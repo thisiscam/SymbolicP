@@ -1,3 +1,5 @@
+#include "pingpong_Macros.h"
+
 using System;
 using System.Diagnostics;
 
@@ -22,8 +24,8 @@ class MachineClient : PMachine {
 		int pc = 0;
 		while(true) {
 		switch(pc) {
-			case  0:	if(e != 2) {pc = 4; break;}						
-						this.state = 1;								
+			case  0:	if(e != SUCCESS) {pc = 4; break;}						
+						this.state = MachineClient_STATE_SendPing;								
 						this.SendPingEntry();						
 						pc = -1; break;									goto case 4;				
 			case  4:	throw new SystemException("Unhandled event");	goto case -1;
@@ -34,8 +36,8 @@ class MachineClient : PMachine {
 		int pc = 0;
 		while(true) {
 		switch(pc) {
-			case  0:	if(e != 2) {pc = 3; break;}						
-						this.state = 2;																				
+			case  0:	if(e != SUCCESS) {pc = 3; break;}						
+						this.state = MachineClient_STATE_WaitPong;																				
 						pc = -1; break;									goto case 3;
 			case  3:	throw new SystemException("Unhandled event");	goto case -1;
 			case -1:	return;

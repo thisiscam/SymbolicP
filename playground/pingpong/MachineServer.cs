@@ -1,3 +1,5 @@
+#include "pingpong_Macros.h"
+
 using System;
 
 class MachineServer : PMachine {
@@ -13,8 +15,8 @@ class MachineServer : PMachine {
 		int pc = 0;
 		while(true) {
 		switch(pc) {
-			case 0:		if(e != 2) {pc = 3 ; break;}					
-						this.state = 0;								
+			case 0:		if(e != SUCCESS) {pc = 3 ; break;}					
+						this.state = MachineServer_STATE_WaitPing;								
 						pc = -1; break;									goto case 3;
 			case 3:		throw new SystemException("Unhandled event");	goto case -1;
 			case -1:	return;
