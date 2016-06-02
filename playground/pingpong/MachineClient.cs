@@ -14,11 +14,11 @@ class MachineClient : PMachine {
 	public void InitEntry() {
 		server = new MachineServer();
 		Scheduler.machines.Add(server);
-		Init_RaiseEvent(2); return;
+		Init_RaiseEvent(SUCCESS); return;
 	}
 	public void SendPingEntry() {
-		sendMsg(this.server, 0, new object[]{this});
-		SendPing_RaiseEvent(2); return;
+		sendMsg(this.server, PING, new object[]{this});
+		SendPing_RaiseEvent(SUCCESS); return;
 	}
 	public void Init_RaiseEvent(int e) {		
 		int pc = 0;

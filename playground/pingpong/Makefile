@@ -1,5 +1,7 @@
 SOURCES = $(wildcard *.cs)
 
+all: clean compile
+
 preprocessed/%.cs: %.cs 
 	cpp -P $^ $@
 
