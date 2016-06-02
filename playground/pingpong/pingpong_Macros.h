@@ -1,15 +1,4 @@
-/* 
-	PING = 0
-	PONG = 1
-	SUCCESS = 2
-
-	MachineServer.STATE_WaitPing = 0
-	MachineServer.STATE_SendPong = 1
-	
-	MachineClient.STATE_Init = 0
-	MachineClient.STATE_SendPing = 1
-	MachineClient.STATE_WaitPong = 2
-*/
+#define CASE(n) goto case n; case n
 #define PING 0
 #define PONG 1
 #define SUCCESS 2

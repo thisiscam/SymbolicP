@@ -12,7 +12,7 @@ class MachineClient : PMachine {
 		InitEntry();
 	}
 	public void InitEntry() {
-		server = new MachineServer();
+		this.server = Inst.Set_Prop<PMachine>(this.server, new MachineServer());
 		Scheduler.machines.Add(server);
 		Init_RaiseEvent(SUCCESS); return;
 	}
@@ -25,11 +25,11 @@ class MachineClient : PMachine {
 		while(true) {
 		switch(pc) {
 			case  0:	if(e != SUCCESS) {pc = 4; break;}						
-						this.state = MachineClient_STATE_SendPing;								
+						this.state = Inst.Set_Prop<int>(this.state, MachineClient_STATE_SendPing);								
 						this.SendPingEntry();						
-						pc = -1; break;									goto case 4;				
-			case  4:	throw new SystemException("Unhandled event");	goto case -1;
-			case -1:	return;
+						pc = -1; break;													
+			CASE(4):	throw new SystemException("Unhandled event");	
+			CASE(-1):	return;
 		}}
 	}
 	public void SendPing_RaiseEvent(int e) {
@@ -37,10 +37,10 @@ class MachineClient : PMachine {
 		while(true) {
 		switch(pc) {
 			case  0:	if(e != SUCCESS) {pc = 3; break;}						
-						this.state = MachineClient_STATE_WaitPong;																				
-						pc = -1; break;									goto case 3;
-			case  3:	throw new SystemException("Unhandled event");	goto case -1;
-			case -1:	return;
+						this.state = Inst.Set_Prop<int>(this.state, MachineClient_STATE_WaitPong);																				
+						pc = 4; break;									
+			CASE(3):	throw new SystemException("Unhandled event");	
+			CASE(4):	return;
 		}}
 	}
 

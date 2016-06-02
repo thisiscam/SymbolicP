@@ -16,10 +16,10 @@ class MachineServer : PMachine {
 		while(true) {
 		switch(pc) {
 			case 0:		if(e != SUCCESS) {pc = 3 ; break;}					
-						this.state = MachineServer_STATE_WaitPing;								
-						pc = -1; break;									goto case 3;
-			case 3:		throw new SystemException("Unhandled event");	goto case -1;
-			case -1:	return;
+						this.state = Inst.Set_Prop<int>(this.state, MachineServer_STATE_WaitPing);								
+						pc = -1; break;									
+			CASE(3):	throw new SystemException("Unhandled event");	
+			CASE(-1):	return;
 		}}
 	}
 }
