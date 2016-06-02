@@ -1,52 +1,45 @@
+using System;
+using System.Diagnostics;
+
 class MachineClient : PMachine {
-	public enum State {
-		STATE_WaitPing,
-		STATE_SendPong
-	};
-
-	MachineClient.State state;
-
 	/* P local vars */
 	PMachine server;
 
 	public MachineClient() {
-		state = STATE_Init;
+		state = 0;
 		InitEntry();
 	}
-	public override void RunStatemachine(Pingpong_Event event) {
-		if(state == STATE_Init) {
-			if (event == SUCCESS) {
-				state = STATE_SendPing;
-				SendPingEntry();
-			} else {
-				throw Exception("Unhandled event");
-			}
-		} else if (state == STATE_SendPing) {
-			if (event == PING) {
-				state = STATE_WaitPong;
-				WaitPingEntry();
-			} else {
-				throw Exception("Unhandled event");
-			}
-		} else if (state == STATE_WaitPong) {
-			if (event == PONG) {
-				state = STATE_SendPing;
-				SendPingEntry();
-			}
-		}
-	}
-	private void InitEntry() {
+	public void InitEntry() {
 		server = new MachineServer();
-		raiseEvent(SUCCESS); return;
+		Scheduler.machines.Add(server);
+		Init_RaiseEvent(2); return;
 	}
-	private void SendPingEntry() {
-		sendMsg(this.server, PING, this);
-		raiseEvent(SUCCESS); return;
+	public void SendPingEntry() {
+		sendMsg(this.server, 0, new object[]{this});
+		SendPing_RaiseEvent(2); return;
 	}
-	private void WaitPingEntry() {
+	public void Init_RaiseEvent(int e) {		
+		int pc = 0;
+		while(true) {
+		switch(pc) {
+			case  0:	if(e != 2) {pc = 4; break;}						
+						this.state = 1;								
+						this.SendPingEntry();						
+						pc = -1; break;									goto case 4;				
+			case  4:	throw new SystemException("Unhandled event");	goto case -1;
+			case -1:	return;
+		}}
+	}
+	public void SendPing_RaiseEvent(int e) {
+		int pc = 0;
+		while(true) {
+		switch(pc) {
+			case  0:	if(e != 2) {pc = 3; break;}						
+						this.state = 2;																				
+						pc = -1; break;									goto case 3;
+			case  3:	throw new SystemException("Unhandled event");	goto case -1;
+			case -1:	return;
+		}}
+	}
 
-	}
-	private void raiseEvent(Pingpong_Event event) {
-		return RunStatemachine(event);
-	}
 }
