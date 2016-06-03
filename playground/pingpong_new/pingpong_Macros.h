@@ -1,4 +1,3 @@
-#define CASE(n) goto case n; case n
 #define PING 0
 #define PONG 1
 #define SUCCESS 2
