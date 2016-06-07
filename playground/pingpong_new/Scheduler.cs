@@ -1,39 +1,37 @@
+#include "common_Macros.h"
+
 using System.Collections.Generic;
 using System.Diagnostics;
 
 class Scheduler {
 
-    public static List<PMachine> machines = new List<PMachine>();
+    List<PMachine> machines = new List<PMachine>();
 
-    static int pickEvent(PMachine machine) {
+    private int ChooseSenderMachineIndex() {
         return 0;
     }
 
-    static PMachine chooseMachine() {
-        //TODO, this is a very naive implementation
-        for(int i=0; i < machines.Count; i++) {
-            if(machines[i].events.Count > 0) {
-                PMachine m = machines[i];
-                return m;
-            }
-        }
-        return null;
-    }
-
     static int Main(string[] args) {
-        Dispatcher d = new Dispatcher();
-        d.StartMainMachine();
-        while(true) {
-            PMachine machine = chooseMachine();
-            if (machine == null) {
-                break;
+        Scheduler scheduler = new Scheduler();
+        
+        /* Scheduler creates first machine and directly starts it */
+        PMachine mainMachine = MachineStarter.CreateMainMachine();
+        scheduler.machines.Add(mainMachine);
+        mainMachine.StartMachine();
+
+        while(scheduler.machines.Count > 0) {
+            int senderMachineIndx = scheduler.ChooseSenderMachineIndex();
+            SendQueueItem dequeuedItem = scheduler.machines[senderMachineIndx].dequeueSend();
+            int e = dequeuedItem.e;
+            if (e == EVENT_NEW_MACHINE) {
+                PMachine newMachine = dequeuedItem.target;
+                scheduler.machines.Add(newMachine);
+                newMachine.StartMachine();
+            } else {
+                PMachine targetMachine = dequeuedItem.target;
+                targetMachine.enqueueReceive(e, dequeuedItem.payload);
+                targetMachine.RunStateMachine();
             }
-            int e_idx = pickEvent(machine);
-            int e = machine.events[e_idx];
-            object payload = machine.payloads[e_idx];
-            machine.events.RemoveAt(e_idx);
-            machine.payloads.RemoveAt(e_idx);
-            d.RunStateMachine(machine, e, payload);
         }
         return 0;
     }
