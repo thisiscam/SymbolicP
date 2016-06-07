@@ -8,7 +8,7 @@ class MachineServer : PMachine {
     }
     public void SendPongEntry(object[] payload) {
         PMachine arg0 = (PMachine)payload[0];
-        sendMsg(arg0, PONG, null);
+        SendMsg(arg0, PONG, null);
         SendPong_RaiseEvent(SUCCESS); return;
     }
     public void SendPong_RaiseEvent(int e) {

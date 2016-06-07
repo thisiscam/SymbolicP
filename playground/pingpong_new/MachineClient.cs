@@ -16,7 +16,8 @@ class MachineClient : PMachine {
     public MachineClient() {
         this.DeferedSet = _DeferedSet;
     }
-    public override void StartMachine() {
+    public override void StartMachine(Scheduler s) {
+        base.StartMachine(s);
         this.state = MachineClient_STATE_Init;
         this.InitEntry();
     }
@@ -64,28 +65,28 @@ class MachineClient : PMachine {
 
     /* Entry Functions */
     private void InitEntry() {
-        this.server = newMachine(new MachineServer()); // Alternatively could have passed in type 'MachineServer', and call constructor in newMachine; 
-        Init_RaiseEvent(SUCCESS); retcode = RAISED_EVENT; return;
+        this.server = NewMachine(new MachineServer());
+        ServeEvent(SUCCESS, null); retcode = RAISED_EVENT; return;
     }
     private void SendPingEntry() {
-        sendMsg(this.server, PING, this);
-        SendPing_RaiseEvent(SUCCESS); retcode = RAISED_EVENT; return;
+        SendMsg(this.server, PING, this);
+        ServeEvent(SUCCESS, null); retcode = RAISED_EVENT; return;
     }
 
-    /* Raise Events */
-    private void Init_RaiseEvent(int e) {        
-        if (e == SUCCESS) {
-            this.state = MachineClient_STATE_SendPing;
-            this.SendPingEntry();
-        } else {
-            throw new SystemException("Unhandled Event");
-        }
-    }
-    private void SendPing_RaiseEvent(int e) {
-        if (e == SUCCESS) {
-            this.state = MachineClient_STATE_WaitPong;
-        } else {
-            throw new SystemException("Unhandled Event");
-        }
-    }
+    // /* Raise Events */
+    // private void Init_RaiseEvent(int e) {        
+    //     if (e == SUCCESS) {
+    //         this.state = MachineClient_STATE_SendPing;
+    //         this.SendPingEntry();
+    //     } else {
+    //         throw new SystemException("Unhandled Event");
+    //     }
+    // }
+    // private void SendPing_RaiseEvent(int e) {
+    //     if (e == SUCCESS) {
+    //         this.state = MachineClient_STATE_WaitPong;
+    //     } else {
+    //         throw new SystemException("Unhandled Event");
+    //     }
+    // }
 }

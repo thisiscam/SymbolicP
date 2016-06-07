@@ -15,7 +15,7 @@ class MachineClient extends PMachine {
         Init_RaiseEvent(SUCCESS); return;
     }
     public void SendPingEntry() {
-        sendMsg(this.server, PING, this);
+        SendMsg(this.server, PING, this);
         SendPing_RaiseEvent(SUCCESS); return;
     }
     public void Init_RaiseEvent(int e) {        

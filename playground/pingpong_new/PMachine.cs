@@ -4,27 +4,31 @@ using System;
 using System.Collections.Generic;
 
 abstract class PMachine {
+
 	protected int retcode;
     protected int state;
-    protected List<SendQueueItem> sendQueue = new List<SendQueueItem>();
-    protected List<ReceiveQueueItem> receiveQueue = new List<ReceiveQueueItem>();
+
+    private Scheduler scheduler;
+    private List<ReceiveQueueItem> receiveQueue = new List<ReceiveQueueItem>();
 
     protected bool[,] DeferedSet;
 
-    public abstract void StartMachine();
+    public virtual void StartMachine(Scheduler s) {
+        this.scheduler = s;
+    }
     protected abstract void ServeEvent(int e, object payload);
 
-    protected void sendMsg(PMachine other, int e, object payload) {
+    protected void SendMsg(PMachine other, int e, object payload) {
         Console.WriteLine(this.ToString() + " send event " + e.ToString() + " to " + other.ToString());
-        this.sendQueue.Add(new SendQueueItem(other, e, payload));
+        this.scheduler.SendMsg(this, other, e, payload);
     }
 
-    protected PMachine newMachine(PMachine new_machine) {
-    	this.sendQueue.Add(new SendQueueItem(new_machine, EVENT_NEW_MACHINE, null));
-    	return new_machine;
+    protected PMachine NewMachine(PMachine newMachine) {
+    	this.scheduler.NewMachine(this, newMachine);
+    	return newMachine;
     }
 
-    protected ReceiveQueueItem dequeueReceive() {
+    protected ReceiveQueueItem DequeueReceive() {
     	int state = this.state;
     	for(int i=0; i < receiveQueue.Count; i++) {
     		ReceiveQueueItem item = receiveQueue[i];
@@ -35,18 +39,12 @@ abstract class PMachine {
     	return null;
     }
 
-    public SendQueueItem dequeueSend() {
-    	SendQueueItem r = this.sendQueue[0];
-    	this.sendQueue.RemoveAt(0);
-    	return r;
-    }
-
-    public void enqueueReceive(int e, object payload) {
+    public void EnqueueReceive(int e, object payload) {
     	this.receiveQueue.Add(new ReceiveQueueItem(e, payload));
     }
 
     public void RunStateMachine() {
-    	ReceiveQueueItem item = dequeueReceive();
+    	ReceiveQueueItem item = DequeueReceive();
         if (item == null)
             return;
         int e = item.e;

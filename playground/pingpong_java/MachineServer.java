@@ -6,7 +6,7 @@ class MachineServer extends PMachine {
         state = MachineServer_STATE_WaitPing;
     }
     public void SendPongEntry(PMachine payload) {
-        sendMsg(payload, PONG, null);
+        SendMsg(payload, PONG, null);
         SendPong_RaiseEvent(SUCCESS); return;
     }
     public void SendPong_RaiseEvent(int e) {

@@ -17,7 +17,7 @@ class MachineClient : PMachine {
         Init_RaiseEvent(SUCCESS); return;
     }
     public void SendPingEntry() {
-        sendMsg(this.server, PING, new object[]{this});
+        SendMsg(this.server, PING, new object[]{this});
         SendPing_RaiseEvent(SUCCESS); return;
     }
     public void Init_RaiseEvent(int e) {        

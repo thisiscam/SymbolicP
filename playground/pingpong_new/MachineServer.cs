@@ -10,7 +10,8 @@ class MachineServer : PMachine {
     public MachineServer() {
         this.DeferedSet = _DeferedSet;
     }
-    public override void StartMachine() {
+    public override void StartMachine(Scheduler s) {
+        base.StartMachine(s);
         this.state = MachineServer_STATE_WaitPing;    
     }
     protected override void ServeEvent (int e, object payload) {
@@ -43,16 +44,16 @@ class MachineServer : PMachine {
 
     /* Entry Functions */
     private void SendPongEntry(PMachine payload) {
-        sendMsg(payload, PONG, null);
-        SendPong_RaiseEvent(SUCCESS); retcode = RAISED_EVENT; return;
+        SendMsg(payload, PONG, null);
+        ServeEvent(SUCCESS, null); retcode = RAISED_EVENT; return;
     }
 
-    /* Raise Events */
-    private void SendPong_RaiseEvent(int e) {
-        if (e == SUCCESS) {
-            this.state = MachineServer_STATE_WaitPing;
-        } else {
-            throw new SystemException("Unhandled Event");
-        }
-    }
+    // /* Raise Events */
+    // private void SendPong_RaiseEvent(int e) {
+    //     if (e == SUCCESS) {
+    //         this.state = MachineServer_STATE_WaitPing;
+    //     } else {
+    //         throw new SystemException("Unhandled Event");
+    //     }
+    // }
 }
