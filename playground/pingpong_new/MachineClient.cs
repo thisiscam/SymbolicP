@@ -9,55 +9,33 @@ class MachineClient : PMachine {
                                             {false, false, false},
                                             {false, false, false}
                                         };
-
     /* P local vars */
     PMachine server;
 
     public MachineClient() {
         this.DeferedSet = _DeferedSet;
+        this.Transitions = new TransitionFunction[,] {
+                                {null, null, Init_SUCCESS},
+                                {null, null, SendPing_SUCCESS},
+                                {null, WaitPong_PONG, null},
+                            };
     }
     public override void StartMachine(Scheduler s) {
         base.StartMachine(s);
         this.state = MachineClient_STATE_Init;
         this.InitEntry();
     }
-    protected override void ServeEvent (int e, object payload) {
-        if (this.state == MachineClient_STATE_Init) {
-            if (e == SUCCESS) {
-                this.Init_SUCCESS(); 
-                if (retcode == RAISED_EVENT) return; 
-            } else {
-                throw new SystemException("Unhandled Event");
-            }
-        } else if (this.state == MachineClient_STATE_SendPing) {
-            if (e == SUCCESS) {
-                this.SendPing_SUCCESS(); 
-                if (retcode == RAISED_EVENT) return; 
-            } else {
-                throw new SystemException("Unhandled Event");
-            }
-        } else if (this.state == MachineClient_STATE_WaitPong) {
-            if (e == PONG) {
-                this.WaitPong_PONG(); 
-                if (retcode == RAISED_EVENT) return; 
-            } else {
-                throw new SystemException("Unhandled Event");
-            }
-        } else {
-            throw new SystemException("Should not be here");
-        }
-    }
 
     /* Transition Functions */
-    private void Init_SUCCESS () {
+    private void Init_SUCCESS (object payload) {
         this.state = MachineClient_STATE_SendPing;
         this.SendPingEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void SendPing_SUCCESS() {
+    private void SendPing_SUCCESS(object payload) {
         this.state = MachineClient_STATE_WaitPong;
     }
-    private void WaitPong_PONG() {
+    private void WaitPong_PONG(object payload) {
         this.state = MachineClient_STATE_SendPing;
         this.SendPingEntry();
         if (retcode == RAISED_EVENT) return;
@@ -72,21 +50,4 @@ class MachineClient : PMachine {
         SendMsg(this.server, PING, this);
         ServeEvent(SUCCESS, null); retcode = RAISED_EVENT; return;
     }
-
-    // /* Raise Events */
-    // private void Init_RaiseEvent(int e) {        
-    //     if (e == SUCCESS) {
-    //         this.state = MachineClient_STATE_SendPing;
-    //         this.SendPingEntry();
-    //     } else {
-    //         throw new SystemException("Unhandled Event");
-    //     }
-    // }
-    // private void SendPing_RaiseEvent(int e) {
-    //     if (e == SUCCESS) {
-    //         this.state = MachineClient_STATE_WaitPong;
-    //     } else {
-    //         throw new SystemException("Unhandled Event");
-    //     }
-    // }
 }

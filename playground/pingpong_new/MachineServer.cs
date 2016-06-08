@@ -7,29 +7,18 @@ class MachineServer : PMachine {
                                             {false, false, false},
                                             {false, false, false},
                                         };
+
     public MachineServer() {
         this.DeferedSet = _DeferedSet;
+        this.Transitions = new TransitionFunction[,] {
+                                {WaitPing_PING, null, null},
+                                {null, null, SendPong_SUCCESS},
+                            };
     }
+    
     public override void StartMachine(Scheduler s) {
         base.StartMachine(s);
         this.state = MachineServer_STATE_WaitPing;    
-    }
-    protected override void ServeEvent (int e, object payload) {
-        if (this.state == MachineServer_STATE_WaitPing) {
-            if (e == PING) {
-                this.WaitPing_PING(payload);
-                if (retcode == RAISED_EVENT) return;
-            } else {
-                throw new SystemException("Unhandled Event");
-            }
-        } else if(this.state == MachineServer_STATE_SendPong) {
-            if (e == SUCCESS) {
-                this.SendPong_SUCCESS();
-                if (retcode == RAISED_EVENT) return;
-            } else {
-                throw new SystemException("Unhandled Event");
-            }
-        }
     }
 
     /* Transition Functions */
@@ -38,7 +27,7 @@ class MachineServer : PMachine {
         this.SendPongEntry((PMachine)payload);
         if (retcode == RAISED_EVENT) return;
     }
-    private void SendPong_SUCCESS() {
+    private void SendPong_SUCCESS(object payload) {
         this.state = MachineServer_STATE_WaitPing;
     }
 
@@ -47,13 +36,4 @@ class MachineServer : PMachine {
         SendMsg(payload, PONG, null);
         ServeEvent(SUCCESS, null); retcode = RAISED_EVENT; return;
     }
-
-    // /* Raise Events */
-    // private void SendPong_RaiseEvent(int e) {
-    //     if (e == SUCCESS) {
-    //         this.state = MachineServer_STATE_WaitPing;
-    //     } else {
-    //         throw new SystemException("Unhandled Event");
-    //     }
-    // }
 }
