@@ -45,27 +45,27 @@ class Scheduler {
 
     public bool RandomBool() {
         /* Hack for now, need to decide on a better structure for "$" sign semantics of P */
-        return this.rng.NextDouble() > 0.5;
+        return this.rnd.NextDouble() > 0.5;
     }
 
-    private void StartMachine(PMachine machine) {
+    private void StartMachine(PMachine machine, object payload) {
         this.machines.Add(machine);
         sendQueues.Add(machine, new List<SendQueueItem>());
-        machine.StartMachine(this);
+        machine.StartMachine(this, payload);
     }
 
     static int Main(string[] args) {
         Scheduler scheduler = new Scheduler();
 
         PMachine mainMachine = MachineStarter.CreateMainMachine();
-        scheduler.StartMachine(mainMachine);
+        scheduler.StartMachine(mainMachine, null);
 
         while(scheduler.machines.Count > 0) {
             SendQueueItem dequeuedItem = scheduler.ChooseSendAndDequeue();
             int e = dequeuedItem.e;
             if (e == EVENT_NEW_MACHINE) {
                 PMachine newMachine = dequeuedItem.target;
-                scheduler.StartMachine(newMachine);
+                scheduler.StartMachine(newMachine, dequeuedItem.payload);
             } else {
                 PMachine targetMachine = dequeuedItem.target;
                 targetMachine.EnqueueReceive(e, dequeuedItem.payload);

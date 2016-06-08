@@ -12,84 +12,79 @@ class MachineDoor : PMachine {
         {false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false},
         {false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false},
         {false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false}
-    }
+    };
 
     /* P local vars */
     PMachine ElevatorV;
 
     public MachineDoor() {
         this.DeferedSet = _DeferedSet;
+        this.Transitions = new TransitionFunction[8, 19];
+        this.Transitions[MachineDoor_STATE__Init, eUnit] = _Init_eUnit;
+        this.Transitions[MachineDoor_STATE_Init, eSendCommandToOpenDoor] = Init_eSendCommandToOpenDoor;
+        this.Transitions[MachineDoor_STATE_Init, eSendCommandToCloseDoor] = Init_eSendCommandToCloseDoor;
+        this.Transitions[MachineDoor_STATE_ConsiderClosingDoor, eUnit] = ConsiderClosingDoor_eUnit;
+        this.Transitions[MachineDoor_STATE_ConsiderClosingDoor, eObjectEncountered] = ConsiderClosingDoor_eObjectEncountered;
+        this.Transitions[MachineDoor_STATE_ConsiderClosingDoor, eSendCommandToStopDoor] = ConsiderClosingDoor_eSendCommandToStopDoor;
+        this.Transitions[MachineDoor_STATE_ObjectEncountered, eUnit] = ObjectEncountered_eUnit;
+        this.Transitions[MachineDoor_STATE_CloseDoor, eUnit] = CloseDoor_eUnit;
+        this.Transitions[MachineDoor_STATE_StopDoor, eUnit] = StopDoor_eUnit;
+        this.Transitions[MachineDoor_STATE_ResetDoor, eSendCommandToResetDoor] = ResetDoor_eSendCommandToResetDoor;
     }
-    public override void StartMachine(Scheduler s) {
-        base.StartMachine(s);
+
+    public override void StartMachine(Scheduler s, object payload) {
+        base.StartMachine(s, payload);
         this.state = MachineDoor_STATE__Init;
-        this._InitEntry();    
-    }
-    protected override void ServeEvent (int e, object payload) {
-        if (this.state == MachineServer_STATE_WaitPing) {
-            if (e == PING) {
-                this.WaitPing_PING(payload);
-                if (retcode == RAISED_EVENT) return;
-            } else {
-                throw new SystemException("Unhandled Event");
-            }
-        } else if(this.state == MachineServer_STATE_SendPong) {
-            if (e == SUCCESS) {
-                this.SendPong_SUCCESS();
-                if (retcode == RAISED_EVENT) return;
-            } else {
-                throw new SystemException("Unhandled Event");
-            }
-        }
+        this._InitEntry((PMachine)payload);    
     }
 
     /* Transition Functions */
-    private void _Init_eUnit() {
+    private void _Init_eUnit(object payload) {
         this.state = MachineDoor_STATE_Init;
         this.InitEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void Init_eSendCommandToOpenDoor() {
+    private void Init_eSendCommandToOpenDoor(object payload) {
         this.state = MachineDoor_STATE_OpenDoor;
         this.OpenDoorEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void Init_eSendCommandToCloseDoor() {
+    private void Init_eSendCommandToCloseDoor(object payload) {
         this.state = MachineDoor_STATE_ConsiderClosingDoor;
         this.ConsiderClosingDoorEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void ConsiderClosingDoor_eUnit() {
+    private void ConsiderClosingDoor_eUnit(object payload) {
         this.state = MachineDoor_STATE_CloseDoor;
         this.CloseDoorEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void ConsiderClosingDoor_eObjectEncountered() {
+    private void ConsiderClosingDoor_eObjectEncountered(object payload) {
         this.state = MachineDoor_STATE_ObjectEncountered;
         this.ObjectEncounteredEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void ConsiderClosingDoor_eSendCommandToStopDoor() {
+    private void ConsiderClosingDoor_eSendCommandToStopDoor(object payload) {
         this.state = MachineDoor_STATE_StopDoor;
         this.StopDoorEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void ObjectEncountered_eUnit() {
+    private void ObjectEncountered_eUnit(object payload) {
         this.state = MachineDoor_STATE_Init;
         this.InitEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void CloseDoor_eUnit() {
+    private void CloseDoor_eUnit(object payload) {
         this.state = MachineDoor_STATE_ResetDoor;
         this.ResetDoorEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void StopDoor_eUnit() {
+    private void StopDoor_eUnit(object payload) {
         this.state = MachineDoor_STATE_OpenDoor;
         this.OpenDoorEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void ResetDoor_eSendCommandToResetDoor() {
+    private void ResetDoor_eSendCommandToResetDoor(object payload) {
         this.state = MachineDoor_STATE_Init;
         this.InitEntry();
         if (retcode == RAISED_EVENT) return;
@@ -101,15 +96,15 @@ class MachineDoor : PMachine {
         this.ElevatorV = payload;
         ServeEvent(eUnit, null); retcode = RAISED_EVENT; return;
     }
-    private void InitEntry(PMachine payload) { }
+    private void InitEntry() { }
     private void OpenDoorEntry() {
         SendMsg(this.ElevatorV, eDoorOpened, null);
         ServeEvent(eUnit, null); retcode = RAISED_EVENT; return;
     }
     private void ConsiderClosingDoorEntry() {
-        if (RandBool()) {
+        if (RandomBool()) {
             ServeEvent(eUnit, null); retcode = RAISED_EVENT; return;
-        } else if (RandBool()) {
+        } else if (RandomBool()) {
             ServeEvent(eObjectEncountered, null); retcode = RAISED_EVENT; return;
         }
     }
@@ -126,13 +121,4 @@ class MachineDoor : PMachine {
         ServeEvent(eUnit, null); retcode = RAISED_EVENT; return;
     }
     private void ResetDoorEntry() { }
-
-    // /* Raise Events */
-    // private void SendPong_RaiseEvent(int e) {
-    //     if (e == SUCCESS) {
-    //         this.state = MachineServer_STATE_WaitPing;
-    //     } else {
-    //         throw new SystemException("Unhandled Event");
-    //     }
-    // }
 }

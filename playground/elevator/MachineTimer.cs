@@ -9,66 +9,55 @@ class MachineTimer : PMachine {
         {false,false,false,false,false,false,false,false,false,false,false,false,false,false,true ,false,false,false,false},
         {false,false,false,false,false,false,false,false,false,false,false,false,false,false,true ,false,false,false,false},
         {false,false,false,false,false,false,false,false,false,false,false,false,false,false,true ,false,false,false,false}
-    }
+    };
 
     /* P local vars */
     PMachine ElevatorV;
 
     public MachineTimer() {
         this.DeferedSet = _DeferedSet;
+        this.Transitions = new TransitionFunction[5, 19];
+        this.Transitions[MachineTimer_STATE__Init, eUnit] = _Init_eUnit;
+        this.Transitions[MachineTimer_STATE_Init, eStartDoorCloseTimer] = Init_eStartDoorCloseTimer;
+        this.Transitions[MachineTimer_STATE_TimerStarted, eUnit] = TimerStarted_eUnit;
+        this.Transitions[MachineTimer_STATE_TimerStarted, eStopDoorCloseTimer] = TimerStarted_eStopDoorCloseTimer;
+        this.Transitions[MachineTimer_STATE_SendTimerFired, eUnit] = SendTimerFired_eUnit;
+        this.Transitions[MachineTimer_STATE_ConsiderStopping, eUnit] = ConsiderStopping_eUnit;
     }
 
-    public override void StartMachine(Scheduler s) {
-        base.StartMachine(s);
-        this.state = MachineServer_STATE__Init;
-        this._InitEntry();
-    }
-
-    protected override void ServeEvent (int e, object payload) {
-        if (this.state == MachineServer_STATE_WaitPing) {
-            if (e == PING) {
-                this.WaitPing_PING(payload);
-                if (retcode == RAISED_EVENT) return;
-            } else {
-                throw new SystemException("Unhandled Event");
-            }
-        } else if(this.state == MachineServer_STATE_SendPong) {
-            if (e == SUCCESS) {
-                this.SendPong_SUCCESS();
-                if (retcode == RAISED_EVENT) return;
-            } else {
-                throw new SystemException("Unhandled Event");
-            }
-        }
+    public override void StartMachine(Scheduler s, object payload) {
+        base.StartMachine(s, payload);
+        this.state = MachineTimer_STATE__Init;
+        this._InitEntry((PMachine)payload);
     }
 
     /* Transition Functions */
-    private void _Init_eUnit() {
+    private void _Init_eUnit(object payload) {
         this.state = MachineTimer_STATE_Init;
         this.InitEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void Init_eStartDoorCloseTimer() {
+    private void Init_eStartDoorCloseTimer(object payload) {
         this.state = MachineTimer_STATE_TimerStarted;
         this.TimerStartedEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void TimerStarted_eUnit() {
+    private void TimerStarted_eUnit(object payload) {
         this.state = MachineTimer_STATE_SendTimerFired;
         this.SendTimerFiredEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void TimerStarted_eStopDoorCloseTimer() {
+    private void TimerStarted_eStopDoorCloseTimer(object payload) {
         this.state = MachineTimer_STATE_ConsiderStopping;
         this.ConsiderStoppingEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void SendTimerFired_eUnit() {
+    private void SendTimerFired_eUnit(object payload) {
         this.state = MachineTimer_STATE_Init;
         this.InitEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void ConsiderStopping_eUnit() {
+    private void ConsiderStopping_eUnit(object payload) {
         this.state = MachineTimer_STATE_Init;
         this.InitEntry();
         if (retcode == RAISED_EVENT) return;
@@ -98,13 +87,4 @@ class MachineTimer : PMachine {
         }
         ServeEvent(eUnit, null); retcode = RAISED_EVENT; return;
     }
-
-    // /* Raise Events */
-    // private void SendPong_RaiseEvent(int e) {
-    //     if (e == SUCCESS) {
-    //         this.state = MachineServer_STATE_WaitPing;
-    //     } else {
-    //         throw new SystemException("Unhandled Event");
-    //     }
-    // }
 }

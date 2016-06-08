@@ -4,8 +4,7 @@ using System;
 using System.Collections.Generic;
 
 abstract class PMachine {
-    
-    protected delegate int TransitionFunction();
+    protected delegate void TransitionFunction(object payload);
 
 	protected int retcode;
     protected int state;
@@ -14,11 +13,21 @@ abstract class PMachine {
     private List<ReceiveQueueItem> receiveQueue = new List<ReceiveQueueItem>();
 
     protected bool[,] DeferedSet;
+    protected TransitionFunction[,] Transitions;
 
-    public virtual void StartMachine(Scheduler s) {
+    public virtual void StartMachine(Scheduler s, object payload) {
         this.scheduler = s;
     }
-    protected abstract void ServeEvent(int e, object payload);
+    
+    protected void ServeEvent(int e, object payload) {
+        TransitionFunction transition_fn = this.Transitions[this.state, e];
+        if(transition_fn != null) {
+            transition_fn(payload);
+            if (retcode == RAISED_EVENT) return;
+        } else {
+            throw new SystemException("Unhandled Event");
+        }
+    }
 
     protected void SendMsg(PMachine other, int e, object payload) {
         Console.WriteLine(this.ToString() + " send event " + e.ToString() + " to " + other.ToString());

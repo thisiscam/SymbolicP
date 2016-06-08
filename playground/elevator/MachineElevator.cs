@@ -14,102 +14,122 @@ class MachineElevator : PMachine {
         {true ,true ,false,false,false,false,true ,false,false,false,false,false,false,false,false,false,false,false,false},
         {true ,true ,false,false,false,false,true ,false,false,false,false,false,false,false,false,false,false,false,false},
         {false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false}
-    }
+    };
     
     /* P local vars */
     PMachine TimerV, DoorV;
 
     public MachineElevator() {
         this.DeferedSet = _DeferedSet;
+        this.Transitions = new TransitionFunction[10,19];
+        this.Transitions[MachineElevator_STATE_Init, eUnit] = Init_eUnit;
+        this.Transitions[MachineElevator_STATE_DoorClosed, eOpenDoor] = DoorClosed_eOpenDoor;
+        this.Transitions[MachineElevator_STATE_DoorOpening, eDoorOpened] = DoorOpening_eDoorOpened;
+        this.Transitions[MachineElevator_STATE_DoorOpened, eTimerFired] = DoorOpened_eTimerFired;
+        this.Transitions[MachineElevator_STATE_DoorOpened, eStopTimerReturned ] = DoorOpened_eStopTimerReturned ;
+        this.Transitions[MachineElevator_STATE_DoorOpened, eOpenDoor] = DoorOpened_eOpenDoor;
+        this.Transitions[MachineElevator_STATE_DoorOpenedOkToClose, eStopTimerReturned] = DoorOpenedOkToClose_eStopTimerReturned_eTimerFired;
+        this.Transitions[MachineElevator_STATE_DoorOpenedOkToClose, eTimerFired] = DoorOpenedOkToClose_eStopTimerReturned_eTimerFired;
+        this.Transitions[MachineElevator_STATE_DoorOpenedOkToClose, eCloseDoor] = DoorOpenedOkToClose_eCloseDoor;
+        this.Transitions[MachineElevator_STATE_DoorClosing, eOpenDoor] = DoorClosing_eOpenDoor;
+        this.Transitions[MachineElevator_STATE_DoorClosing, eDoorClosed] = DoorClosing_eDoorClosed;
+        this.Transitions[MachineElevator_STATE_DoorClosing, eObjectDetected] = DoorClosing_eObjectDetected;
+        this.Transitions[MachineElevator_STATE_StoppingDoor, eDoorOpened] = StoppingDoor_eDoorOpened;
+        this.Transitions[MachineElevator_STATE_StoppingDoor, eDoorClosed] = StoppingDoor_eDoorClosed;
+        this.Transitions[MachineElevator_STATE_StoppingDoor, eDoorStopped] = StoppingDoor_eDoorStopped;
+        this.Transitions[MachineElevator_STATE_StoppingTimer, eOperationSuccess] = StoppingTimer_eOperationSuccess;
+        this.Transitions[MachineElevator_STATE_StoppingTimer, eOperationFailure] = StoppingTimer_eOperationFailure;
+        this.Transitions[MachineElevator_STATE_WaitingForTimer, eTimerFired] = WaitingForTimer_eTimerFired;
     }
-    public override void StartMachine(Scheduler s) {
-        base.StartMachine(s);
-        this.state = MachineServer_STATE_WaitPing;    
+
+    public override void StartMachine(Scheduler s, object payload) {
+        base.StartMachine(s, payload);
+        this.state = MachineElevator_STATE_Init;
+        this.InitEntry();    
     }
     
-
     /* Transition Functions */
-    private void Init_eUnit() {
+    private void Init_eUnit(object payload) {
         this.state = MachineElevator_STATE_DoorClosed;
         this.DoorClosedEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void DoorClosed_eOpenDoor() {
+    private void DoorClosed_eOpenDoor(object payload) {
         this.state = MachineElevator_STATE_DoorOpening;
         this.DoorOpeningEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void DoorOpening_eDoorOpened() {
+    private void DoorOpening_eDoorOpened(object payload) {
         this.state = MachineElevator_STATE_DoorOpened;
         this.DoorOpenedEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void DoorOpened_eTimerFired() {
+    private void DoorOpened_eTimerFired(object payload) {
         this.state = MachineElevator_STATE_DoorOpenedOkToClose;
         this.DoorOpenedOkToCloseEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void DoorOpened_eStopTimerReturned () {
+    private void DoorOpened_eStopTimerReturned(object payload) {
         this.state = MachineElevator_STATE_DoorOpened;
         this.DoorOpenedEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void DoorOpened_eOpenDoor() {
+    private void DoorOpened_eOpenDoor(object payload) {
         this.state = MachineElevator_STATE_StoppingTimer;
         this.StoppingTimerEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void DoorOpenedOkToClose_eStopTimerReturned_eTimerFired() {
+    private void DoorOpenedOkToClose_eStopTimerReturned_eTimerFired(object payload) {
         this.state = MachineElevator_STATE_DoorClosing;
         this.DoorClosingEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void DoorOpenedOkToClose_eCloseDoor() {
+    private void DoorOpenedOkToClose_eCloseDoor(object payload) {
         this.state = MachineElevator_STATE_StoppingTimer;
         this.StoppingTimerEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void DoorClosing_eOpenDoor() {
+    private void DoorClosing_eOpenDoor(object payload) {
         this.state = MachineElevator_STATE_StoppingDoor;
         this.StoppingDoorEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void DoorClosing_eDoorClosed() {
+    private void DoorClosing_eDoorClosed(object payload) {
         this.state = MachineElevator_STATE_DoorClosed;
         this.DoorClosedEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void DoorClosing_eObjectDetected() {
+    private void DoorClosing_eObjectDetected(object payload) {
         this.state = MachineElevator_STATE_DoorOpening;
         this.DoorOpeningEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void StoppingDoor_eDoorOpened() {
+    private void StoppingDoor_eDoorOpened(object payload) {
         this.state = MachineElevator_STATE_DoorOpened;
         this.DoorOpenedEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void StoppingDoor_eDoorClosed() {
+    private void StoppingDoor_eDoorClosed(object payload) {
         this.state = MachineElevator_STATE_DoorClosed;
         this.DoorClosedEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void StoppingDoor_eDoorStopped() {
+    private void StoppingDoor_eDoorStopped(object payload) {
         this.state = MachineElevator_STATE_DoorOpening;
         this.DoorOpeningEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void StoppingTimer_eOperationSuccess() {
+    private void StoppingTimer_eOperationSuccess(object payload) {
         this.state = MachineElevator_STATE_ReturnState;
         this.ReturnStateEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void StoppingTimer_eOperationFailure() {
+    private void StoppingTimer_eOperationFailure(object payload) {
         this.state = MachineElevator_STATE_WaitingForTimer;
         this.WaitingForTimerEntry();
         if (retcode == RAISED_EVENT) return;
     }
-    private void WaitingForTimer_eTimerFired() {
+    private void WaitingForTimer_eTimerFired(object payload) {
         this.state = MachineElevator_STATE_ReturnState;
         this.ReturnStateEntry();
         if (retcode == RAISED_EVENT) return;
@@ -120,7 +140,7 @@ class MachineElevator : PMachine {
     private void InitEntry() {
         this.TimerV = NewMachine(new MachineTimer(), this);
         this.DoorV = NewMachine(new MachineDoor(), this);
-        ServeEvent(eUnit); retcode = RAISED_EVENT; return;
+        ServeEvent(eUnit, null); retcode = RAISED_EVENT; return;
     }
     private void DoorClosedEntry() {
         SendMsg(this.DoorV, eSendCommandToResetDoor, null);
@@ -148,6 +168,6 @@ class MachineElevator : PMachine {
         SendMsg(this.TimerV, eTimerFired, null);
     }
     private void ReturnStateEntry() {
-        ServeEvent(eStopTimerReturned); retcode = RAISED_EVENT; return;
+        ServeEvent(eStopTimerReturned, null); retcode = RAISED_EVENT; return;
     }
 }

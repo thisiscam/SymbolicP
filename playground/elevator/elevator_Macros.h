@@ -1,24 +1,24 @@
 #include "common_Macros.h"
 
-#define eOpenDoor 0;
-#define eCloseDoor 1;
-#define eResetDoor 2;
-#define eDoorOpened 3;
-#define eDoorClosed 4;
-#define eDoorStopped 5;
-#define eObjectDetected 6;
-#define eTimerFired 7;
-#define eOperationSuccess 8;
-#define eOperationFailure 9;
-#define eSendCommandToOpenDoor 10;
-#define eSendCommandToCloseDoor 11;
-#define eSendCommandToStopDoor 12;
-#define eSendCommandToResetDoor 13;
-#define eStartDoorCloseTimer 14;
-#define eStopDoorCloseTimer 15;
-#define eUnit 16;
-#define eStopTimerReturned 17;
-#define eObjectEncountered 18;
+#define eOpenDoor 0
+#define eCloseDoor 1
+#define eResetDoor 2
+#define eDoorOpened 3
+#define eDoorClosed 4
+#define eDoorStopped 5
+#define eObjectDetected 6
+#define eTimerFired 7
+#define eOperationSuccess 8
+#define eOperationFailure 9
+#define eSendCommandToOpenDoor 10
+#define eSendCommandToCloseDoor 11
+#define eSendCommandToStopDoor 12
+#define eSendCommandToResetDoor 13
+#define eStartDoorCloseTimer 14
+#define eStopDoorCloseTimer 15
+#define eUnit 16
+#define eStopTimerReturned 17
+#define eObjectEncountered 18
 
 #define MachineElevator_STATE_Init 0
 #define MachineElevator_STATE_DoorClosed 1
