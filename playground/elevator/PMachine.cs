@@ -20,6 +20,7 @@ abstract class PMachine {
     }
     
     protected void ServeEvent(int e, object payload) {
+        this.retcode = EXECUTE_FINISHED;
         TransitionFunction transition_fn = this.Transitions[this.state, e];
         if(transition_fn != null) {
             transition_fn(payload);
@@ -59,13 +60,14 @@ abstract class PMachine {
     }
 
     public void RunStateMachine() {
-    	ReceiveQueueItem item = DequeueReceive();
-        if (item == null)
-            return;
-        int e = item.e;
-        object payload = item.payload;
-        this.retcode = EXECUTE_FINISHED;
-        this.ServeEvent(e, payload);
+        while(true) {
+            ReceiveQueueItem item = DequeueReceive();
+            if (item == null)
+                return;
+            int e = item.e;
+            object payload = item.payload;
+            this.ServeEvent(e, payload);        
+        }
     }
 
     protected void Transition_Ignore(object payload) {
