@@ -15,7 +15,7 @@ abstract class PMachine {
     protected bool[,] DeferedSet;
     protected TransitionFunction[,] Transitions;
 
-    public virtual void StartMachine(Scheduler s) {
+    public virtual void StartMachine(Scheduler s, object payload) {
         this.scheduler = s;
     }
     
@@ -34,9 +34,13 @@ abstract class PMachine {
         this.scheduler.SendMsg(this, other, e, payload);
     }
 
-    protected PMachine NewMachine(PMachine newMachine) {
-    	this.scheduler.NewMachine(this, newMachine);
+    protected PMachine NewMachine(PMachine newMachine, object payload) {
+    	this.scheduler.NewMachine(this, newMachine, payload);
     	return newMachine;
+    }
+
+    protected bool RandomBool() {
+        return this.scheduler.RandomBool();
     }
 
     protected ReceiveQueueItem DequeueReceive() {
@@ -62,5 +66,9 @@ abstract class PMachine {
         object payload = item.payload;
         this.retcode = EXECUTE_FINISHED;
         this.ServeEvent(e, payload);
+    }
+
+    protected void Transition_Ignore(object payload) {
+        return;
     }
 }

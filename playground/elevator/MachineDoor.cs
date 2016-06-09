@@ -23,6 +23,9 @@ class MachineDoor : PMachine {
         this.Transitions[MachineDoor_STATE__Init, eUnit] = _Init_eUnit;
         this.Transitions[MachineDoor_STATE_Init, eSendCommandToOpenDoor] = Init_eSendCommandToOpenDoor;
         this.Transitions[MachineDoor_STATE_Init, eSendCommandToCloseDoor] = Init_eSendCommandToCloseDoor;
+        this.Transitions[MachineDoor_STATE_Init, eSendCommandToStopDoor] = Transition_Ignore;
+        this.Transitions[MachineDoor_STATE_Init, eSendCommandToResetDoor] = Transition_Ignore;
+        this.Transitions[MachineDoor_STATE_Init, eResetDoor] = Transition_Ignore;
         this.Transitions[MachineDoor_STATE_ConsiderClosingDoor, eUnit] = ConsiderClosingDoor_eUnit;
         this.Transitions[MachineDoor_STATE_ConsiderClosingDoor, eObjectEncountered] = ConsiderClosingDoor_eObjectEncountered;
         this.Transitions[MachineDoor_STATE_ConsiderClosingDoor, eSendCommandToStopDoor] = ConsiderClosingDoor_eSendCommandToStopDoor;
@@ -30,6 +33,9 @@ class MachineDoor : PMachine {
         this.Transitions[MachineDoor_STATE_CloseDoor, eUnit] = CloseDoor_eUnit;
         this.Transitions[MachineDoor_STATE_StopDoor, eUnit] = StopDoor_eUnit;
         this.Transitions[MachineDoor_STATE_ResetDoor, eSendCommandToResetDoor] = ResetDoor_eSendCommandToResetDoor;
+        this.Transitions[MachineDoor_STATE_ResetDoor, eSendCommandToOpenDoor] = Transition_Ignore;
+        this.Transitions[MachineDoor_STATE_ResetDoor, eSendCommandToCloseDoor] = Transition_Ignore;
+        this.Transitions[MachineDoor_STATE_ResetDoor, eSendCommandToStopDoor] = Transition_Ignore;
     }
 
     public override void StartMachine(Scheduler s, object payload) {

@@ -27,7 +27,7 @@ class MachineClient : PMachine {
     }
 
     /* Transition Functions */
-    private void Init_SUCCESS (object payload) {
+    private void Init_SUCCESS(object payload) {
         this.state = MachineClient_STATE_SendPing;
         this.SendPingEntry();
         if (retcode == RAISED_EVENT) return;

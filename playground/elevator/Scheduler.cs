@@ -6,7 +6,7 @@ using System.Diagnostics;
 
 class Scheduler {
 
-    Random rnd;
+    Random rng;
 
     List<PMachine> machines = new List<PMachine>();
 
@@ -15,11 +15,11 @@ class Scheduler {
     Dictionary<PMachine, List<SendQueueItem>> sendQueues = new Dictionary<PMachine, List<SendQueueItem>>(); // To avoid dictionary, consider adding an machine_id field to each PMachine
 
     public Scheduler() {
-        this.rnd = new Random();
+        this.rng = new Random();
     }
 
     private SendQueueItem ChooseSendAndDequeue() {
-        int idx = this.rnd.Next(0, sendQueueActiveMachines.Count);
+        int idx = this.rng.Next(0, sendQueueActiveMachines.Count);
         PMachine chosenMachine = sendQueueActiveMachines[idx];
         SendQueueItem r = this.sendQueues[chosenMachine][0];
         this.sendQueues[chosenMachine].RemoveAt(0);
@@ -45,7 +45,7 @@ class Scheduler {
 
     public bool RandomBool() {
         /* Hack for now, need to decide on a better structure for "$" sign semantics of P */
-        return this.rnd.NextDouble() > 0.5;
+        return this.rng.NextDouble() > 0.5;
     }
 
     private void StartMachine(PMachine machine, object payload) {
@@ -60,7 +60,7 @@ class Scheduler {
         PMachine mainMachine = MachineStarter.CreateMainMachine();
         scheduler.StartMachine(mainMachine, null);
 
-        while(scheduler.machines.Count > 0) {
+        while(scheduler.sendQueueActiveMachines.Count > 0) {
             SendQueueItem dequeuedItem = scheduler.ChooseSendAndDequeue();
             int e = dequeuedItem.e;
             if (e == EVENT_NEW_MACHINE) {

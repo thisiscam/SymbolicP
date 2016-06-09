@@ -24,7 +24,9 @@ class MachineElevator : PMachine {
         this.Transitions = new TransitionFunction[10,19];
         this.Transitions[MachineElevator_STATE_Init, eUnit] = Init_eUnit;
         this.Transitions[MachineElevator_STATE_DoorClosed, eOpenDoor] = DoorClosed_eOpenDoor;
+        this.Transitions[MachineElevator_STATE_DoorClosed, eCloseDoor] = Transition_Ignore;
         this.Transitions[MachineElevator_STATE_DoorOpening, eDoorOpened] = DoorOpening_eDoorOpened;
+        this.Transitions[MachineElevator_STATE_DoorOpening, eOpenDoor] = Transition_Ignore;
         this.Transitions[MachineElevator_STATE_DoorOpened, eTimerFired] = DoorOpened_eTimerFired;
         this.Transitions[MachineElevator_STATE_DoorOpened, eStopTimerReturned ] = DoorOpened_eStopTimerReturned ;
         this.Transitions[MachineElevator_STATE_DoorOpened, eOpenDoor] = DoorOpened_eOpenDoor;
@@ -37,6 +39,8 @@ class MachineElevator : PMachine {
         this.Transitions[MachineElevator_STATE_StoppingDoor, eDoorOpened] = StoppingDoor_eDoorOpened;
         this.Transitions[MachineElevator_STATE_StoppingDoor, eDoorClosed] = StoppingDoor_eDoorClosed;
         this.Transitions[MachineElevator_STATE_StoppingDoor, eDoorStopped] = StoppingDoor_eDoorStopped;
+        this.Transitions[MachineElevator_STATE_StoppingDoor, eOpenDoor] = Transition_Ignore;
+        this.Transitions[MachineElevator_STATE_StoppingDoor, eObjectDetected] = Transition_Ignore;
         this.Transitions[MachineElevator_STATE_StoppingTimer, eOperationSuccess] = StoppingTimer_eOperationSuccess;
         this.Transitions[MachineElevator_STATE_StoppingTimer, eOperationFailure] = StoppingTimer_eOperationFailure;
         this.Transitions[MachineElevator_STATE_WaitingForTimer, eTimerFired] = WaitingForTimer_eTimerFired;

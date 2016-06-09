@@ -67,4 +67,8 @@ abstract class PMachine {
         this.retcode = EXECUTE_FINISHED;
         this.ServeEvent(e, payload);
     }
+
+    protected void Transition_Ignore(object payload) {
+        return;
+    }
 }

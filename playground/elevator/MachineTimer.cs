@@ -19,6 +19,7 @@ class MachineTimer : PMachine {
         this.Transitions = new TransitionFunction[5, 19];
         this.Transitions[MachineTimer_STATE__Init, eUnit] = _Init_eUnit;
         this.Transitions[MachineTimer_STATE_Init, eStartDoorCloseTimer] = Init_eStartDoorCloseTimer;
+        this.Transitions[MachineTimer_STATE_Init, eStopDoorCloseTimer] = Transition_Ignore;
         this.Transitions[MachineTimer_STATE_TimerStarted, eUnit] = TimerStarted_eUnit;
         this.Transitions[MachineTimer_STATE_TimerStarted, eStopDoorCloseTimer] = TimerStarted_eStopDoorCloseTimer;
         this.Transitions[MachineTimer_STATE_SendTimerFired, eUnit] = SendTimerFired_eUnit;
