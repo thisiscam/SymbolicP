@@ -15,7 +15,7 @@ class MachineServer : PMachine {
                                 {null, null, SendPong_SUCCESS},
                             };
     }
-    
+
     public override void StartMachine(Scheduler s) {
         base.StartMachine(s);
         this.state = MachineServer_STATE_WaitPing;    
@@ -25,7 +25,6 @@ class MachineServer : PMachine {
     private void WaitPing_PING(object payload) {
         this.state = MachineServer_STATE_SendPong;
         this.SendPongEntry((PMachine)payload);
-        if (retcode == RAISED_EVENT) return;
     }
     private void SendPong_SUCCESS(object payload) {
         this.state = MachineServer_STATE_WaitPing;

@@ -36,32 +36,26 @@ class MachineTimer : PMachine {
     private void _Init_eUnit(object payload) {
         this.state = MachineTimer_STATE_Init;
         this.InitEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void Init_eStartDoorCloseTimer(object payload) {
         this.state = MachineTimer_STATE_TimerStarted;
         this.TimerStartedEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void TimerStarted_eUnit(object payload) {
         this.state = MachineTimer_STATE_SendTimerFired;
         this.SendTimerFiredEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void TimerStarted_eStopDoorCloseTimer(object payload) {
         this.state = MachineTimer_STATE_ConsiderStopping;
         this.ConsiderStoppingEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void SendTimerFired_eUnit(object payload) {
         this.state = MachineTimer_STATE_Init;
         this.InitEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void ConsiderStopping_eUnit(object payload) {
         this.state = MachineTimer_STATE_Init;
         this.InitEntry();
-        if (retcode == RAISED_EVENT) return;
     }
 
     /* Entry Functions */

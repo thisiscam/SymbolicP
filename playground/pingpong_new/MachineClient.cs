@@ -30,7 +30,6 @@ class MachineClient : PMachine {
     private void Init_SUCCESS(object payload) {
         this.state = MachineClient_STATE_SendPing;
         this.SendPingEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void SendPing_SUCCESS(object payload) {
         this.state = MachineClient_STATE_WaitPong;
@@ -38,7 +37,6 @@ class MachineClient : PMachine {
     private void WaitPong_PONG(object payload) {
         this.state = MachineClient_STATE_SendPing;
         this.SendPingEntry();
-        if (retcode == RAISED_EVENT) return;
     }
 
     /* Entry Functions */

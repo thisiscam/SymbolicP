@@ -48,52 +48,42 @@ class MachineDoor : PMachine {
     private void _Init_eUnit(object payload) {
         this.state = MachineDoor_STATE_Init;
         this.InitEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void Init_eSendCommandToOpenDoor(object payload) {
         this.state = MachineDoor_STATE_OpenDoor;
         this.OpenDoorEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void Init_eSendCommandToCloseDoor(object payload) {
         this.state = MachineDoor_STATE_ConsiderClosingDoor;
         this.ConsiderClosingDoorEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void ConsiderClosingDoor_eUnit(object payload) {
         this.state = MachineDoor_STATE_CloseDoor;
         this.CloseDoorEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void ConsiderClosingDoor_eObjectEncountered(object payload) {
         this.state = MachineDoor_STATE_ObjectEncountered;
         this.ObjectEncounteredEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void ConsiderClosingDoor_eSendCommandToStopDoor(object payload) {
         this.state = MachineDoor_STATE_StopDoor;
         this.StopDoorEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void ObjectEncountered_eUnit(object payload) {
         this.state = MachineDoor_STATE_Init;
         this.InitEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void CloseDoor_eUnit(object payload) {
         this.state = MachineDoor_STATE_ResetDoor;
         this.ResetDoorEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void StopDoor_eUnit(object payload) {
         this.state = MachineDoor_STATE_OpenDoor;
         this.OpenDoorEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void ResetDoor_eSendCommandToResetDoor(object payload) {
         this.state = MachineDoor_STATE_Init;
         this.InitEntry();
-        if (retcode == RAISED_EVENT) return;
     }
 
 
