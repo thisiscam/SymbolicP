@@ -16,8 +16,8 @@ class MachineServer : PMachine {
                             };
     }
 
-    public override void StartMachine(Scheduler s) {
-        base.StartMachine(s);
+    public override void StartMachine(Scheduler s, object payload) {
+        base.StartMachine(s, payload);
         this.state = MachineServer_STATE_WaitPing;    
     }
 

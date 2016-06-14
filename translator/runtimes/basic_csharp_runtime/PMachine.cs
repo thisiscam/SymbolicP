@@ -10,7 +10,6 @@ abstract class PMachine {
     protected int state;
 
     private Scheduler scheduler;
-    private List<ReceiveQueueItem> receiveQueue = new List<ReceiveQueueItem>();
 
     protected bool[,] DeferedSet;
     protected TransitionFunction[,] Transitions;
@@ -19,6 +18,10 @@ abstract class PMachine {
         this.scheduler = s;
     }
     
+    public bool CanServeEvent(int e) {
+        return !this.DeferedSet[this.state, e];
+    }
+
     protected void ServeEvent(int e, object payload) {
         this.retcode = EXECUTE_FINISHED;
         TransitionFunction transition_fn = this.Transitions[this.state, e];
@@ -44,30 +47,8 @@ abstract class PMachine {
         return this.scheduler.RandomBool();
     }
 
-    protected ReceiveQueueItem DequeueReceive() {
-    	int state = this.state;
-    	for(int i=0; i < receiveQueue.Count; i++) {
-    		ReceiveQueueItem item = receiveQueue[i];
-    		if (!this.DeferedSet[state, item.e]) {
-    			return item;
-    		}
-    	}
-    	return null;
-    }
-
-    public void EnqueueReceive(int e, object payload) {
-    	this.receiveQueue.Add(new ReceiveQueueItem(e, payload));
-    }
-
-    public void RunStateMachine() {
-        while(true) {
-            ReceiveQueueItem item = DequeueReceive();
-            if (item == null)
-                return;
-            int e = item.e;
-            object payload = item.payload;
-            this.ServeEvent(e, payload);        
-        }
+    public void RunStateMachine(int e, object payload) {
+        this.ServeEvent(e, payload);        
     }
 
     protected void Transition_Ignore(object payload) {

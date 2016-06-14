@@ -18,28 +18,23 @@ class Scheduler {
 
     private SendQueueItem ChooseSendAndDequeue() {
         // Collect all servable events
-        List<PMachine> choice_src_machines = new List<PMachine>();
-        List<int> indexes = new List<int>();
+        List<SendQueueItem> choices = new List<SendQueueItem>();
+        List<int> choice_src_machines = new List<int>();
         for(int i=0; i < this.machines.Count; i++) {
             PMachine machine = machines[i];
             List<SendQueueItem> sendQueue = this.sendQueues[machine];
             for(int j=0; j < sendQueue.Count; j++) {
-                SendQueueItem item = sendQueue[j];
-                if(item.e == EVENT_NEW_MACHINE || item.target.CanServeEvent(item.e)) {
-                    choice_src_machines.Add(machine);
-                    indexes.Add(j);
-                    break;
+                SendQueueItem item = sendQueue[j]
+                if(item.target.CanServeEvent(item.e)) {
+                    choices.Add(item);
+                    choice_src_machines.Add(i);
                 }
             }
         }
         // choose one and remove from send queue
-        if(indexes.Count == 0) {
-            return null;
-        }
-        int idx = this.rng.Next(0, indexes.Count);
-        SendQueueItem r = this.sendQueues[choice_src_machines[idx]][indexes[idx]];
-        this.sendQueues[choice_src_machines[idx]].RemoveAt(indexes[idx]);
-        return r;
+        int idx = this.rng.Next(0, choices.Count);
+        this.sendQueues[choice_src_machines[i]].Remove(0);
+        return choices[idx];
     }
 
     public void SendMsg(PMachine source, PMachine target, int e, object payload) {
@@ -67,18 +62,16 @@ class Scheduler {
         PMachine mainMachine = MachineStarter.CreateMainMachine();
         scheduler.StartMachine(mainMachine, null);
 
-        while(true) {
+        while(scheduler.sendQueueActiveMachines.Count > 0) {
             SendQueueItem dequeuedItem = scheduler.ChooseSendAndDequeue();
-            if(dequeuedItem == null) {
-                break;
-            }
             int e = dequeuedItem.e;
             if (e == EVENT_NEW_MACHINE) {
                 PMachine newMachine = dequeuedItem.target;
                 scheduler.StartMachine(newMachine, dequeuedItem.payload);
             } else {
                 PMachine targetMachine = dequeuedItem.target;
-                targetMachine.RunStateMachine(e, dequeuedItem.payload);
+                targetMachine.EnqueueReceive(e, dequeuedItem.payload);
+                targetMachine.RunStateMachine();
             }
         }
         return 0;

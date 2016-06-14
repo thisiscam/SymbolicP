@@ -20,8 +20,8 @@ class MachineClient : PMachine {
                                 {null, WaitPong_PONG, null},
                             };
     }
-    public override void StartMachine(Scheduler s) {
-        base.StartMachine(s);
+    public override void StartMachine(Scheduler s, object payload) {
+        base.StartMachine(s, payload);
         this.state = MachineClient_STATE_Init;
         this.InitEntry();
     }
@@ -41,7 +41,7 @@ class MachineClient : PMachine {
 
     /* Entry Functions */
     private void InitEntry() {
-        this.server = NewMachine(new MachineServer());
+        this.server = NewMachine(new MachineServer(), null);
         ServeEvent(SUCCESS, null); retcode = RAISED_EVENT; return;
     }
     private void SendPingEntry() {

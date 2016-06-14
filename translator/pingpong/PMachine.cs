@@ -19,7 +19,7 @@ abstract class PMachine {
     }
     
     public bool CanServeEvent(int e) {
-        return !this.DeferedSet[this.state, e];
+        return this.DeferedSet[state, e];
     }
 
     protected void ServeEvent(int e, object payload) {
@@ -47,8 +47,15 @@ abstract class PMachine {
         return this.scheduler.RandomBool();
     }
 
-    public void RunStateMachine(int e, object payload) {
-        this.ServeEvent(e, payload);        
+    public void RunStateMachine() {
+        while(true) {
+            ReceiveQueueItem item = DequeueReceive();
+            if (item == null)
+                return;
+            int e = item.e;
+            object payload = item.payload;
+            this.ServeEvent(e, payload);        
+        }
     }
 
     protected void Transition_Ignore(object payload) {

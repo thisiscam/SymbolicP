@@ -10,8 +10,6 @@ class Scheduler {
 
     List<PMachine> machines = new List<PMachine>();
 
-    List<PMachine> sendQueueActiveMachines = new List<PMachine>(); // Ideally should be a hash-linkedlist
-
     Dictionary<PMachine, List<SendQueueItem>> sendQueues = new Dictionary<PMachine, List<SendQueueItem>>(); // To avoid dictionary, consider adding an machine_id field to each PMachine
 
     public Scheduler() {
@@ -19,27 +17,36 @@ class Scheduler {
     }
 
     private SendQueueItem ChooseSendAndDequeue() {
-        int idx = this.rng.Next(0, sendQueueActiveMachines.Count);
-        PMachine chosenMachine = sendQueueActiveMachines[idx];
-        SendQueueItem r = this.sendQueues[chosenMachine][0];
-        this.sendQueues[chosenMachine].RemoveAt(0);
-        if(this.sendQueues[chosenMachine].Count == 0) {
-            this.sendQueueActiveMachines.Remove(chosenMachine);
+        // Collect all servable events
+        List<PMachine> choice_src_machines = new List<PMachine>();
+        List<int> indexes = new List<int>();
+        for(int i=0; i < this.machines.Count; i++) {
+            PMachine machine = machines[i];
+            List<SendQueueItem> sendQueue = this.sendQueues[machine];
+            for(int j=0; j < sendQueue.Count; j++) {
+                SendQueueItem item = sendQueue[j];
+                if(item.e == EVENT_NEW_MACHINE || item.target.CanServeEvent(item.e)) {
+                    choice_src_machines.Add(machine);
+                    indexes.Add(j);
+                    break;
+                }
+            }
         }
+        // choose one and remove from send queue
+        if(indexes.Count == 0) {
+            return null;
+        }
+        int idx = this.rng.Next(0, indexes.Count);
+        SendQueueItem r = this.sendQueues[choice_src_machines[idx]][indexes[idx]];
+        this.sendQueues[choice_src_machines[idx]].RemoveAt(indexes[idx]);
         return r;
     }
 
     public void SendMsg(PMachine source, PMachine target, int e, object payload) {
-        if(this.sendQueues[source].Count == 0) {
-            this.sendQueueActiveMachines.Add(source);
-        }
         this.sendQueues[source].Add(new SendQueueItem(target, e, payload));
     }
 
     public void NewMachine(PMachine source, PMachine newMachine, object payload) {
-        if(this.sendQueues[source].Count == 0) {
-            this.sendQueueActiveMachines.Add(source);
-        }
         this.sendQueues[source].Add(new SendQueueItem(newMachine, EVENT_NEW_MACHINE, payload));
     }
 
@@ -60,16 +67,18 @@ class Scheduler {
         PMachine mainMachine = MachineStarter.CreateMainMachine();
         scheduler.StartMachine(mainMachine, null);
 
-        while(scheduler.sendQueueActiveMachines.Count > 0) {
+        while(true) {
             SendQueueItem dequeuedItem = scheduler.ChooseSendAndDequeue();
+            if(dequeuedItem == null) {
+                break;
+            }
             int e = dequeuedItem.e;
             if (e == EVENT_NEW_MACHINE) {
                 PMachine newMachine = dequeuedItem.target;
                 scheduler.StartMachine(newMachine, dequeuedItem.payload);
             } else {
                 PMachine targetMachine = dequeuedItem.target;
-                targetMachine.EnqueueReceive(e, dequeuedItem.payload);
-                targetMachine.RunStateMachine();
+                targetMachine.RunStateMachine(e, dequeuedItem.payload);
             }
         }
         return 0;
