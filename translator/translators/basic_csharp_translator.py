@@ -68,25 +68,38 @@ class PProgramToCSharpTranslator(TranslatorBase):
     def translate(self):
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
+        # create ProjectMacros
+        with open(os.path.join(self.out_dir, "ProjectMacros.h"), 'w+') as macrosf:
+            self.stream = macrosf
+            self.out('#include "CommonMacros.h"\n\n')
+            for i, e in enumerate(self.pprogram.events):
+                self.out("#define {0} {1}\n".format(e, i))
+            for machine in self.pprogram.machines:
+                self.out("\n")
+                for i, s in enumerate(machine.state_decls.values()):
+                    self.out("#define {0} {1}\n".format(self.translate_state(machine, s), i))
+        # generated .cs files for each machine
         for machine in self.pprogram.machines:
             self.current_visited_machine = machine
             classname = "Machine" + machine.name
             with open(os.path.join(self.out_dir, classname + ".cs"), 'w+') as csharpsrcf:
                 self.stream = csharpsrcf
+                self.out('#include "ProjectMacros.h"\n\n')
                 self.out("using System;\n\n")
                 self.out("class {0} : PMachine {{\n".format(classname))
-                self.out("/* P local vars */\n")
                 # Defered set 
                 self.out("\nprivate readonly static bool[,] _DeferedSet = {\n")
                 for state in machine.state_decls.values():
                     self.out("{");
                     for e in self.pprogram.events:
-                        self.out("true," if e in state.defered_events else "false,")
+                        self.out("true ," if e in state.defered_events else "false,")
                     self.out("},\n")
                 self.out("};\n")
                 # P local vars
+                self.out("/* P local vars */\n")
                 for i, t in machine.var_decls.items():
                     self.out("{type} {var_name};\n".format(type=self.translate_type(t), var_name=i))
+                self.out("\n\n")
                 # Constructor(including transition function map)
                 self.out("public {0} () {{\n".format(classname))
                 self.out("this.DeferedSet = _DeferedSet;\n")
