@@ -103,7 +103,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
                 # Constructor(including transition function map)
                 self.out("public {0} () {{\n".format(classname))
                 self.out("this.DeferedSet = _DeferedSet;\n")
-                self.out("this.Transitions = new TransitionFunction[{0}][{1}];\n".format(len(machine.state_decls), len(self.pprogram.events)))
+                self.out("this.Transitions = new TransitionFunction[{0},{1}];\n".format(len(machine.state_decls), len(self.pprogram.events)))
                 rtransitions_map = self.build_transition_map(machine)
                 for (state, to_state, fn_name, is_named), on_es in rtransitions_map.items():
                     transition_fn_name = None
@@ -298,7 +298,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#stmt_new.
     def visitStmt_new(self, ctx):
-        self.out("NewMachine(new Machine{}());\n".format(ctx.getChild(1).getText()))
+        self.out("NewMachine(new Machine{}(), null);\n".format(ctx.getChild(1).getText()))
 
 
     # Visit a parse tree produced by pParser#stmt_new_with_arguments.
@@ -432,7 +432,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#exp_new.
     def visitExp_new(self, ctx):
-        self.out("NewMachine(new Machine{}())".format(ctx.getChild(1).getText()))
+        self.out("NewMachine(new Machine{}(), null)".format(ctx.getChild(1).getText()))
         return PTypeMachine
 
     # Visit a parse tree produced by pParser#exp_call_with_arguments.

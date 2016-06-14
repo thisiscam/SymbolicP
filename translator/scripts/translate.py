@@ -21,7 +21,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--out-dir', type=str, dest="out_dir",
     					help="ouput directory, defaults to input file's name")
-    parser.add_argument('input-file')
+    parser.add_argument('input_file')
     options = parser.parse_args()
     process_options(options)
     translate(options)
