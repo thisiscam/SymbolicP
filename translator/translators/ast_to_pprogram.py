@@ -214,6 +214,7 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
 
     # Visit a parse tree produced by pParser#machine_name_decl_regular.
     def visitMachine_name_decl_regular(self, ctx):
+        ctx.getChild(0).accept(self)
         name = ctx.getChild(2).getText()
         self.current_visited_machine.name = name
         return;
@@ -434,10 +435,7 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.current_visited_event_list = new_event_list
         self.visitChildren(ctx)
         self.current_visited_event_list = None
-        try:
-            self.current_visited_state.transitions.update({e : (None, self.current_state_target, False) for e in new_event_list})
-        except:
-            import pdb; pdb.set_trace()
+        self.current_visited_state.transitions.update({e : (None, self.current_state_target, False) for e in new_event_list})
         self.current_state_target = None
 
     # Visit a parse tree produced by pParser#state_body_item_on_e_goto_with_unnamed.

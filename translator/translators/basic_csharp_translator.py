@@ -141,6 +141,17 @@ class PProgramToCSharpTranslator(TranslatorBase):
                     self.out("}\n")
                 self.out("}")
 
+                # if main machine, create machine starter
+                if machine.is_main:
+                    with open(os.path.join(self.out_dir, "MachineStarter.cs"), "w+") as ms:
+                        ms.write(
+                            "class MachineStarter {{\n"
+                            "   public static PMachine CreateMainMachine() {{\n"
+                            "       return new {0}();\n"
+                            "   }}\n"
+                            "}}".format(classname)
+                        )
+
     # Visit a parse tree produced by pParser#local_var_decl.
     def visitLocal_var_decl(self, ctx):
         t = ctx.getChild(3).accept(self)
