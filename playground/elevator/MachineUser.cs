@@ -29,12 +29,10 @@ class MachineUser : PMachine {
     private void Init_eUnit(object payload) {
         this.state = MachineUser_STATE_Loop;
         this.LoopEntry();
-        if (retcode == RAISED_EVENT) return;
     }
     private void Loop_eUnit(object payload) {
         this.state = MachineUser_STATE_Loop;
         this.LoopEntry();
-        if (retcode == RAISED_EVENT) return;
     }
 
     /* Entry Functions */
