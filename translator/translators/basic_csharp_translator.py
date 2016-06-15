@@ -10,7 +10,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
             None: "void",
             PTypeBool: "bool",
             PTypeInt: "int",
-            PTypeMachine: "PMachine"
+            PTypeMachine: "PMachine",
+            PTypeEvent: "int"
         }
         self.named_tuple_counts = 0
 
