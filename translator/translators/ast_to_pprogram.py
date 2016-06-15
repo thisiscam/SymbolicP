@@ -2,7 +2,7 @@ from __future__ import print_function
 import os, sys
 from ordered_set import OrderedSet
 from collections import defaultdict, OrderedDict
-from parser.pVisitor import pVisitor
+from pparser.pVisitor import pVisitor
 
 class PProgram(object):
     def __init__(self):
