@@ -8,6 +8,7 @@ class PProgram(object):
     def __init__(self):
         self.events = OrderedSet()
         self.machines = OrderedSet()
+        self.observes_map = defaultdict(list)
 
 class PMachine(object):
     def __init__(self):
@@ -208,8 +209,6 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.current_visited_machine = new_visiting_machine
         self.visitChildren(ctx)
         self.current_visited_machine = None
-        if new_visiting_machine.is_spec:
-            return None
         self.current_pprogram.machines.add(new_visiting_machine)
         return new_visiting_machine
 
@@ -219,8 +218,6 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         ctx.getChild(0).accept(self)
         name = ctx.getChild(2).getText()
         self.current_visited_machine.name = name
-        return;
-
 
     # Visit a parse tree produced by pParser#machine_name_decl_model.
     def visitMachine_name_decl_model(self, ctx):
@@ -228,18 +225,22 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
             self.warning("Ignored keyword 'model'", ctx)
         name = ctx.getChild(1).getText()
         self.current_visited_machine.name = name
-        return
-
 
     # Visit a parse tree produced by pParser#machine_name_decl_spec.
     def visitMachine_name_decl_spec(self, ctx):
         self.current_visited_machine.is_spec = True
-        self.warning("Spec machines not supported", ctx)
+        name = ctx.getChild(1).getText()
+        self.current_visited_machine.name = name
+        ctx.getChild(2).accept(self)
 
     # Visit a parse tree produced by pParser#observes_list.
     def visitObserves_list(self, ctx):
-        raise ValueError("Spec machines not supported")
-
+        new_event_list = []
+        self.current_visited_event_list = new_event_list
+        self.visitChildren(ctx)
+        self.current_visited_event_list = None
+        for e in new_event_list:
+            self.current_pprogram.observes_map[e].append(self.current_visited_machine)
 
     # Visit a parse tree produced by pParser#is_main.
     def visitIs_main(self, ctx):

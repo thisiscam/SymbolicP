@@ -126,7 +126,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
                 self.stream = csharpsrcf
                 self.out('#include "ProjectMacros.h"\n\n')
                 self.out("using System;\nusing System.Collections.Generic;\nusing System.Diagnostics;\n\n")
-                self.out("class {0} : PMachine {{\n".format(classname))
+                base_clase = "MonitorPMachine" if machine.is_spec else "PMachine"
+                self.out("class {0} : {1} {{\n".format(classname, base_clase))
                 # Defered set 
                 self.out("\nprivate readonly static bool[,] _DeferedSet = {\n")
                 for state in machine.state_decls.values():
@@ -166,12 +167,16 @@ class PProgramToCSharpTranslator(TranslatorBase):
                 for state in machine.state_decls.values():
                     for ignored_event in state.ignored_events:
                         self.out("this.Transitions[{0},{1}] = Transition_Ignore;\n".format(self.translate_state(machine, state), ignored_event))
-                self.out("}\n")
                 # StartMachine
-                self.out("public override void StartMachine (Scheduler s, object payload) {\n")
-                self.out("base.StartMachine(s, payload);\n")
-                self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0])
+                if machine.is_spec:
+                    self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0])
+                else:
+                    self.out("}\n")
+                    self.out("public override void StartMachine (Scheduler s, object payload) {\n")
+                    self.out("base.StartMachine(s, payload);\n")
+                    self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0])
                 self.out("}\n")
+
                 # Transition functions
                 for (from_state, to_state, with_fn_name, is_named), on_es in rtransitions_map.items():
                     if to_state:
@@ -190,15 +195,31 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
                 # if main machine, create machine starter
                 if machine.is_main:
-                    with open(os.path.join(self.out_dir, "MachineStarter.cs"), "w+") as ms:
-                        ms.write(
-                            "class MachineStarter {{\n"
-                            "   public static PMachine CreateMainMachine() {{\n"
-                            "       return new {0}();\n"
-                            "   }}\n"
-                            "}}".format(classname)
-                        )
-
+                    with open(os.path.join(self.out_dir, "MachineController.cs"), "w+") as ms:
+                        self.stream = ms
+                        self.out('#include "ProjectMacros.h"\n\n')
+                        self.out("class MachineController {\n\n")
+                        spec_machines = filter(lambda m: m.is_spec, self.pprogram.machines)
+                        for spec_machine in spec_machines:
+                            self.out("static MonitorPMachine {m_name} = new Machine{m_type}();\n".format(
+                                m_name=spec_machine.name.lower(), 
+                                m_type=spec_machine.name)
+                            )
+                        self.out("\n")
+                        self.out("public static PMachine CreateMainMachine() {{\nreturn new {0}();\n}}\n\n".format(classname))
+                        self.out("/* Observers */\n")
+                        self.out("public static void AnnounceEvent(int e, object payload) {\n")
+                        self.out("switch(e) {")
+                        for observed_event, observing_machines in self.pprogram.observes_map.items():
+                            self.out("case {0}: {{\n".format(observed_event))
+                            for m in observing_machines:
+                                self.out("{0}.ServeEvent({1}, payload);\n".format(m.name.lower(), observed_event))
+                            self.out("break;\n")
+                            self.out("}\n")
+                        self.out("}\n")
+                        self.out("}\n")
+                        self.out("}\n")
+                                                
     # Visit a parse tree produced by pParser#local_var_decl.
     def visitLocal_var_decl(self, ctx):
         t = ctx.getChild(3).accept(self)
@@ -392,12 +413,18 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#stmt_monitor.
     def visitStmt_monitor(self, ctx):
-        self.warning("Monitor not supported", ctx)
+        self.out("MachineController.AnnounceEvent(")
+        ctx.getChild(1).accept(self)
+        self.out(", null);\n")
 
 
     # Visit a parse tree produced by pParser#stmt_monitor_with_arguments.
     def visitStmt_monitor_with_arguments(self, ctx):
-        self.warning("Monitor not supported", ctx)
+        self.out("MachineController.AnnounceEvent(")
+        ctx.getChild(1).accept(self)
+        self.out(", ")
+        ctx.getChild(3).accept(self)
+        self.out(");\n")
 
 
     # Visit a parse tree produced by pParser#stmt_recieve.

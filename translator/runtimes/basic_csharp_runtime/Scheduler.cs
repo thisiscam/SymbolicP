@@ -64,7 +64,7 @@ class Scheduler {
     static int Main(string[] args) {
         Scheduler scheduler = new Scheduler();
 
-        PMachine mainMachine = MachineStarter.CreateMainMachine();
+        PMachine mainMachine = MachineController.CreateMainMachine();
         scheduler.StartMachine(mainMachine, null);
 
         while(true) {
