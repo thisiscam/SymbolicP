@@ -21,8 +21,6 @@ class PProgramToCSharpTranslator(TranslatorBase):
     def __init__(self, *args):
         super(PProgramToCSharpTranslator, self).__init__(*args)
 
-        self.named_tuple_counts = 0
-
     def translate_type(self, T):
         t = None
         if T in self.type_to_csharp_type_name_map:
