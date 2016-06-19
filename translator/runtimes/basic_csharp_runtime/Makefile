@@ -9,7 +9,7 @@ preprocessed/%.cs: %.cs
 	cpp -P $^ $@
 
 compile: $(foreach var, ${SOURCES}, preprocessed/${var})
-	mcs -debug -out:run.exe $^
+	mcs -d:DEBUG -debug -out:run.exe $^
 
 clean:
 	rm -rf preprocessed/*.cs
