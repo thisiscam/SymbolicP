@@ -2,23 +2,31 @@ from .ast_to_pprogram import *
 from .translator_base import TranslatorBase
 
 class PProgramToCSharpTranslator(TranslatorBase):
+    type_to_csharp_type_name_map = {
+        None: "void",
+        PTypeBool: "bool",
+        PTypeInt: "int",
+        PTypeMachine: "PMachine",
+        PTypeEvent: "int"
+    }
+
+    type_to_default_exp_map = {
+        None: "null",
+        PTypeBool: "false",
+        PTypeInt: "0",
+        PTypeMachine: "null",
+        PTypeEvent: "EVENT_NULL"
+    }
 
     def __init__(self, *args):
         super(PProgramToCSharpTranslator, self).__init__(*args)
 
-        self.type_csharp_name_map = {
-            None: "void",
-            PTypeBool: "bool",
-            PTypeInt: "int",
-            PTypeMachine: "PMachine",
-            PTypeEvent: "int"
-        }
         self.named_tuple_counts = 0
 
     def translate_type(self, T):
         t = None
-        if T in self.type_csharp_name_map:
-            return self.type_csharp_name_map[T]
+        if T in self.type_to_csharp_type_name_map:
+            return self.type_to_csharp_type_name_map[T]
         elif isinstance(T, PTypeSeq):
             t = "List<{0}>".format(self.translate_type(T.T))
         elif isinstance(T, PTypeMap):
@@ -27,7 +35,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
             t = "Tuple<{0}>".format(','.join([self.translate_type(x) for x in T.Ts]))
         elif isinstance(T, PTypeNamedTuple):
             t = "Tuple<{0}>".format(','.join([self.translate_type(x) for x in T.NTs.values()]))
-        self.type_csharp_name_map[T] = t
+        self.type_to_csharp_type_name_map[T] = t
         return t
 
     def build_transition_map(self, machine):
@@ -39,6 +47,18 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     def translate_state(self, machine, state):
         return "Machine{0}_S_{1}".format(machine.name, state.name)
+
+    def translate_default_exp(self, T):
+        r = None
+        if T in self.type_to_default_exp_map:
+            r = self.type_to_default_exp_map[T]
+        elif isinstance(T, PTypeSeq) or isinstance(T, PTypeMap):
+            r = "new {0}()".format(self.translate_type(T))
+        elif isinstance(T, PTypeTuple):
+            r = "new {0}({1})".format(self.translate_type(T), ','.join([self.translate_default_exp(x) for x in T.Ts]))
+        elif isinstance(T, PTypeNamedTuple):
+            r = "new {0}({1})".format(self.translate_type(T), ','.join([self.translate_default_exp(x) for x in T.NTs.values()]))
+        return r
 
     def out_fn_call(self, machine, fn_name):
         self.out(fn_name)
@@ -66,6 +86,25 @@ class PProgramToCSharpTranslator(TranslatorBase):
         self.current_visited_fn = fn
         fn.stmt_block.accept(self)
 
+    def out_arg_cast_for_function(self, machine, fn_name):
+        fn = machine.fun_decls[fn_name]
+        if len(fn.params) > 0:
+            p, t = fn.params.items()[0]
+            t_str = self.translate_type(t)
+            self.out("{0} {1} = ({2})_payload;\n".format(t_str, p, t_str))
+
+    def out_fn_decl(self, machine, fn_name):
+        fn_node = machine.fun_decls[fn_name]
+        ret_type = fn_node.ret_type
+        if fn_node.is_transition_handler:
+            self.out("private {0} {1} (object _payload) {{\n".format(self.translate_type(ret_type), fn_name))
+            self.out_arg_cast_for_function(machine, fn_name)
+        else:
+            self.out("private {0} {1} ({2}) {{\n".format(self.translate_type(ret_type), fn_name, 
+                    ",".join(("{} {}".format(self.translate_type(t), i)) for i,t in fn_node.params.items())))
+        self.out_fn_body(machine, fn_name)
+        self.out("}\n")
+
     def translate(self):
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
@@ -86,7 +125,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
             with open(os.path.join(self.out_dir, classname + ".cs"), 'w+') as csharpsrcf:
                 self.stream = csharpsrcf
                 self.out('#include "ProjectMacros.h"\n\n')
-                self.out("using System;\n\n")
+                self.out("using System;\nusing System.Collections.Generic;\nusing System.Diagnostics;\n\n")
                 self.out("class {0} : PMachine {{\n".format(classname))
                 # Defered set 
                 self.out("\nprivate readonly static bool[,] _DeferedSet = {\n")
@@ -99,7 +138,11 @@ class PProgramToCSharpTranslator(TranslatorBase):
                 # P local vars
                 self.out("/* P local vars */\n")
                 for i, t in machine.var_decls.items():
-                    self.out("{type} {var_name};\n".format(type=self.translate_type(t), var_name=i))
+                    self.out("{type} {var_name}={init};\n".format(
+                                    type=self.translate_type(t), 
+                                    var_name=i,
+                                    init=self.translate_default_exp(t)
+                                ))
                 self.out("\n\n")
                 # Constructor(including transition function map)
                 self.out("public {0} () {{\n".format(classname))
@@ -122,7 +165,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
                         self.out("this.Transitions[{0},{1}] = {2};\n".format(self.translate_state(machine, state), on_e, transition_fn_name))
                 for state in machine.state_decls.values():
                     for ignored_event in state.ignored_events:
-                        self.out("this.Transitions[{0},{1}] = TransitionIgnored;\n".format(self.translate_state(machine, state), ignored_event))
+                        self.out("this.Transitions[{0},{1}] = Transition_Ignore;\n".format(self.translate_state(machine, state), ignored_event))
                 self.out("}\n")
                 # StartMachine
                 self.out("public override void StartMachine (Scheduler s, object payload) {\n")
@@ -140,19 +183,9 @@ class PProgramToCSharpTranslator(TranslatorBase):
                                 self.out_fn_call(machine, with_fn_name)
                             self.out_enter_state(machine, to_state)
                             self.out("}\n")
-                        else: # goto ... with {}
-                            self.out("private void {0} (object payload) {{\n".format(with_fn_name))
-                            self.out_exit_state(machine, from_state)
-                            self.out_fn_body(machine, with_fn_name)
-                            self.out_enter_state(machine, to_state)
-                            self.out("}\n")
                 # Named and unnamed user defined functions
-                for fn_name, fn_node in machine.fun_decls.items():
-                    ret_type = fn_node.ret_type
-                    self.out("private {0} {1} ({2}) {{\n".format(self.translate_type(ret_type), fn_name, 
-                            ",".join(("{} {}".format(self.translate_type(t), i)) for i,t in fn_node.params.items())))
-                    self.out_fn_body(machine, fn_name)
-                    self.out("}\n")
+                for fn_name in machine.fun_decls:
+                    self.out_fn_decl(machine, fn_name)
                 self.out("}")
 
                 # if main machine, create machine starter
@@ -171,7 +204,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
         t = ctx.getChild(3).accept(self)
         var_list = ctx.getChild(1).accept(self)
         self.current_visited_fn.local_decls.update({i : t for i in var_list})
-        self.out("{0} {1};", self.translate_type(t), ",".join(var_list))
+        self.out("{0} {1};", self.translate_type(t), ",".join("{0}={1}".format(var,self.translate_default_exp(t)) for var in var_list))
 
 
     # Visit a parse tree produced by pParser#local_var_decl_list.
@@ -266,7 +299,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
     def visitStmt_insert(self, ctx):
         ctx.getChild(0).accept(self)
         self.out(".Insert(")
-        ctx.getChild(1).accept(self)
+        ctx.getChild(2).accept(self)
         self.out(");")
 
     # Visit a parse tree produced by pParser#stmt_while.
@@ -359,12 +392,12 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#stmt_monitor.
     def visitStmt_monitor(self, ctx):
-        raise ValueError("Monitor not supported")
+        self.warning("Monitor not supported", ctx)
 
 
     # Visit a parse tree produced by pParser#stmt_monitor_with_arguments.
     def visitStmt_monitor_with_arguments(self, ctx):
-        raise ValueError("Monitor not supported")
+        self.warning("Monitor not supported", ctx)
 
 
     # Visit a parse tree produced by pParser#stmt_recieve.
@@ -385,7 +418,21 @@ class PProgramToCSharpTranslator(TranslatorBase):
     visitExp = visitBinary_Exp(PTypeBool)
     visitExp_7 = visitBinary_Exp(PTypeBool)
     visitExp_6 = visitBinary_Exp(PTypeBool)
-    visitExp_5 = visitBinary_Exp(PTypeBool)
+
+    def visitExp_5(self, ctx):            
+        if ctx.getChildCount() > 1:
+            if ctx.getChild(1).getText() == "in":
+                ctx.getChild(2).accept(self)
+                self.out(".ContainsKey(".format(ctx.getChild(1).getText()))
+                ctx.getChild(0).accept(self)
+                self.out(")")
+            else:
+                ctx.getChild(0).accept(self)
+                self.out(" {0} ".format(ctx.getChild(1).getText()))
+                ctx.getChild(2).accept(self)
+            return PTypeBool
+        else:
+            return ctx.getChild(0).accept(self)
     
     def visitExp_4(self, ctx):
         if ctx.getChildCount() > 1:
@@ -415,14 +462,14 @@ class PProgramToCSharpTranslator(TranslatorBase):
     # Visit a parse tree produced by pParser#exp_getidx.
     def visitExp_getidx(self, ctx):
         tuple_type = ctx.getChild(0).accept(self)
-        idx = ctx.getChild(2).getText()
-        self.out(".Get{0}()".format(idx))
+        idx = int(ctx.getChild(2).getText()) + 1
+        self.out(".Item{0}".format(idx))
         return tuple_type.Ts[int(idx)]
 
     # Visit a parse tree produced by pParser#exp_sizeof.
     def visitExp_sizeof(self, ctx):
         ctx.getChild(2).accept(self)
-        self.out(".Size()")
+        self.out(".Count")
         return PTypeInt
 
     # Visit a parse tree produced by pParser#exp_call.
@@ -474,19 +521,21 @@ class PProgramToCSharpTranslator(TranslatorBase):
     def visitExp_getattr(self, ctx):
         named_tuple_type = ctx.getChild(0).accept(self)
         attr = ctx.getChild(2).getText()
-        idx = named_tuple_type.NTs.keys().index(attr)
-        self.out(".Get{0}()".format(idx))
+        idx = named_tuple_type.NTs.keys().index(attr) + 1
+        self.out(".Item{0}".format(idx))
         return named_tuple_type.NTs[attr]
 
     # Visit a parse tree produced by pParser#exp_named_tuple_1_elem.
     def visitExp_named_tuple_1_elem(self, ctx):
-        ld_s = self.acquire_buffer()
         n1 = ctx.getChild(1).getText()
+        old_s = self.acquire_buffer()
         t1 = ctx.getChild(3).accept(self)
+        tmp_buffer = self.release_buffer(old_s)
         nmd_tuple_type = PTypeNamedTuple([(n1, t1)])
+        self.out("new ")
         self.out(self.translate_type(nmd_tuple_type))
         self.out("(")
-        self.release_buffer(old_s)
+        self.dump_buffer(tmp_buffer)
         self.out(")")       
         return nmd_tuple_type
 
@@ -505,14 +554,17 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#exp_named_tuple_n_elems.
     def visitExp_named_tuple_n_elems(self, ctx):
-        old_s = self.acquire_buffer()
         n1 = ctx.getChild(1).getText()
+        old_s = self.acquire_buffer()
         t1 = ctx.getChild(3).accept(self)
+        self.out(",")
         trest = ctx.getChild(5).accept(self)
+        tmp_buffer = self.release_buffer(old_s)
         nmd_tuple_type = PTypeNamedTuple([(n1, t1)] + trest)
+        self.out("new ")
         self.out(self.translate_type(nmd_tuple_type))
         self.out("(")
-        self.release_buffer(old_s)
+        self.dump_buffer(tmp_buffer)
         self.out(")")       
         return nmd_tuple_type
 
@@ -578,12 +630,14 @@ class PProgramToCSharpTranslator(TranslatorBase):
     # Visit a parse tree produced by pParser#exp_tuple_1_elem.
     def visitExp_tuple_1_elem(self, ctx):
         old_s = self.acquire_buffer()
-        t = ctx.getChild(3).accept(self)
+        t = ctx.getChild(1).accept(self)
+        tmp_buffer = self.release_buffer(old_s)
         tuple_type = PTypeTuple([t])
+        self.out("new ")
         self.out(self.translate_type(tuple_type))
         self.out("(")
-        self.release_buffer(old_s)
-        self.out(")")  
+        self.dump_buffer(tmp_buffer)
+        self.out(")")
         return tuple_type
 
     # Visit a parse tree produced by pParser#exp_int.
@@ -594,11 +648,15 @@ class PProgramToCSharpTranslator(TranslatorBase):
     # Visit a parse tree produced by pParser#exp_tuple_n_elems.
     def visitExp_tuple_n_elems(self, ctx):
         old_s = self.acquire_buffer()
-        t = ctx.getChild(3).accept(self)
-        tuple_type = PTypeTuple(t)
+        t = ctx.getChild(1).accept(self)
+        self.out(",")
+        trest = ctx.getChild(3).accept(self)
+        tmp_s = self.release_buffer(old_s)
+        self.out("new ")
+        tuple_type = PTypeTuple([t] + trest)
         self.out(self.translate_type(tuple_type))
         self.out("(")
-        self.release_buffer(old_s)
+        self.dump_buffer(tmp_s)
         self.out(")")
         return tuple_type
 
@@ -615,7 +673,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
     # Visit a parse tree produced by pParser#expr_arg_list.
     def visitExpr_arg_list(self, ctx):
         if ctx.getChildCount() == 2:
-            return ctx.getChild(0).accept(self)
+            return [ctx.getChild(0).accept(self)]
         else:
             t1 = ctx.getChild(0).accept(self)
             self.out(",")
@@ -624,10 +682,11 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#nmd_expr_arg_list.
     def visitNmd_expr_arg_list(self, ctx):
-        if ctx.getChildCount() == 2:
+        if ctx.getChildCount() == 3:
             return [(ctx.getChild(0).getText(), ctx.getChild(2).accept(self))]
         else:
+            id1 = ctx.getChild(0).getText()
             t1 = ctx.getChild(2).accept(self)
             self.out(",")
-            trest = ctx.getChild(5).accept(self)
-            return [t1] + trest
+            trest = ctx.getChild(4).accept(self)
+            return [(id1, t1)] + trest

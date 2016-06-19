@@ -12,6 +12,7 @@ class PProgram(object):
 class PMachine(object):
     def __init__(self):
         self.is_main = False
+        self.is_spec = False
         self.var_decls = {}
         self.fun_decls = {}
         self.state_decls = OrderedDict()
@@ -23,6 +24,7 @@ class PFunctionWrapper(object):
         self.local_decls = {}
         self.ret_type = None
         self.stmt_block = None
+        self.is_transition_handler = False
     def __str__(self):
         return "PFunctionWrapper({name})".format(self.name)
 
@@ -151,9 +153,7 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.enable_warning = enable_warning
 
     def warning(self, msg, ctx):
-        print("Warning: {}@line{}~{}".format(msg, 
-                    *ctx.getChild(0).getSourceInterval()),
-            file=sys.stderr)
+        print("Warning: {}".format(msg), file=sys.stderr)
 
     # Visit a parse tree produced by pParser#program.
     def visitProgram(self, ctx):
@@ -208,6 +208,8 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.current_visited_machine = new_visiting_machine
         self.visitChildren(ctx)
         self.current_visited_machine = None
+        if new_visiting_machine.is_spec:
+            return None
         self.current_pprogram.machines.add(new_visiting_machine)
         return new_visiting_machine
 
@@ -231,7 +233,8 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
 
     # Visit a parse tree produced by pParser#machine_name_decl_spec.
     def visitMachine_name_decl_spec(self, ctx):
-        raise ValueError("Spec machines not supported")
+        self.current_visited_machine.is_spec = True
+        self.warning("Spec machines not supported", ctx)
 
     # Visit a parse tree produced by pParser#observes_list.
     def visitObserves_list(self, ctx):
@@ -413,6 +416,7 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
     # Visit a parse tree produced by pParser#state_body_item_on_e_do_unamed.
     def visitState_body_item_on_e_do_unamed(self, ctx):
         f = PFunctionWrapper()
+        f.is_transition_handler = True
         self.current_visited_fn = f
         new_event_list = []
         self.current_visited_event_list = new_event_list
@@ -441,6 +445,7 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
     # Visit a parse tree produced by pParser#state_body_item_on_e_goto_with_unnamed.
     def visitState_body_item_on_e_goto_with_unnamed(self, ctx):
         f = PFunctionWrapper()
+        f.is_transition_handler = True
         new_event_list = []
         self.current_visited_fn = f
         self.current_visited_event_list = new_event_list

@@ -1,4 +1,6 @@
+from __future__ import print_function
 from .ast_to_pprogram import *
+from StringIO import StringIO
 
 class TranslatorBase(PTypeTranslatorVisitor):
 
@@ -9,9 +11,7 @@ class TranslatorBase(PTypeTranslatorVisitor):
         self.out_dir = out_dir
 
     def warning(self, msg, ctx):
-        warnings.warn("{}@line{}~{}".format(msg, 
-                    *ctx.getChild(0).getSourceInterval())
-                )
+        print("Warning: {}".format(msg), file=sys.stderr)
 
     def acquire_buffer(self):
         r = self.stream
@@ -19,9 +19,13 @@ class TranslatorBase(PTypeTranslatorVisitor):
         return r
 
     def release_buffer(self, old_stream):
-        old_stream.write(self.stream.getvalue())
-        self.stream.close()
+        tmp_buffer = self.stream
         self.stream = old_stream
+        return tmp_buffer
+
+    def dump_buffer(self, tmp_buffer):
+        self.stream.write(tmp_buffer.getvalue())
+        tmp_buffer.close()
 
     def out(self, s):
     	self.stream.write(s)
