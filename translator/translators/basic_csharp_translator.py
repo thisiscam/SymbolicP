@@ -77,7 +77,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     def out_exit_state(self, machine, state):
         if state.exit_fn:
-            self.out_fn_call(state.exit_fn)
+            self.out_fn_call(machine, state.exit_fn)
 
     def out_fn_body(self, machine, fn_name):
         fn = machine.fun_decls[fn_name]

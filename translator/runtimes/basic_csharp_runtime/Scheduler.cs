@@ -13,7 +13,7 @@ class Scheduler {
     Dictionary<PMachine, List<SendQueueItem>> sendQueues = new Dictionary<PMachine, List<SendQueueItem>>(); // To avoid dictionary, consider adding an machine_id field to each PMachine
 
     public Scheduler() {
-        this.rng = new Random();
+        this.rng = new Random((int)DateTime.Now.Ticks);
     }
 
     private SendQueueItem ChooseSendAndDequeue() {
@@ -37,6 +37,7 @@ class Scheduler {
             return null;
         }
         int idx = this.rng.Next(0, indexes.Count);
+        Console.WriteLine("chose" + idx.ToString() + " " + indexes.Count.ToString());
         SendQueueItem r = this.sendQueues[choice_src_machines[idx]][indexes[idx]];
         this.sendQueues[choice_src_machines[idx]].RemoveAt(indexes[idx]);
         return r;

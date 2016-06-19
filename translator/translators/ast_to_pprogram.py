@@ -374,7 +374,7 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
     # Visit a parse tree produced by pParser#state_body_item_exit_unnamed.
     def visitState_body_item_exit_unnamed(self, ctx):
         f = PFunctionWrapper()
-        f.name = ctx.current_visited_state.name + "_Exit" 
+        f.name = self.current_visited_state.name + "_Exit" 
         self.current_visited_fn = f
         self.visitChildren(ctx)
         self.current_visited_fn = None

@@ -269,7 +269,7 @@ model CPU {
 				    send cache.2, ask_excl;
 				}
 			}
-			raise unit;
+			send this, unit;
 		}
 		on unit goto makeReq;
 	}
