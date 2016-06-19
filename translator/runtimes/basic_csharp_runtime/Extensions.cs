@@ -6,4 +6,9 @@ public static class Extensions {
     {
         list.Insert(t.Item1, t.Item2);
     }
+
+    public static void Insert<K, V>(this Dictionary<K, V> dict, Tuple<K, V> t)
+    {
+        dict.Add(t.Item1, t.Item2);
+    }
 }  

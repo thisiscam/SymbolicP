@@ -156,7 +156,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
                         else:
                             transition_fn_name = fn_name
                     else:
-                        if is_named:
+                        if is_named and len(machine.fun_decls[fn_name].params) == 1:
                             transition_fn_name = fn_name
                         else:
                             transition_fn_name = "{0}_on_{1}".format(state.name, "_".join(on_es))
@@ -177,14 +177,16 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
                 # Transition functions
                 for (from_state, to_state, with_fn_name, is_named), on_es in rtransitions_map.items():
-                    if to_state:
+                    if to_state or len(machine.fun_decls[with_fn_name].params) != 1:
                         if is_named or not with_fn_name:
                             transition_fn_name = "{0}_on_{1}".format(from_state.name, "_".join(on_es))
                             self.out("private void {0} (object payload) {{\n".format(transition_fn_name))
-                            self.out_exit_state(machine, from_state)
+                            if to_state:
+                                self.out_exit_state(machine, from_state)
                             if with_fn_name:
                                 self.out_fn_call(machine, with_fn_name)
-                            self.out_enter_state(machine, to_state)
+                            if to_state:
+                                self.out_enter_state(machine, to_state)
                             self.out("}\n")
                 # Named and unnamed user defined functions
                 for fn_name in machine.fun_decls:
@@ -309,9 +311,12 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#stmt_remove.
     def visitStmt_remove(self, ctx):
-        ctx.getChild(0).accept(self)
-        self.out(".Remove(")
-        ctx.getChild(1).accept(self)
+        target_type = ctx.getChild(0).accept(self)
+        if isinstance(target_type, PTypeSeq):
+            self.out(".RemoveAt(")
+        else:
+            self.out(".Remove(")
+        ctx.getChild(2).accept(self)
         self.out(");")
 
     # Visit a parse tree produced by pParser#stmt_insert.
@@ -487,9 +492,9 @@ class PProgramToCSharpTranslator(TranslatorBase):
     # Visit a parse tree produced by pParser#exp_getidx.
     def visitExp_getidx(self, ctx):
         tuple_type = ctx.getChild(0).accept(self)
-        idx = int(ctx.getChild(2).getText()) + 1
-        self.out(".Item{0}".format(idx))
-        return tuple_type.Ts[int(idx)]
+        idx = int(ctx.getChild(2).getText())
+        self.out(".Item{0}".format(idx + 1))
+        return tuple_type.Ts[idx]
 
     # Visit a parse tree produced by pParser#exp_sizeof.
     def visitExp_sizeof(self, ctx):
@@ -688,12 +693,23 @@ class PProgramToCSharpTranslator(TranslatorBase):
     # Visit a parse tree produced by pParser#single_expr_arg_list.
     def visitSingle_expr_arg_list(self, ctx):
         if ctx.getChildCount() == 1:
-            return [ctx.getChild(0).accept(self)]
+            return ctx.getChild(0).accept(self)
         else:
+            old_s = self.acquire_buffer()
             t1 = ctx.getChild(0).accept(self)
             self.out(",")
             trest = ctx.getChild(3).accept(self)
-            return [t1] + trest
+            tmp_s = self.release_buffer(old_s)
+            self.out("new ")
+            if isinstance(trest, PTypeTuple):
+                trest.Ts = [t1] + trest.Ts
+                tuple_type = trest
+            else:
+                tuple_type = PTypeTuple([t1, trest])
+            self.out(self.translate_type(tuple_type))
+            self.out("(")
+            self.dump_buffer(tmp_s)
+            self.out(")")
 
     # Visit a parse tree produced by pParser#expr_arg_list.
     def visitExpr_arg_list(self, ctx):
