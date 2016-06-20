@@ -1,5 +1,6 @@
 from __future__ import print_function
 from .ast_to_pprogram import *
+from .type_annotator import *
 from StringIO import StringIO
 
 class TranslatorBase(PTypeTranslatorVisitor):
@@ -8,6 +9,7 @@ class TranslatorBase(PTypeTranslatorVisitor):
         super(TranslatorBase, self).__init__()
         visitor = AntlrTreeToPProgramVisitor()
         self.pprogram = ast.accept(visitor)
+        PProgramTypeAnnotator(self.pprogram).annotate_types()
         self.out_dir = out_dir
 
     def warning(self, msg, ctx):

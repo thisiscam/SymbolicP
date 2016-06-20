@@ -58,7 +58,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
             r = "new {0}({1})".format(self.translate_type(T), ','.join([self.translate_default_exp(x) for x in T.NTs.values()]))
         return r
 
-    def out_fn_call(self, machine, fn_name):
+    def out_fn_call(self, machine, fn_name, last_stmt=True, ret_type=None):
         self.out(fn_name)
         self.out("(")
         assert(len(machine.fun_decls[fn_name].params) <= 1)
@@ -68,19 +68,34 @@ class PProgramToCSharpTranslator(TranslatorBase):
             self.out(self.translate_type(possible_payload_type[0]))
             self.out(")")
             self.out("payload")
-        self.out(");\n")
+        self.out(");")
+        if not last_stmt:
+            self.out_check_raise_exit(ret_type)
+        self.out("\n")
 
-    def out_enter_state(self, machine, state):
+    def out_enter_state(self, machine, state, last_stmt=True, ret_type=None):
         self.out("this.state = {0};\n".format(self.translate_state(machine, state)))
         if state.entry_fn:
-            self.out_fn_call(machine, state.entry_fn)
+            self.out_fn_call(machine, state.entry_fn, last_stmt, ret_type)
 
-    def out_exit_state(self, machine, state):
+    def out_exit_state(self, machine, state, last_stmt=True, ret_type=None):
         if state.exit_fn:
-            self.out_fn_call(machine, state.exit_fn)
+            self.out_fn_call(machine, state.exit_fn, last_stmt, ret_type)
+
+    raise_return_type_to_default_exp_map = {
+        None: "",
+        PTypeBool: "false",
+        PTypeInt: "-1",
+        PTypeMachine: "null",
+        PTypeEvent: "-1"
+    }
+    def out_check_raise_exit(self, ret_type):
+        default_exp = self.raise_return_type_to_default_exp_map.get(ret_type, "null")
+        self.out(" if(retcode == RAISED_EVENT) {{ return {0}; }}\n".format(default_exp))
 
     def out_fn_body(self, machine, fn_name):
         fn = machine.fun_decls[fn_name]
+        self.tmp_var_cnt = 0
         self.current_visited_fn = fn
         fn.stmt_block.accept(self)
 
@@ -182,11 +197,11 @@ class PProgramToCSharpTranslator(TranslatorBase):
                             transition_fn_name = "{0}_on_{1}".format(from_state.name, "_".join(on_es))
                             self.out("private void {0} (object payload) {{\n".format(transition_fn_name))
                             if to_state:
-                                self.out_exit_state(machine, from_state)
+                                self.out_exit_state(machine, from_state, last_stmt=with_fn_name and to_state)
                             if with_fn_name:
-                                self.out_fn_call(machine, with_fn_name)
+                                self.out_fn_call(machine, with_fn_name, last_stmt=to_state)
                             if to_state:
-                                self.out_enter_state(machine, to_state)
+                                self.out_enter_state(machine, to_state, last_stmt=True)
                             self.out("}\n")
                 # Named and unnamed user defined functions
                 for fn_name in machine.fun_decls:
@@ -207,19 +222,23 @@ class PProgramToCSharpTranslator(TranslatorBase):
                             )
                         self.out("\n")
                         self.out("public static PMachine CreateMainMachine() {{\nreturn new {0}();\n}}\n\n".format(classname))
-                        self.out("/* Observers */\n")
-                        self.out("public static void AnnounceEvent(int e, object payload) {\n")
-                        self.out("switch(e) {")
-                        for observed_event, observing_machines in self.pprogram.observes_map.items():
-                            self.out("case {0}: {{\n".format(observed_event))
-                            for m in observing_machines:
-                                self.out("{0}.ServeEvent({1}, payload);\n".format(m.name.lower(), observed_event))
-                            self.out("break;\n")
-                            self.out("}\n")
+                        if len(self.pprogram.observes_map) > 0:
+                            self.out("/* Observers */\n")
+                            self.out("public static void AnnounceEvent(int e, object payload) {\n")
+                            self.out("switch(e) {")
+                            for observed_event, observing_machines in self.pprogram.observes_map.items():
+                                self.out("case {0}: {{\n".format(observed_event))
+                                for m in observing_machines:
+                                    self.out("{0}.ServeEvent({1}, payload);\n".format(m.name.lower(), observed_event))
+                                self.out("break;\n")
+                                self.out("}\n")
+                            self.out("}\n}\n")
                         self.out("}\n")
-                        self.out("}\n")
-                        self.out("}\n")
-                                                
+    
+    def allocate_local_var(self):
+        self.tmp_var_cnt += 1
+        return "tmp{0}".format(self.tmp_var_cnt)
+
     # Visit a parse tree produced by pParser#local_var_decl.
     def visitLocal_var_decl(self, ctx):
         t = ctx.getChild(3).accept(self)
@@ -268,25 +287,21 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#stmt_assert.
     def visitStmt_assert(self, ctx):
-        self.out("Debug.Assert(")
-        ctx.getChild(1).accept(self)
-        self.out(");\n")
+        c1 = ctx.getChild(1).accept(self)
+        self.out("Debug.Assert({0});\n".format(c1))
 
 
     # Visit a parse tree produced by pParser#stmt_assert_str.
     def visitStmt_assert_str(self, ctx):
-        self.out("Debug.Assert(")
-        ctx.getChild(1).accept(self)
-        self.out(",")
-        self.out(ctx.getChild(3).getText())
-        self.out(");\n")
+        c1 = ctx.getChild(1).accept(self)
+        c3 = ctx.getChild(3).getText()
+        self.out("Debug.Assert({0},{1});\n".format(c1, c3))
 
 
     # Visit a parse tree produced by pParser#stmt_print.
     def visitStmt_print(self, ctx):
-        self.out("Console.Write(")
-        ctx.getChild(1).accept(self)
-        self.out(");\n")
+        c1 = ctx.getChild(1).accept(self)
+        self.out("Console.Write({0})\n;".format(c1))
 
 
     # Visit a parse tree produced by pParser#stmt_return.
@@ -296,40 +311,44 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#stmt_return_exp.
     def visitStmt_return_exp(self, ctx):
-        self.out("return ")
-        ctx.getChild(1).accept(self)
-        self.out(";\n")
+        c1 = ctx.getChild(1).accept(self)
+        self.out("return {0};".format(c1))
 
 
     # Visit a parse tree produced by pParser#stmt_assign.
     def visitStmt_assign(self, ctx):
-        ctx.getChild(0).accept(self)
-        self.out(" = ")
-        ctx.getChild(2).accept(self)
-        self.out(";\n")
+        c0 = ctx.getChild(0).accept(self)
+        c2 = ctx.getChild(2).accept(self)
+        self.out("{0} = {1};\n".format(c0, c2))
 
 
     # Visit a parse tree produced by pParser#stmt_remove.
     def visitStmt_remove(self, ctx):
-        target_type = ctx.getChild(0).accept(self)
+        target_type = ctx.getChild(0).exp_type
+        c0 = ctx.getChild(0).accept(self)
+        c2 = ctx.getChild(2).accept(self)
+        self.out(c0)
         if isinstance(target_type, PTypeSeq):
             self.out(".RemoveAt(")
         else:
             self.out(".Remove(")
-        ctx.getChild(2).accept(self)
-        self.out(");")
+        self.out(c2)
+        self.out(");\n")
 
     # Visit a parse tree produced by pParser#stmt_insert.
     def visitStmt_insert(self, ctx):
-        ctx.getChild(0).accept(self)
+        c0 = ctx.getChild(0).accept(self)
+        c2 = ctx.getChild(2).accept(self)
+        self.out(c0)
         self.out(".Insert(")
-        ctx.getChild(2).accept(self)
-        self.out(");")
+        self.out(c2)
+        self.out(");\n")
 
     # Visit a parse tree produced by pParser#stmt_while.
     def visitStmt_while(self, ctx):
+        c2 = ctx.getChild(2).accept(self)
         self.out("while(")
-        ctx.getChild(2).accept(self)
+        self.out(c2)
         self.out(") {\n")
         ctx.getChild(4).accept(self)
         self.out("}\n")
@@ -337,8 +356,9 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#stmt_if_then_else.
     def visitStmt_if_then_else(self, ctx):
+        c2 = ctx.getChild(2).accept(self)
         self.out("if(")
-        ctx.getChild(2).accept(self)
+        self.out(c2)
         self.out(") {\n")
         ctx.getChild(4).accept(self)
         self.out("} else {\n")
@@ -348,8 +368,9 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#stmt_if_then.
     def visitStmt_if_then(self, ctx):
+        c2 = ctx.getChild(2).accept(self)
         self.out("if(")
-        ctx.getChild(2).accept(self)
+        self.out(c2)
         self.out(") {\n")
         ctx.getChild(4).accept(self)
         self.out("}\n")
@@ -361,373 +382,274 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#stmt_new_with_arguments.
     def visitStmt_new_with_arguments(self, ctx):
-        self.out("NewMachine(new Machine{}(), ".format(ctx.getChild(1).getText()))
-        ctx.getChild(3).accept(self)
-        self.out(");\n")
+        c3 = ctx.getChild(3).accept(self)
+        self.out("NewMachine(new Machine{0}(),{1});\n".format(ctx.getChild(1).getText(), c3))
 
     # Visit a parse tree produced by pParser#stmt_call.
     def visitStmt_call(self, ctx):
         self.out(ctx.getChild(0).getText())
-        self.out("();\n")
-
+        self.out("();")
+        self.out_check_raise_exit(self.current_visited_fn.ret_type)
+        self.out("\n")
 
     # Visit a parse tree produced by pParser#stmt_call_with_arguments.
     def visitStmt_call_with_arguments(self, ctx):
         self.out(ctx.getChild(0).getText())
+        c2 = ctx.getChild(2).accept(self)
         self.out("(")
-        ctx.getChild(2).accept(self)
-        self.out(");\n")
+        self.out(c2)
+        self.out(");")
+        self.out_check_raise_exit(self.current_visited_fn.ret_type)
+        self.out("\n")
 
     # Visit a parse tree produced by pParser#stmt_raise.
     def visitStmt_raise(self, ctx):
-        self.out("this.ServeEvent(")
-        ctx.getChild(1).accept(self)
-        self.out(", null); retcode = RAISED_EVENT; return;\n")
-
+        c1 = ctx.getChild(1).accept(self)
+        self.out("this.ServeEvent({0}, null); retcode = RAISED_EVENT; return;\n".format(c1))
 
     # Visit a parse tree produced by pParser#stmt_raise_with_arguments.
     def visitStmt_raise_with_arguments(self, ctx):
-        self.out("this.ServeEvent(")
-        ctx.getChild(1).accept(self)
-        self.out(", ")
-        ctx.getChild(3).accept(self)
-        self.out("); retcode = RAISED_EVENT; return;\n")
+        c1 = ctx.getChild(1).accept(self)
+        c3 = ctx.getChild(3).accept(self)
+        self.out("this.ServeEvent({0}, {1}); retcode = RAISED_EVENT; return;\n".format(c1, c3))
 
 
     # Visit a parse tree produced by pParser#stmt_send.
     def visitStmt_send(self, ctx):
-        self.out("this.SendMsg(")
-        ctx.getChild(2).accept(self)
-        self.out(", ")
-        ctx.getChild(4).accept(self)
-        self.out(", null);\n")
+        c2 = ctx.getChild(2).accept(self)
+        c4 = ctx.getChild(4).accept(self)
+        self.out("this.SendMsg({0},{1},null);\n".format(c2, c4))
 
 
     # Visit a parse tree produced by pParser#stmt_send_with_arguments.
     def visitStmt_send_with_arguments(self, ctx):
-        self.out("this.SendMsg(")
-        ctx.getChild(2).accept(self)
-        self.out(", ")
-        ctx.getChild(4).accept(self)
-        self.out(", ")
-        ctx.getChild(6).accept(self)
-        self.out(");\n")
+        c2 = ctx.getChild(2).accept(self)
+        c4 = ctx.getChild(4).accept(self)
+        c6 = ctx.getChild(6).accept(self)
+        self.out("this.SendMsg({0},{1},{2});\n".format(c2, c4, c6))
 
 
     # Visit a parse tree produced by pParser#stmt_monitor.
     def visitStmt_monitor(self, ctx):
-        self.out("MachineController.AnnounceEvent(")
-        ctx.getChild(1).accept(self)
-        self.out(", null);\n")
+        c1 = ctx.getChild(1).accept(self)
+        self.out("MachineController.AnnounceEvent({0}, null);\n".format(c1))
 
 
     # Visit a parse tree produced by pParser#stmt_monitor_with_arguments.
     def visitStmt_monitor_with_arguments(self, ctx):
-        self.out("MachineController.AnnounceEvent(")
-        ctx.getChild(1).accept(self)
-        self.out(", ")
-        ctx.getChild(3).accept(self)
-        self.out(");\n")
+        c1 = ctx.getChild(1).accept(self)
+        c3 = ctx.getChild(3).accept(self)
+        self.out("MachineController.AnnounceEvent({0},{1});\n".format(c1, c3))
 
 
     # Visit a parse tree produced by pParser#stmt_recieve.
     def visitStmt_recieve(self, ctx):
         raise ValueError("Recieve not supported")
 
-    def visitBinary_Exp(ret_type):
-        def visitBinary_Exp_Wrapped(self, ctx):
-            if ctx.getChildCount() > 1:
-                ctx.getChild(0).accept(self)
-                self.out(" {0} ".format(ctx.getChild(1).getText()))
-                ctx.getChild(2).accept(self)
-                return ret_type
-            else:
-                return ctx.getChild(0).accept(self)
-        return visitBinary_Exp_Wrapped
-
-    visitExp = visitBinary_Exp(PTypeBool)
-    visitExp_7 = visitBinary_Exp(PTypeBool)
-    visitExp_6 = visitBinary_Exp(PTypeBool)
-
-    def visitExp_5(self, ctx):            
+    def visitBinary_Exp(self, ctx):
         if ctx.getChildCount() > 1:
-            if ctx.getChild(1).getText() == "in":
-                ctx.getChild(2).accept(self)
-                self.out(".ContainsKey(".format(ctx.getChild(1).getText()))
-                ctx.getChild(0).accept(self)
-                self.out(")")
-            else:
-                ctx.getChild(0).accept(self)
-                self.out(" {0} ".format(ctx.getChild(1).getText()))
-                ctx.getChild(2).accept(self)
-            return PTypeBool
+            c0 = ctx.getChild(0).accept(self)
+            c2 = ctx.getChild(2).accept(self)
+            return "{0} {1} {2}".format(c0, ctx.getChild(1).getText(), c2)
         else:
             return ctx.getChild(0).accept(self)
+
+    visitExp = visitBinary_Exp
+    visitExp_7 = visitBinary_Exp
+    visitExp_6 = visitBinary_Exp
+
+    def visitExp_5(self, ctx):            
+        if ctx.getChildCount() > 1 and ctx.getChild(1).getText() == "in":
+                c2 = ctx.getChild(2).accept(self)
+                c0 = ctx.getChild(0).accept(self)
+                return "{0}.ContainsKey({1})".format(c2, c0)
+        else:
+            return self.visitBinary_Exp(ctx)
     
     def visitExp_4(self, ctx):
         if ctx.getChildCount() > 1:
-            self.out("((")
             ret_type = ctx.getChild(2).accept(self)
-            self.out(")")
-            ctx.getChild(0).accept(self)
-            self.out(")")
-            return ret_type
+            c0 = ctx.getChild(0).accept(self)
+            return "(({0}) {1})".format(ret_type, c0)
         else:
             return ctx.getChild(0).accept(self)
 
-    visitExp_3 = visitBinary_Exp(PTypeInt)
-    visitExp_2 = visitBinary_Exp(PTypeInt)
+    visitExp_3 = visitBinary_Exp
+    visitExp_2 = visitBinary_Exp
 
     # Visit a parse tree produced by pParser#exp_1.
     def visitExp_1(self, ctx):
         if ctx.getChildCount() > 1:
             op = ctx.getChild(0).getText()
-            self.out(op)
-            ctx.getChild(1).accept(self)
-            return PTypeInt if op == "-" else PTypeBool
+            c1 = ctx.getChild(1).accept(self)
+            return "{op}{c1}".format(op=op, c1=c1)
         else:
             return ctx.getChild(0).accept(self)
 
 
     # Visit a parse tree produced by pParser#exp_getidx.
     def visitExp_getidx(self, ctx):
-        tuple_type = ctx.getChild(0).accept(self)
+        c0 = ctx.getChild(0).accept(self)
         idx = int(ctx.getChild(2).getText())
-        self.out(".Item{0}".format(idx + 1))
-        return tuple_type.Ts[idx]
+        return "{0}.Item{1}".format(c0, idx + 1)
 
     # Visit a parse tree produced by pParser#exp_sizeof.
     def visitExp_sizeof(self, ctx):
-        ctx.getChild(2).accept(self)
-        self.out(".Count")
-        return PTypeInt
+        c2 = ctx.getChild(2).accept(self)
+        return "{0}.Count".format(c2)
 
     # Visit a parse tree produced by pParser#exp_call.
     def visitExp_call(self, ctx):
+        exp_ref = self.allocate_local_var()
         fn_name = ctx.getChild(0).getText()
-        self.out("{0}()".format(fn_name))
-        return self.current_visited_machine.fun_decls[fn_name].ret_type
+        self.out("{T} {ref}={fn_name}();".format(T=self.translate_type(ctx.exp_type), ref=exp_ref, fn_name=fn_name))
+        self.out_check_raise_exit(self.current_visited_fn.ret_type)
+        return exp_ref
 
     # Visit a parse tree produced by pParser#exp_new.
     def visitExp_new(self, ctx):
-        self.out("NewMachine(new Machine{}(), null)".format(ctx.getChild(1).getText()))
-        return PTypeMachine
+        return "NewMachine(new Machine{}(), null)".format(ctx.getChild(1).getText())
 
     # Visit a parse tree produced by pParser#exp_call_with_arguments.
     def visitExp_call_with_arguments(self, ctx):
+        exp_ref = self.allocate_local_var()
         fn_name = ctx.getChild(0).getText()
-        self.out("{0}(".format(fn_name))
-        ctx.getChild(2).accept(self)
-        self.out(")")
-        return self.current_visited_machine[fn_name].ret_type
+        c2 = ctx.getChild(2).accept(self)
+        self.out("{T} {ref}={fn_name}({args});".format(T=self.translate_type(ctx.exp_type), 
+                                                    ref=exp_ref, 
+                                                    fn_name=fn_name,
+                                                    args=c2)
+                )
+        self.out_check_raise_exit(self.current_visited_fn.ret_type)
+        return exp_ref
 
     # Visit a parse tree produced by pParser#exp_nondet.
     def visitExp_nondet(self, ctx):
-        self.out("RandomBool()")
-        return PTypeBool
+        return "RandomBool()"
 
     # Visit a parse tree produced by pParser#exp_this.
     def visitExp_this(self, ctx):
-        self.out("this")
-        return PTypeMachine
+        return "this"
 
     # Visit a parse tree produced by pParser#exp_id.
     def visitExp_id(self, ctx):
-        identifier = ctx.getChild(0).getText()
-        self.out(identifier)
-        if identifier in self.current_visited_fn.local_decls:
-            return self.current_visited_fn.local_decls[identifier]
-        elif identifier in self.current_visited_fn.params:
-            return self.current_visited_fn.params[identifier]
-        elif identifier in self.current_visited_machine.var_decls:
-            return self.current_visited_machine.var_decls[identifier]
-        elif identifier in self.pprogram.events:
-            return PTypeEvent
-        else:
-            self.warning("Cannot find identifier {0}".format(identifier), ctx)
-            return PTypeAny
+        return ctx.getChild(0).getText()
+        
 
     # Visit a parse tree produced by pParser#exp_getattr.
     def visitExp_getattr(self, ctx):
-        named_tuple_type = ctx.getChild(0).accept(self)
+        named_tuple_type = ctx.getChild(0).exp_type
+        c0 = ctx.getChild(0).accept(self)
         attr = ctx.getChild(2).getText()
         idx = named_tuple_type.NTs.keys().index(attr) + 1
-        self.out(".Item{0}".format(idx))
-        return named_tuple_type.NTs[attr]
+        return "{0}.Item{1}".format(c0, idx)
 
     # Visit a parse tree produced by pParser#exp_named_tuple_1_elem.
     def visitExp_named_tuple_1_elem(self, ctx):
-        n1 = ctx.getChild(1).getText()
-        old_s = self.acquire_buffer()
-        t1 = ctx.getChild(3).accept(self)
-        tmp_buffer = self.release_buffer(old_s)
-        nmd_tuple_type = PTypeNamedTuple([(n1, t1)])
-        self.out("new ")
-        self.out(self.translate_type(nmd_tuple_type))
-        self.out("(")
-        self.dump_buffer(tmp_buffer)
-        self.out(")")       
-        return nmd_tuple_type
+        c3 = ctx.getChild(3).accept(self)
+        nmd_tuple_type = ctx.exp_type
+        return "new {T}({arg})".format(self.translate_type(nmd_tuple_type), c3)
 
     # Visit a parse tree produced by pParser#exp_keys.
     def visitExp_keys(self, ctx):
-        map_type = ctx.getChild(2).accept(self)
-        self.out(".Keys()")
-        return map_type.T1
+        c2 = ctx.getChild(2).accept(self)
+        return "{0}.Keys()".format(c2)
 
     # Visit a parse tree produced by pParser#exp_grouped.
     def visitExp_grouped(self, ctx):
-        self.out("(")
-        ret_type = ctx.getChild(1).accept(self)
-        self.out(")")
-        return ret_type
-
+        c1 = ctx.getChild(1).accept(self)
+        return "({0})".format(c1)
+        
     # Visit a parse tree produced by pParser#exp_named_tuple_n_elems.
     def visitExp_named_tuple_n_elems(self, ctx):
-        n1 = ctx.getChild(1).getText()
-        old_s = self.acquire_buffer()
-        t1 = ctx.getChild(3).accept(self)
-        self.out(",")
-        trest = ctx.getChild(5).accept(self)
-        tmp_buffer = self.release_buffer(old_s)
-        nmd_tuple_type = PTypeNamedTuple([(n1, t1)] + trest)
-        self.out("new ")
-        self.out(self.translate_type(nmd_tuple_type))
-        self.out("(")
-        self.dump_buffer(tmp_buffer)
-        self.out(")")       
-        return nmd_tuple_type
+        c3 = ctx.getChild(3).accept(self)
+        c5 = ctx.getChild(5).accept(self)
+        nmd_tuple_type = ctx.exp_type
+        return "new {0}({1}, {2})".format(self.translate_type(nmd_tuple_type), c3, c5)
 
     # Visit a parse tree produced by pParser#exp_true.
     def visitExp_true(self, ctx):
-        self.out("true")
-        return PTypeBool
+        return "true"
 
     # Visit a parse tree produced by pParser#exp_values.
     def visitExp_values(self, ctx):
-        map_type = ctx.getChild(2).accept(self)
-        self.out(".Values()")
-        return map_type.T1
+        c2 = ctx.getChild(2).accept(self)
+        return "{0}.Values()".format(c2)
 
     # Visit a parse tree produced by pParser#exp_default.
     def visitExp_default(self, ctx):
-        raise ValueError("Default not implemented")
-        t = ctx.getChild(2).accept(self)
-        self.out("null")
-        return t
+        return self.translate_default_exp(ctx.exp_type)
 
     # Visit a parse tree produced by pParser#exp_null.
     def visitExp_null(self, ctx):
-        self.out("null")
-        return PTypeAny
+        return "null"
 
     # Visit a parse tree produced by pParser#exp_new_with_arguments.
     def visitExp_new_with_arguments(self, ctx):
-        self.out("NewMachine(new Machine{0}(), ".format(ctx.getChild(1).getText()))
-        ctx.getChild(3).accept(self)
-        self.out(")")
-        return PTypeMachine
+        c3 = ctx.getChild(3).accept(self)
+        return "NewMachine(new Machine{0}(), {1})".format(ctx.getChild(1).getText(),c3)
 
     # Visit a parse tree produced by pParser#exp_false.
     def visitExp_false(self, ctx):
-        self.out("false")
-        return PTypeBool
+        return "false"
 
     # Visit a parse tree produced by pParser#exp_halt.
     def visitExp_halt(self, ctx):
-        self.out("this.Halt()")
-        return PTypeEvent
+        return "this.Halt()"
 
     # Visit a parse tree produced by pParser#exp_getitem.
     def visitExp_getitem(self, ctx):
-        map_or_seq_type = ctx.getChild(0).accept(self)
-        self.out("[")
-        ctx.getChild(2).accept(self)
-        self.out("]")
-        if isinstance(map_or_seq_type, PTypeMap):
-            return map_or_seq_type.T2
-        elif isinstance(map_or_seq_type, PTypeSeq):
-            return map_or_seq_type.T
-        else:
-            self.warning("Failed to infer type", ctx)
-            return PTypeAny
+        c0 = ctx.getChild(0).accept(self)
+        c2 = ctx.getChild(2).accept(self)
+        return "{0}[{1}]".format(c0, c2)
 
     # Visit a parse tree produced by pParser#exp_fairnondet.
     def visitExp_fairnondet(self, ctx):
-        self.out("RandomBool()")
-        return PTypeBool
+        return "RandomBool()"
 
     # Visit a parse tree produced by pParser#exp_tuple_1_elem.
     def visitExp_tuple_1_elem(self, ctx):
-        old_s = self.acquire_buffer()
-        t = ctx.getChild(1).accept(self)
-        tmp_buffer = self.release_buffer(old_s)
-        tuple_type = PTypeTuple([t])
-        self.out("new ")
-        self.out(self.translate_type(tuple_type))
-        self.out("(")
-        self.dump_buffer(tmp_buffer)
-        self.out(")")
-        return tuple_type
+        c1 = ctx.getChild(1).accept(self)
+        tuple_type = ctx.exp_type
+        return "new {0}({1})".format(self.translate_type(tuple_type), c1)
 
     # Visit a parse tree produced by pParser#exp_int.
     def visitExp_int(self, ctx):
-        self.out(ctx.getChild(0).getText())
-        return PTypeInt
+        return ctx.getChild(0).getText()
 
     # Visit a parse tree produced by pParser#exp_tuple_n_elems.
     def visitExp_tuple_n_elems(self, ctx):
-        old_s = self.acquire_buffer()
-        t = ctx.getChild(1).accept(self)
-        self.out(",")
-        trest = ctx.getChild(3).accept(self)
-        tmp_s = self.release_buffer(old_s)
-        self.out("new ")
-        tuple_type = PTypeTuple([t] + trest)
-        self.out(self.translate_type(tuple_type))
-        self.out("(")
-        self.dump_buffer(tmp_s)
-        self.out(")")
-        return tuple_type
+        c1 = ctx.getChild(1).accept(self)
+        c3 = ctx.getChild(3).accept(self)
+        tuple_type = ctx.exp_type
+        return "new {0}({1},{2})".format(self.translate_type(tuple_type), c1, c3)
 
     # Visit a parse tree produced by pParser#single_expr_arg_list.
     def visitSingle_expr_arg_list(self, ctx):
         if ctx.getChildCount() == 1:
             return ctx.getChild(0).accept(self)
         else:
-            old_s = self.acquire_buffer()
-            t1 = ctx.getChild(0).accept(self)
-            self.out(",")
-            trest = ctx.getChild(3).accept(self)
-            tmp_s = self.release_buffer(old_s)
-            self.out("new ")
-            if isinstance(trest, PTypeTuple):
-                trest.Ts = [t1] + trest.Ts
-                tuple_type = trest
+            c0 = ctx.getChild(0).accept(self)
+            c3 = ctx.getChild(3).accept(self)
+            if isinstance(ctx.exp_type, list):
+                return "{0},{1}".format(c0, c3)
             else:
-                tuple_type = PTypeTuple([t1, trest])
-            self.out(self.translate_type(tuple_type))
-            self.out("(")
-            self.dump_buffer(tmp_s)
-            self.out(")")
+                return "new {0}({1},{2})".format(self.translate_type(ctx.exp_type), c0, c3)
 
     # Visit a parse tree produced by pParser#expr_arg_list.
     def visitExpr_arg_list(self, ctx):
         if ctx.getChildCount() == 2:
-            return [ctx.getChild(0).accept(self)]
+            return ctx.getChild(0).accept(self)
         else:
-            t1 = ctx.getChild(0).accept(self)
-            self.out(",")
-            trest = ctx.getChild(3).accept(self)
-            return [t1] + trest
+            c0 = ctx.getChild(0).accept(self)
+            c3 = ctx.getChild(3).accept(self)
+            return "{0},{1}".format(c0, c3)
 
     # Visit a parse tree produced by pParser#nmd_expr_arg_list.
     def visitNmd_expr_arg_list(self, ctx):
         if ctx.getChildCount() == 3:
-            return [(ctx.getChild(0).getText(), ctx.getChild(2).accept(self))]
+            return ctx.getChild(2).accept(self)
         else:
-            id1 = ctx.getChild(0).getText()
-            t1 = ctx.getChild(2).accept(self)
-            self.out(",")
-            trest = ctx.getChild(4).accept(self)
-            return [(id1, t1)] + trest
+            c2 = ctx.getChild(2).accept(self)
+            c4 = ctx.getChild(4).accept(self)
+            return "{0},{1}".format(c2, c4)
