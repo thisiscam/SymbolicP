@@ -69,7 +69,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
             self.out(")")
             self.out("payload")
         self.out(");")
-        if not last_stmt:
+        if not last_stmt and machine.fun_decls[fn_name].can_raise_event:
             self.out_check_raise_exit(ret_type)
         self.out("\n")
 
@@ -312,7 +312,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
     # Visit a parse tree produced by pParser#stmt_return_exp.
     def visitStmt_return_exp(self, ctx):
         c1 = ctx.getChild(1).accept(self)
-        self.out("return {0};".format(c1))
+        self.out("return {0};\n".format(c1))
 
 
     # Visit a parse tree produced by pParser#stmt_assign.
@@ -387,19 +387,23 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#stmt_call.
     def visitStmt_call(self, ctx):
-        self.out(ctx.getChild(0).getText())
+        fn_name = ctx.getChild(0).getText()
+        self.out(fn_name)
         self.out("();")
-        self.out_check_raise_exit(self.current_visited_fn.ret_type)
+        if self.current_visited_machine.fun_decls[fn_name].can_raise_event:
+            self.out_check_raise_exit(self.current_visited_fn.ret_type)
         self.out("\n")
 
     # Visit a parse tree produced by pParser#stmt_call_with_arguments.
     def visitStmt_call_with_arguments(self, ctx):
-        self.out(ctx.getChild(0).getText())
+        fn_name = ctx.getChild(0).getText()
+        self.out(fn_name)
         c2 = ctx.getChild(2).accept(self)
         self.out("(")
         self.out(c2)
         self.out(");")
-        self.out_check_raise_exit(self.current_visited_fn.ret_type)
+        if self.current_visited_machine.fun_decls[fn_name].can_raise_event:
+            self.out_check_raise_exit(self.current_visited_fn.ret_type)
         self.out("\n")
 
     # Visit a parse tree produced by pParser#stmt_raise.
@@ -500,11 +504,14 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#exp_call.
     def visitExp_call(self, ctx):
-        exp_ref = self.allocate_local_var()
         fn_name = ctx.getChild(0).getText()
-        self.out("{T} {ref}={fn_name}();".format(T=self.translate_type(ctx.exp_type), ref=exp_ref, fn_name=fn_name))
-        self.out_check_raise_exit(self.current_visited_fn.ret_type)
-        return exp_ref
+        if self.current_visited_machine.fun_decls[fn_name].can_raise_event:
+            exp_ref = self.allocate_local_var()
+            self.out("{T} {ref}={fn_name}();".format(T=self.translate_type(ctx.exp_type), ref=exp_ref, fn_name=fn_name))
+            self.out_check_raise_exit(self.current_visited_fn.ret_type)
+            return exp_ref
+        else:
+            return "{fn_name}()".format(fn_name=fn_name)
 
     # Visit a parse tree produced by pParser#exp_new.
     def visitExp_new(self, ctx):
@@ -512,16 +519,19 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#exp_call_with_arguments.
     def visitExp_call_with_arguments(self, ctx):
-        exp_ref = self.allocate_local_var()
         fn_name = ctx.getChild(0).getText()
-        c2 = ctx.getChild(2).accept(self)
-        self.out("{T} {ref}={fn_name}({args});".format(T=self.translate_type(ctx.exp_type), 
-                                                    ref=exp_ref, 
-                                                    fn_name=fn_name,
-                                                    args=c2)
-                )
-        self.out_check_raise_exit(self.current_visited_fn.ret_type)
-        return exp_ref
+        if self.current_visited_machine.fun_decls[fn_name].can_raise_event:
+            exp_ref = self.allocate_local_var()
+            c2 = ctx.getChild(2).accept(self)
+            self.out("{T} {ref}={fn_name}({args});".format(T=self.translate_type(ctx.exp_type), 
+                                                        ref=exp_ref, 
+                                                        fn_name=fn_name,
+                                                        args=c2)
+                    )
+            self.out_check_raise_exit(self.current_visited_fn.ret_type)
+            return exp_ref
+        else:
+            return "{fn_name}({args})".format(fn_name=fn_name, args=c2)
 
     # Visit a parse tree produced by pParser#exp_nondet.
     def visitExp_nondet(self, ctx):
