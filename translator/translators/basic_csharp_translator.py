@@ -236,8 +236,9 @@ class PProgramToCSharpTranslator(TranslatorBase):
                         self.out("}\n")
     
     def allocate_local_var(self):
+        var = "tmp{0}".format(self.tmp_var_cnt)
         self.tmp_var_cnt += 1
-        return "tmp{0}".format(self.tmp_var_cnt)
+        return var
 
     # Visit a parse tree produced by pParser#local_var_decl.
     def visitLocal_var_decl(self, ctx):
