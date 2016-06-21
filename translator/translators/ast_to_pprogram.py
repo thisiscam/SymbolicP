@@ -26,6 +26,7 @@ class PFunctionWrapper(object):
         self.ret_type = None
         self.stmt_block = None
         self.is_transition_handler = False
+        self.from_to_state = None # extra info signaturing if this function should transit to state
     def __str__(self):
         return "PFunctionWrapper({name})".format(self.name)
 
@@ -454,6 +455,7 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.current_visited_fn = None
         self.current_visited_event_list = None
         f.name = "{0}_on_{1}".format(self.current_visited_state.name, "_".join(new_event_list))
+        f.from_to_state = (self.current_visited_state.name, self.current_state_target)
         self.current_visited_machine.fun_decls[f.name] = f
         self.current_visited_state.transitions.update({e : (f.name, self.current_state_target, False) for e in new_event_list})
 

@@ -106,6 +106,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
             t_str = self.translate_type(t)
             self.out("{0} {1} = ({2})_payload;\n".format(t_str, p, t_str))
 
+
     def out_fn_decl(self, machine, fn_name):
         fn_node = machine.fun_decls[fn_name]
         ret_type = fn_node.ret_type
@@ -115,7 +116,13 @@ class PProgramToCSharpTranslator(TranslatorBase):
         else:
             self.out("private {0} {1} ({2}) {{\n".format(self.translate_type(ret_type), fn_name, 
                     ",".join(("{} {}".format(self.translate_type(t), i)) for i,t in fn_node.params.items())))
-        self.out_fn_body(machine, fn_name)
+        if fn_node.from_to_state:
+            from_state, to_state = fn_node.from_to_state
+            self.out_exit_state(machine, machine.state_decls[from_state], last_stmt=False, ret_type=ret_type)
+            self.out_fn_body(machine, fn_name)
+            self.out_enter_state(machine, machine.state_decls[to_state], last_stmt=True)
+        else:    
+            self.out_fn_body(machine, fn_name)
         self.out("}\n")
 
     def translate(self):
