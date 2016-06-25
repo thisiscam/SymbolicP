@@ -1,7 +1,7 @@
 from __future__ import print_function
 import os, sys
 from ordered_set import OrderedSet
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, namedtuple
 from pparser.pVisitor import pVisitor
 
 class PProgram(object):
@@ -39,6 +39,9 @@ class PMachineState(object):
         self.transitions = {}
         self.defered_events = OrderedSet()
         self.ignored_events = OrderedSet()
+
+TransitionAttributes = namedtuple('TransitionAttributes', 
+                                  ['fn_name', 'to_state', 'is_named', 'is_push'])
 
 class PTypeMachine(object):
     pass
@@ -413,7 +416,11 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.current_visited_event_list = new_event_list
         self.visitChildren(ctx)
         self.current_visited_event_list = None
-        self.current_visited_state.transitions.update({e : (fn_name, None, True) for e in new_event_list})        
+        self.current_visited_state.transitions.update({e : TransitionAttributes(fn_name=fn_name, 
+                                                                                to_state=None, 
+                                                                                is_named=True, 
+                                                                                is_push=False) 
+                                                        for e in new_event_list})        
 
     # Visit a parse tree produced by pParser#state_body_item_on_e_do_unamed.
     def visitState_body_item_on_e_do_unamed(self, ctx):
@@ -427,12 +434,25 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.current_visited_event_list = None
         f.name = "{0}_on_{1}".format(self.current_visited_state.name, "_".join(new_event_list))
         self.current_visited_machine.fun_decls[f.name] = f
-        self.current_visited_state.transitions.update({e : (f.name, None, False) for e in new_event_list})
+        self.current_visited_state.transitions.update({e : TransitionAttributes(fn_name=fn_name, 
+                                                                                to_state=None, 
+                                                                                is_named=False, 
+                                                                                is_push=False)  
+                                                        for e in new_event_list})
 
 
     # Visit a parse tree produced by pParser#state_body_item_push.
     def visitState_body_item_push(self, ctx):
-        raise ValueError("Push is not supported")
+        new_event_list = []
+        self.current_visited_event_list = new_event_list
+        self.visitChildren(ctx)
+        self.current_visited_event_list = None
+        self.current_visited_state.transitions.update({e : TransitionAttributes(fn_name=None, 
+                                                                                to_state=self.current_state_target, 
+                                                                                is_named=False, 
+                                                                                is_push=True) 
+                                                        for e in new_event_list})
+        self.current_state_target = None
 
 
     # Visit a parse tree produced by pParser#state_body_item_on_e_goto.
@@ -441,7 +461,11 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.current_visited_event_list = new_event_list
         self.visitChildren(ctx)
         self.current_visited_event_list = None
-        self.current_visited_state.transitions.update({e : (None, self.current_state_target, False) for e in new_event_list})
+        self.current_visited_state.transitions.update({e : TransitionAttributes(fn_name=None, 
+                                                                                to_state=self.current_state_target, 
+                                                                                is_named=False, 
+                                                                                is_push=False) 
+                                                        for e in new_event_list})
         self.current_state_target = None
 
     # Visit a parse tree produced by pParser#state_body_item_on_e_goto_with_unnamed.
@@ -457,7 +481,11 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         f.name = "{0}_on_{1}".format(self.current_visited_state.name, "_".join(new_event_list))
         f.from_to_state = (self.current_visited_state.name, self.current_state_target)
         self.current_visited_machine.fun_decls[f.name] = f
-        self.current_visited_state.transitions.update({e : (f.name, self.current_state_target, False) for e in new_event_list})
+        self.current_visited_state.transitions.update({e : TransitionAttributes(fn_name=f.name, 
+                                                                                to_state=self.current_state_target, 
+                                                                                is_named=False,
+                                                                                is_push=False) 
+                                                        for e in new_event_list})
 
 
     # Visit a parse tree produced by pParser#state_body_item_on_e_goto_with_fn_named.
@@ -467,7 +495,11 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.current_visited_event_list = new_event_list
         self.visitChildren(ctx)
         self.current_visited_event_list = None
-        self.current_visited_state.transitions.update({e : (fn_name, self.current_state_target, True) for e in new_event_list})
+        self.current_visited_state.transitions.update({e : TransitionAttributes(fn_name=fn_name, 
+                                                                                to_state=self.current_state_target, 
+                                                                                is_named=True, 
+                                                                                is_push=False) 
+                                                        for e in new_event_list})
         return new_event_list
 
 

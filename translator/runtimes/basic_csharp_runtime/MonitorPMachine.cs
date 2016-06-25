@@ -7,23 +7,27 @@ abstract class MonitorPMachine {
     protected delegate void TransitionFunction(object payload);
 
 	protected int retcode;
-    protected int state;
+    protected List<int> states = new List<int>();
 
     protected bool[,] DeferedSet;
+
+    protected bool[,] IsGotoTransition;
     protected TransitionFunction[,] Transitions;
 
     public void ServeEvent(int e, object payload) {
-        if (this.DeferedSet[this.state, e]) {
-            return;
+        for(int i=0; i < this.states.Count; i++) {
+            int state = this.states[i];
+            if(this.Transitions[state, e] != null) {
+                if(this.IsGotoTransition[state, e]) {
+                    this.states.RemoveRange(0, i);
+                }
+                this.retcode = EXECUTE_FINISHED;
+                TransitionFunction transition_fn = this.Transitions[state, e];
+                transition_fn(payload);                
+                return;
+            }
         }
-        this.retcode = EXECUTE_FINISHED;
-        TransitionFunction transition_fn = this.Transitions[this.state, e];
-        if(transition_fn != null) {
-            transition_fn(payload);
-            if (retcode == RAISED_EVENT) return;
-        } else {
-            throw new SystemException("Unhandled Event");
-        }
+        throw new SystemException("Unhandled event");
     }
 
     protected void Transition_Ignore(object payload) {

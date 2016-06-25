@@ -62,7 +62,7 @@ machine Elevator {
 
         on eTimerFired goto DoorOpenedOkToClose;
         on eStopTimerReturned goto DoorOpened;
-        on eOpenDoor goto StoppingTimer;
+        on eOpenDoor push StoppingTimer;
     }
 
     state DoorOpenedOkToClose {
@@ -73,7 +73,7 @@ machine Elevator {
         }
 
         on eStopTimerReturned, eTimerFired goto DoorClosing;
-        on eCloseDoor goto StoppingTimer;
+        on eCloseDoor push StoppingTimer;
     }
 
     state DoorClosing {
@@ -145,7 +145,7 @@ main machine User {
             } else if ($) {
                send ElevatorV,eCloseDoor;
             }
-            raise eUnit;
+            send this, eUnit;
         }
 
         on eUnit goto Loop;

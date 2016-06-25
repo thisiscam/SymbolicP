@@ -39,8 +39,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
     def build_transition_map(self, machine):
         rtransitions_map = defaultdict(list) 
         for state in machine.state_decls.values():
-            for on_e, (fn_name, to_state, is_named) in state.transitions.items():
-                rtransitions_map[(state, machine.state_decls.get(to_state), fn_name, is_named)].append(on_e)
+            for on_e, (fn_name, to_state, is_named, is_push) in state.transitions.items():
+                rtransitions_map[(state, machine.state_decls.get(to_state), fn_name, is_named, is_push)].append(on_e)
         return rtransitions_map
 
     def translate_state(self, machine, state):
@@ -73,8 +73,11 @@ class PProgramToCSharpTranslator(TranslatorBase):
             self.out_check_raise_exit(ret_type)
         self.out("\n")
 
-    def out_enter_state(self, machine, state, last_stmt=True, ret_type=None):
-        self.out("this.state = {0};\n".format(self.translate_state(machine, state)))
+    def out_enter_state(self, machine, state, last_stmt=True, ret_type=None, is_push=False):
+        if is_push:
+            self.out("this.states.Insert(0, {0});\n".format(self.translate_state(machine, state)))
+        else:
+            self.out("this.states[0] = {0};\n".format(self.translate_state(machine, state)))
         if state.entry_fn:
             self.out_fn_call(machine, state.entry_fn, last_stmt, ret_type)
 
@@ -156,6 +159,17 @@ class PProgramToCSharpTranslator(TranslatorBase):
                         self.out("true ," if e in state.defered_events else "false,")
                     self.out("},\n")
                 self.out("};\n")
+                # IsGotoTransition
+                self.out("\nprivate readonly static bool[,] _IsGotoTransition = {\n")
+                for state in machine.state_decls.values():
+                    self.out("{")
+                    for e in self.pprogram.events:
+                        if e in state.transitions and state.transitions[e].to_state:
+                            self.out("true, ")
+                        else:
+                            self.out("false,")
+                    self.out("},\n")
+                self.out("};\n")
                 # P local vars
                 self.out("/* P local vars */\n")
                 for i, t in machine.var_decls.items():
@@ -167,10 +181,10 @@ class PProgramToCSharpTranslator(TranslatorBase):
                 self.out("\n\n")
                 # Constructor(including transition function map)
                 self.out("public {0} () {{\n".format(classname))
-                self.out("this.DeferedSet = _DeferedSet;\n")
+                self.out("this.DeferedSet = _DeferedSet;\nthis.IsGotoTransition = _IsGotoTransition;\n")
                 self.out("this.Transitions = new TransitionFunction[{0},{1}];\n".format(len(machine.state_decls), len(self.pprogram.events)))
                 rtransitions_map = self.build_transition_map(machine)
-                for (state, to_state, fn_name, is_named), on_es in rtransitions_map.items():
+                for (state, to_state, fn_name, is_named, is_push), on_es in rtransitions_map.items():
                     transition_fn_name = None
                     if to_state:
                         if is_named or not fn_name:
@@ -187,28 +201,38 @@ class PProgramToCSharpTranslator(TranslatorBase):
                 for state in machine.state_decls.values():
                     for ignored_event in state.ignored_events:
                         self.out("this.Transitions[{0},{1}] = Transition_Ignore;\n".format(self.translate_state(machine, state), ignored_event))
+                # Exit Functions
+                self.out("this.ExitFunctions = new ExitFunction[{0}];\n".format(len(machine.state_decls)))
+                for state in machine.state_decls.values():
+                    if state.exit_fn:
+                        self.out("this.ExitFunctions[{state}] = {state}_Exit;\n".format(state=self.translate_state(machine, state)))
                 # StartMachine
                 if machine.is_spec:
-                    self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0])
+                    self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
                 else:
                     self.out("}\n")
                     self.out("public override void StartMachine (Scheduler s, object payload) {\n")
                     self.out("base.StartMachine(s, payload);\n")
-                    self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0])
+                    self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
                 self.out("}\n")
 
                 # Transition functions
-                for (from_state, to_state, with_fn_name, is_named), on_es in rtransitions_map.items():
+                for (from_state, to_state, with_fn_name, is_named, is_push), on_es in rtransitions_map.items():
                     if to_state or len(machine.fun_decls[with_fn_name].params) != 1:
                         if is_named or not with_fn_name:
                             transition_fn_name = "{0}_on_{1}".format(from_state.name, "_".join(on_es))
                             self.out("private void {0} (object payload) {{\n".format(transition_fn_name))
-                            if to_state:
-                                self.out_exit_state(machine, from_state, last_stmt=with_fn_name and to_state)
-                            if with_fn_name:
-                                self.out_fn_call(machine, with_fn_name, last_stmt=to_state)
-                            if to_state:
-                                self.out_enter_state(machine, to_state, last_stmt=True)
+                            if is_push:
+                                if with_fn_name:
+                                    self.out_fn_call(machine, with_fn_name, last_stmt=False)
+                                self.out_enter_state(machine, to_state, last_stmt=True, is_push=True)
+                            else:
+                                if to_state:
+                                    self.out_exit_state(machine, from_state, last_stmt=with_fn_name and to_state)
+                                if with_fn_name:
+                                    self.out_fn_call(machine, with_fn_name, last_stmt=to_state)
+                                if to_state:
+                                    self.out_enter_state(machine, to_state, last_stmt=True)
                             self.out("}\n")
                 # Named and unnamed user defined functions
                 for fn_name in machine.fun_decls:
@@ -285,8 +309,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#stmt_pop.
     def visitStmt_pop(self, ctx):
-        raise ValueError("Pop not supported")
-
+        self.out("this.PopState(); retcode = RAISED_EVENT; return;\n")
 
     # Visit a parse tree produced by pParser#stmt_stmt_list.
     def visitStmt_stmt_list(self, ctx):
@@ -417,13 +440,13 @@ class PProgramToCSharpTranslator(TranslatorBase):
     # Visit a parse tree produced by pParser#stmt_raise.
     def visitStmt_raise(self, ctx):
         c1 = ctx.getChild(1).accept(self)
-        self.out("this.ServeEvent({0}, null); retcode = RAISED_EVENT; return;\n".format(c1))
+        self.out("this.RaiseEvent({0}, null); retcode = RAISED_EVENT; return;\n".format(c1))
 
     # Visit a parse tree produced by pParser#stmt_raise_with_arguments.
     def visitStmt_raise_with_arguments(self, ctx):
         c1 = ctx.getChild(1).accept(self)
         c3 = ctx.getChild(3).accept(self)
-        self.out("this.ServeEvent({0}, {1}); retcode = RAISED_EVENT; return;\n".format(c1, c3))
+        self.out("this.RaiseEvent({0}, {1}); retcode = RAISED_EVENT; return;\n".format(c1, c3))
 
 
     # Visit a parse tree produced by pParser#stmt_send.
