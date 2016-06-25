@@ -62,6 +62,7 @@ class Scheduler {
         int sourceMachineSendQueueIndex = chosen.sourceMachineSendQueueIndex;
         if (sourceMachineSendQueueIndex < 0) {
             PMachine chosenTargetMachine = chosen.sourceMachine;
+            Console.WriteLine(chosenTargetMachine.ToString() + "executes EVENT_NULL");
             chosenTargetMachine.RunStateMachine(chosen.targetMachineStateIndex, EVENT_NULL, null);
         } else {
             PMachine chosenSourceMachine = chosen.sourceMachine;
