@@ -22,8 +22,12 @@ class Scheduler {
 
     List<PMachine> machines = new List<PMachine>();
 
-    public Scheduler() {
-        this.rng = new Random();
+    public Scheduler() : this(new Random()) {
+        
+    }
+
+    public Scheduler(Random rng) {
+        this.rng = rng;
     }
 
     private bool ChooseAndRunMachine() {
@@ -49,6 +53,7 @@ class Scheduler {
             // Machine is state that can serve null event?
             int null_state_idx = machine.CanServeEvent(EVENT_NULL);
             if(null_state_idx >= 0) {
+                Debugger.Break();
                 choices.Add(new SchedulerChoice(machine, -1, null_state_idx));
             }
         }
@@ -62,7 +67,7 @@ class Scheduler {
         int sourceMachineSendQueueIndex = chosen.sourceMachineSendQueueIndex;
         if (sourceMachineSendQueueIndex < 0) {
             PMachine chosenTargetMachine = chosen.sourceMachine;
-            Console.WriteLine(chosenTargetMachine.ToString() + "executes EVENT_NULL");
+            Console.WriteLine(chosenTargetMachine.ToString() + " executes EVENT_NULL");
             chosenTargetMachine.RunStateMachine(chosen.targetMachineStateIndex, EVENT_NULL, null);
         } else {
             PMachine chosenSourceMachine = chosen.sourceMachine;
@@ -101,12 +106,26 @@ class Scheduler {
     }
 
     static int Main(string[] args) {
-        Scheduler scheduler = new Scheduler();
+        int maxExplorationSteps = 500;
+        Random rng = new Random();
 
-        PMachine mainMachine = MachineController.CreateMainMachine();
-        scheduler.StartMachine(mainMachine, null);
+        int iteration = 0;
+        while(true) {
+            Console.WriteLine(String.Format("========BEGIN NEW TRACE {0}=========", iteration));
+            Scheduler scheduler = new Scheduler(rng);
 
-        while(scheduler.ChooseAndRunMachine()) { Debugger.Break(); }
+            PMachine mainMachine = MachineController.CreateMainMachine();
+            scheduler.StartMachine(mainMachine, null);
+
+            for(int i=0; i < maxExplorationSteps; i++) { 
+                if(!scheduler.ChooseAndRunMachine()) {
+                    break;
+                }
+            }
+            Console.WriteLine("===========END TRACE===========");
+            iteration ++;
+        }
+        
         return 0;
     }
 }

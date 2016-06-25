@@ -135,8 +135,9 @@ class PProgramToCSharpTranslator(TranslatorBase):
         with open(os.path.join(self.out_dir, "ProjectMacros.h"), 'w+') as macrosf:
             self.stream = macrosf
             self.out('#include "CommonMacros.h"\n\n')
-            for i, e in enumerate(self.pprogram.events[1:]):
-                self.out("#define {0} {1}\n".format(e, i))
+            for i, e in enumerate(self.pprogram.events):
+                if e != "EVENT_NULL":
+                    self.out("#define {0} {1}\n".format(e, i))
             for machine in self.pprogram.machines:
                 self.out("\n")
                 for i, s in enumerate(machine.state_decls.values()):
@@ -319,14 +320,14 @@ class PProgramToCSharpTranslator(TranslatorBase):
     # Visit a parse tree produced by pParser#stmt_assert.
     def visitStmt_assert(self, ctx):
         c1 = ctx.getChild(1).accept(self)
-        self.out("Debug.Assert({0});\n".format(c1))
+        self.out("Assert({0});\n".format(c1))
 
 
     # Visit a parse tree produced by pParser#stmt_assert_str.
     def visitStmt_assert_str(self, ctx):
         c1 = ctx.getChild(1).accept(self)
         c3 = ctx.getChild(3).getText()
-        self.out("Debug.Assert({0},{1});\n".format(c1, c3))
+        self.out("Assert({0},{1});\n".format(c1, c3))
 
 
     # Visit a parse tree produced by pParser#stmt_print.

@@ -69,6 +69,12 @@ abstract class PMachine {
         return this.scheduler.RandomBool();
     }
 
+    protected void Assert(bool cond, string msg) {
+        if(!cond) {
+            throw new SystemException(msg);
+        }
+    }
+
     public void RunStateMachine(int state_idx, int e, object payload) {
         int state = this.states[state_idx];
         if(this.IsGotoTransition[state, e]) {
