@@ -2,3 +2,5 @@
 
 #define EXECUTE_FINISHED 0
 #define RAISED_EVENT 1
+
+#define EVENT_NULL 0

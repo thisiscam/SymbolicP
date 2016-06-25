@@ -7,6 +7,7 @@ from pparser.pVisitor import pVisitor
 class PProgram(object):
     def __init__(self):
         self.events = OrderedSet()
+        self.events.add("EVENT_NULL")
         self.machines = OrderedSet()
         self.observes_map = defaultdict(list)
 

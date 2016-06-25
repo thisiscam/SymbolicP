@@ -31,6 +31,7 @@ class Scheduler {
         List<SchedulerChoice> choices = new List<SchedulerChoice>();
         for(int i=0; i < this.machines.Count; i++) {
             PMachine machine = machines[i];
+            // Collect from send queue
             List<SendQueueItem> sendQueue = machine.sendQueue;
             for(int j=0; j < sendQueue.Count; j++) {
                 SendQueueItem item = sendQueue[j];
@@ -45,6 +46,11 @@ class Scheduler {
                     }
                 }
             }
+            // Machine is state that can serve null event?
+            int null_state_idx = machine.CanServeEvent(EVENT_NULL);
+            if(null_state_idx >= 0) {
+                choices.Add(new SchedulerChoice(machine, -1, null_state_idx));
+            }
         }
         if(choices.Count == 0) {
             return false;
@@ -53,19 +59,24 @@ class Scheduler {
         // Choose one and remove from send queue
         int idx = this.rng.Next(0, choices.Count);
         SchedulerChoice chosen = choices[idx];
-        PMachine chosenSourceMachine = chosen.sourceMachine;
-        SendQueueItem dequeuedItem = chosenSourceMachine.sendQueue[chosen.sourceMachineSendQueueIndex];
-        chosenSourceMachine.sendQueue.RemoveAt(chosen.sourceMachineSendQueueIndex);
-
-        // Invoke Machine
-        if(dequeuedItem.e == EVENT_NEW_MACHINE) {
-            PMachine newMachine = dequeuedItem.target;
-            Console.WriteLine(chosenSourceMachine.ToString() + " creates " + newMachine.ToString());
-            this.StartMachine(newMachine, dequeuedItem.payload);
-        } else{
-            PMachine targetMachine = dequeuedItem.target;
-            Console.WriteLine(chosenSourceMachine.ToString() + " sends event " + dequeuedItem.e.ToString() + " to " + targetMachine.ToString());
-            targetMachine.RunStateMachine(chosen.targetMachineStateIndex, dequeuedItem.e, dequeuedItem.payload);
+        int sourceMachineSendQueueIndex = chosen.sourceMachineSendQueueIndex;
+        if (sourceMachineSendQueueIndex < 0) {
+            PMachine chosenTargetMachine = chosen.sourceMachine;
+            chosenTargetMachine.RunStateMachine(chosen.targetMachineStateIndex, EVENT_NULL, null);
+        } else {
+            PMachine chosenSourceMachine = chosen.sourceMachine;
+            SendQueueItem dequeuedItem = chosenSourceMachine.sendQueue[sourceMachineSendQueueIndex];
+            chosenSourceMachine.sendQueue.RemoveAt(sourceMachineSendQueueIndex);
+            // Invoke Machine
+            if(dequeuedItem.e == EVENT_NEW_MACHINE) {
+                PMachine newMachine = dequeuedItem.target;
+                Console.WriteLine(chosenSourceMachine.ToString() + " creates " + newMachine.ToString());
+                this.StartMachine(newMachine, dequeuedItem.payload);
+            } else{
+                PMachine targetMachine = dequeuedItem.target;
+                Console.WriteLine(chosenSourceMachine.ToString() + " sends event " + dequeuedItem.e.ToString() + " to " + targetMachine.ToString());
+                targetMachine.RunStateMachine(chosen.targetMachineStateIndex, dequeuedItem.e, dequeuedItem.payload);
+            }
         }
         return true;
     }

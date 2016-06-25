@@ -135,7 +135,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
         with open(os.path.join(self.out_dir, "ProjectMacros.h"), 'w+') as macrosf:
             self.stream = macrosf
             self.out('#include "CommonMacros.h"\n\n')
-            for i, e in enumerate(self.pprogram.events):
+            for i, e in enumerate(self.pprogram.events[1:]):
                 self.out("#define {0} {1}\n".format(e, i))
             for machine in self.pprogram.machines:
                 self.out("\n")
