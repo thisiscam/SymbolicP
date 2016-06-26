@@ -87,11 +87,11 @@ class Scheduler {
         return true;
     }
 
-    public void SendMsg(PMachine source, PMachine target, int e, object payload) {
+    public void SendMsg(PMachine source, PMachine target, int e, IPType payload) {
         source.sendQueue.Add(new SendQueueItem(target, e, payload));
     }
 
-    public void NewMachine(PMachine source, PMachine newMachine, object payload) {
+    public void NewMachine(PMachine source, PMachine newMachine, IPType payload) {
         source.sendQueue.Add(new SendQueueItem(newMachine, EVENT_NEW_MACHINE, payload));
     }
 
@@ -100,7 +100,7 @@ class Scheduler {
         return this.rng.NextDouble() > 0.5;
     }
 
-    private void StartMachine(PMachine machine, object payload) {
+    private void StartMachine(PMachine machine, IPType payload) {
         this.machines.Add(machine);
         machine.StartMachine(this, payload);
     }

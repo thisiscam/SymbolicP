@@ -3,8 +3,8 @@
 using System;
 using System.Collections.Generic;
 
-abstract class PMachine {
-    protected delegate void TransitionFunction(object payload);
+abstract class PMachine : IPType<PMachine> {
+    protected delegate void TransitionFunction(IPType payload);
     protected delegate void ExitFunction();
 
     protected int retcode;
@@ -21,7 +21,7 @@ abstract class PMachine {
 
     public List<SendQueueItem> sendQueue = new List<SendQueueItem>();
 
-    public virtual void StartMachine(Scheduler s, object payload) {
+    public virtual void StartMachine(Scheduler s, IPType payload) {
         this.scheduler = s;
     }
     
@@ -36,7 +36,7 @@ abstract class PMachine {
         return -1;
     }
 
-    protected void RaiseEvent(int e, object payload) {
+    protected void RaiseEvent(int e, IPType payload) {
         for(int i=0; i < this.states.Count; i++) {
             int state = this.states[i];
             if(this.Transitions[state, e] != null) {
@@ -47,11 +47,11 @@ abstract class PMachine {
         throw new SystemException("Unhandled event");
     }
 
-    protected void SendMsg(PMachine other, int e, object payload) {
+    protected void SendMsg(PMachine other, int e, IPType payload) {
         this.scheduler.SendMsg(this, other, e, payload);
     }
 
-    protected PMachine NewMachine(PMachine newMachine, object payload) {
+    protected PMachine NewMachine(PMachine newMachine, IPType payload) {
         this.scheduler.NewMachine(this, newMachine, payload);
         return newMachine;
     }
@@ -75,7 +75,13 @@ abstract class PMachine {
         }
     }
 
-    public void RunStateMachine(int state_idx, int e, object payload) {
+    protected void Assert(bool cond) {
+        if(!cond) {
+            throw new SystemException("Assertion failure");
+        }
+    }
+
+    public void RunStateMachine(int state_idx, int e, IPType payload) {
         int state = this.states[state_idx];
         if(this.IsGotoTransition[state, e]) {
             this.states.RemoveRange(0, state_idx);
@@ -85,7 +91,11 @@ abstract class PMachine {
         transition_fn(payload);
     }
 
-    protected void Transition_Ignore(object payload) {
+    protected void Transition_Ignore(IPType payload) {
         return;
+    }
+
+    public PMachine DeepCopy() {
+        return this;
     }
 }

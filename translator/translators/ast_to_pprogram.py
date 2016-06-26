@@ -435,7 +435,7 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.current_visited_event_list = None
         f.name = "{0}_on_{1}".format(self.current_visited_state.name, "_".join(new_event_list))
         self.current_visited_machine.fun_decls[f.name] = f
-        self.current_visited_state.transitions.update({e : TransitionAttributes(fn_name=fn_name, 
+        self.current_visited_state.transitions.update({e : TransitionAttributes(fn_name=f.name, 
                                                                                 to_state=None, 
                                                                                 is_named=False, 
                                                                                 is_push=False)  
