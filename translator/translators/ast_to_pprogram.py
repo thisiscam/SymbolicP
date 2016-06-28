@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os, sys
+import copy
 from ordered_set import OrderedSet
 from collections import defaultdict, OrderedDict, namedtuple
 from pparser.pVisitor import pVisitor
@@ -156,6 +157,8 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.current_visited_event_list = None
         self.current_state_target = None
 
+        self.global_fun_decls = []
+
         self.enable_warning = enable_warning
 
     def warning(self, msg, ctx):
@@ -166,9 +169,10 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         new_program = PProgram()
         self.current_pprogram = new_program
         self.visitChildren(ctx)
+        for m in self.current_pprogram.machines:
+            m.fun_decls.update([(f.name, copy.deepcopy(f)) for f in self.global_fun_decls])
         self.current_pprogram = None
         return new_program
-
 
     # Visit a parse tree produced by pParser#annotation_set.
     def visitAnnotation_set(self, ctx):
@@ -280,7 +284,10 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.current_visited_fn = f 
         self.visitChildren(ctx)
         self.current_visited_fn = None
-        self.current_visited_machine.fun_decls[f.name] = f
+        if self.current_visited_machine:
+            self.current_visited_machine.fun_decls[f.name] = f
+        else:
+            self.global_fun_decls.append(f)
         return f
 
 
@@ -526,5 +533,7 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
             self.warning("'.' ignored", ctx)
         return
 
-
+    # Visit a parse tree produced by pParser#stmt_pop.
+    def visitStmt_pop(self, ctx):
+        self.out("this.PopState(); retcode = RAISED_EVENT; return;\n")
 

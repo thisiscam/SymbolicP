@@ -54,3 +54,8 @@ class PProgramCallGraphASTAnnotator(PTypeTranslatorVisitor):
     # Visit a parse tree produced by pParser#stmt_raise_with_arguments.
     def visitStmt_raise_with_arguments(self, ctx):
         self.raise_event_fns.append(self.current_visited_fn)
+
+    # Visit a parse tree produced by pParser#stmt_pop.
+    def visitStmt_pop(self, ctx):
+        self.raise_event_fns.append(self.current_visited_fn)
+
