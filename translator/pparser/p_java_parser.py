@@ -14,9 +14,9 @@ class AntlrSExpCtx(object):
     def getChild(self, i):
         return self.childs[i]
 
-    def accept(self, visitor):
+    def accept(self, visitor, *args, **kwargs):
         if hasattr(visitor, self.visitor_invoke_name):
-            return getattr(visitor, self.visitor_invoke_name)(self)
+            return getattr(visitor, self.visitor_invoke_name)(self, *args, **kwargs)
         else:
             print("Warning: {0} not invoked".format(self.visitor_invoke_name))
 

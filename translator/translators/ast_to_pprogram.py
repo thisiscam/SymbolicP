@@ -46,33 +46,37 @@ TransitionAttributes = namedtuple('TransitionAttributes',
                                   ['fn_name', 'to_state', 'is_named', 'is_push'])
 
 class PTypeMachine(object):
-    pass
+    clonable = False
 PTypeMachine = PTypeMachine()
 class PTypeBool(object):
-    pass
+    clonable = False
 PTypeBool = PTypeBool()
 class PTypeInt(object):
-    pass
+    clonable = False
 PTypeInt = PTypeInt()
 class PTypeEvent(object):
-    pass
+    clonable = False
 PTypeEvent = PTypeEvent()
 class PTypeAny(object):
-    pass
+    clonable = True
 PTypeAny = PTypeAny()
 class PTypeSeq(object):
+    clonable = True
     def __init__(self, T):
         self.T = T
 class PTypeMap(object):
+    clonable = True
     def __init__(self, T1, T2):
         self.T1 = T1
         self.T2 = T2
 class PTypeTuple(object):
+    clonable = True
     def __init__(self, Ts):
         self.Ts = Ts
     def __eq__(self, other):
         return self.Ts == other.Ts
 class PTypeNamedTuple(object):
+    clonable = True
     def __init__(self, NTs):
         self.NTs = OrderedDict(NTs)
     def __eq__(self, other):
