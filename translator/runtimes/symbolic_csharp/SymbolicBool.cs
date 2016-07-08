@@ -1,15 +1,18 @@
 using System;
+using Microsoft.Z3;
 
-public struct SymbolicBool : ISymbolicHashable<SymbolicBool> {
+public struct SymbolicBool {
 	bool concreteValue;
 	BoolExpr abstractValue;
 
 	public SymbolicBool(bool value) {
-		this.concreteValue = value;		
+		this.concreteValue = value;
+		this.abstractValue = null;
 	}
 
 	public SymbolicBool(BoolExpr value) {
-		this.abstractValue = value;		
+		this.concreteValue = false;
+		this.abstractValue = value;
 	}
 
 	public bool IsAbstract() {
@@ -35,13 +38,13 @@ public struct SymbolicBool : ISymbolicHashable<SymbolicBool> {
     { 
     	if(a.IsAbstract()) {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(ctx.MkEq(a.abstractValue, b.abstractValue));
+    			return new SymbolicBool(Z3Wrapper.ctx.MkEq(a.abstractValue, b.abstractValue));
     		} else {
-    			return new SymbolicBool(ctx.MkEq(a.abstractValue, ctx.MkBool(b.concreteValue)));
+    			return new SymbolicBool(Z3Wrapper.ctx.MkEq(a.abstractValue, Z3Wrapper.ctx.MkBool(b.concreteValue)));
     		}
     	} else {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(ctx.MkEq(ctx.MkBool(a.concreteValue), b.abstractValue));
+    			return new SymbolicBool(Z3Wrapper.ctx.MkEq(Z3Wrapper.ctx.MkBool(a.concreteValue), b.abstractValue));
 			} else {
 				return new SymbolicBool(a.concreteValue == b.concreteValue);
 			}
@@ -52,14 +55,13 @@ public struct SymbolicBool : ISymbolicHashable<SymbolicBool> {
     { 
 		if(a.IsAbstract()) {
     		if(b.IsAbstract()) {
-    			Context ctx = a.abstractValue.;
-    			return new SymbolicBool(ctx.MkNot(ctx.MkEq(a.abstractValue, b.abstractValue)));
+    			return new SymbolicBool(Z3Wrapper.ctx.MkNot(Z3Wrapper.ctx.MkEq(a.abstractValue, b.abstractValue)));
     		} else {
-    			return new SymbolicBool(ctx.MkEq(a.abstractValue, ctx.MkBool(!b.concreteValue)));
+    			return new SymbolicBool(Z3Wrapper.ctx.MkEq(a.abstractValue, Z3Wrapper.ctx.MkBool(!b.concreteValue)));
     		}
     	} else {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(ctx.MkEq(ctx.MkBool(!a.concreteValue), b.abstractValue));
+    			return new SymbolicBool(Z3Wrapper.ctx.MkEq(Z3Wrapper.ctx.MkBool(!a.concreteValue), b.abstractValue));
 			} else {
 				return new SymbolicBool(a.concreteValue != b.concreteValue);
 			}
@@ -71,10 +73,10 @@ public struct SymbolicBool : ISymbolicHashable<SymbolicBool> {
 	    return this == other;
 	}
 
-	public override SymbolicInteger GetHashCode()
+	public SymbolicInteger GetHashCode()
 	{
 		if (IsAbstract()) {
-	    	return new SymbolicInteger((IntExpr)ctx.MkITE(this.abstractValue, ctx.MkBV(1, SymbolicInteger.INT_SIZE), ctx.MkBV(0, SymbolicInteger.INT_SIZE)));
+			return new SymbolicInteger((BitVecExpr)Z3Wrapper.ctx.MkITE(this.abstractValue, Z3Wrapper.ctx.MkBV(1, SymbolicInteger.INT_SIZE), Z3Wrapper.ctx.MkBV(0, SymbolicInteger.INT_SIZE)));
 		} else {
 			return new SymbolicInteger(this.concreteValue ? 1 : 0);
 		}

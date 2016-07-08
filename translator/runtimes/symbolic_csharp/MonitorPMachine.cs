@@ -1,5 +1,3 @@
-#include "CommonMacros.h"
-
 using System;
 using System.Collections.Generic;
 
@@ -23,7 +21,7 @@ abstract class MonitorPMachine {
                 if(this.IsGotoTransition[state, e]) {
                     this.states.RemoveRange(0, i);
                 }
-                this.retcode = EXECUTE_FINISHED;
+                this.retcode = Constants.EXECUTE_FINISHED;
                 TransitionFunction transition_fn = this.Transitions[state, e];
                 transition_fn(payload);                
                 return;

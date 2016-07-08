@@ -1,18 +1,18 @@
 using System;
 
-public struct PBool : IPType<PBool> {
-	SymbolicBool value;
+public struct PBool : IPType<PBool>, IEquatable<PBool> {
+	bool value;
 
-	public PBool(SymbolicBool value) {
+	public PBool(bool value) {
 		this.value = value;		
 	}
 
-	public static implicit operator PBool(SymbolicBool value) 
+	public static implicit operator PBool(bool value) 
     { 
         return new PBool(value); 
     } 
 
-    public static implicit operator SymbolicBool(PBool b) 
+    public static implicit operator bool(PBool b) 
     { 
         return b.value; 
     }
@@ -27,12 +27,15 @@ public struct PBool : IPType<PBool> {
         return new PBool(a.value != b.value); 
     }
 
-    public SymbolicBool Equals(PBool other)
+    public bool Equals(PBool other)
 	{
 	    return this.value == other.value;
 	}
-
-	public override SymbolicInteger GetHashCode()
+	public override bool Equals(object obj)
+	{
+	    return obj is PBool && this.value == ((PBool)obj).value;
+	}
+	public override int GetHashCode()
 	{
 	    return this.value.GetHashCode();
 	}

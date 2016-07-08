@@ -43,7 +43,7 @@
     {% endfor %}
     {% for runtime_src in runtime_srcs %}
     <Compile Include="{{ runtime_dir }}/{{ runtime_src }}" >
-      <Link> basic_csharp/{{ runtime_src }} </Link>
+      <Link> symbolic_csharp/{{ runtime_src }} </Link>
     </Compile>
     {% endfor %}
   </ItemGroup>

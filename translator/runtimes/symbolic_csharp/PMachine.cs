@@ -1,5 +1,3 @@
-#include "CommonMacros.h"
-
 using System;
 using System.Collections.Generic;
 
@@ -57,7 +55,7 @@ abstract class PMachine : IPType<PMachine> {
     }
 
     protected void PopState() {
-        this.retcode = EXECUTE_FINISHED;
+        this.retcode = Constants.EXECUTE_FINISHED;
         int current_state = this.states[0];
         this.states.RemoveAt(0);
         if(this.ExitFunctions[current_state] != null) {
@@ -86,7 +84,7 @@ abstract class PMachine : IPType<PMachine> {
         if(this.IsGotoTransition[state, e]) {
             this.states.RemoveRange(0, state_idx);
         }
-        this.retcode = EXECUTE_FINISHED;
+        this.retcode = Constants.EXECUTE_FINISHED;
         TransitionFunction transition_fn = this.Transitions[state, e];
         transition_fn(payload);
     }

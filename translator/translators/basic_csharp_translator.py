@@ -758,3 +758,6 @@ class PProgramToCSharpTranslator(TranslatorBase):
             c2 = ctx.getChild(2).accept(self, **kwargs)
             c4 = ctx.getChild(4).accept(self, **kwargs)
             return "{0},{1}".format(c2, c4)
+
+Translator = PProgramToCSharpTranslator
+
