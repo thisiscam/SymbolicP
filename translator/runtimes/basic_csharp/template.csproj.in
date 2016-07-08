@@ -33,9 +33,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="Microsoft.Z3">
-      <HintPath>..\lib\Microsoft.Z3.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     {% for generated_src in generated_srcs %}
