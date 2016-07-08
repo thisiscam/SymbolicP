@@ -27,6 +27,16 @@ public struct PBool : IPType<PBool>, IEquatable<PBool> {
         return new PBool(a.value != b.value); 
     }
 
+	public static bool operator true(PBool op)
+	{
+		return op.value;
+	}
+
+	public static bool operator false(PBool op)
+	{
+		return op.value;
+	}
+
     public bool Equals(PBool other)
 	{
 	    return this.value == other.value;

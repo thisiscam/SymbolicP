@@ -67,6 +67,16 @@ public struct SymbolicBool {
 			}
     	}    
     }
+		
+	public static bool operator true(SymbolicBool op)
+	{
+		return op.concreteValue;
+	}
+
+	public static bool operator false(SymbolicBool op)
+	{
+		return op.concreteValue;
+	}
 
     public SymbolicBool Equals(SymbolicBool other)
 	{

@@ -30,7 +30,7 @@ public struct SymbolicInteger {
 
     public static implicit operator int(SymbolicInteger integer) 
     { 
-		if(!integer.IsAbstract()) {
+		if(integer.IsAbstract()) {
 			throw new SystemException ("Cannot convert abstract value to int");
         }
 		return integer.concreteValue;
@@ -206,7 +206,7 @@ public struct SymbolicInteger {
         }
     }
 
-    public SymbolicBool Equals(PInteger other)
+	public SymbolicBool Equals(SymbolicInteger other)
     {
         return this == other;
     }

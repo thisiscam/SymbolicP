@@ -1,19 +1,19 @@
 using System;
 
 public struct PInteger : IPType<PInteger>, IEquatable<PInteger> { 
-    int value;
+    SymbolicInteger value;
 
-    public PInteger(int value) 
+    public PInteger(SymbolicInteger value) 
     { 
         this.value = value; 
     } 
 
-    public static implicit operator PInteger(int value) 
+    public static implicit operator PInteger(SymbolicInteger value) 
     { 
         return new PInteger(value); 
     }
 
-	public static implicit operator int(PInteger value) 
+	public static implicit operator SymbolicInteger(PInteger value) 
 	{ 
 		return value.value;
 	}
@@ -76,7 +76,7 @@ public struct PInteger : IPType<PInteger>, IEquatable<PInteger> {
 	{
 	    return obj is PInteger && this.value == ((PInteger)obj).value;
 	}
-	public override int GetHashCode()
+	public SymbolicInteger GetHashCode()
 	{
 	    return this.value.GetHashCode();
 	}
