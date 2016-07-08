@@ -22,7 +22,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     def __init__(self, *args):
         super(PProgramToCSharpTranslator, self).__init__(*args)
-        self.runtime_dir = os.environ.get("RUNTIME_DIR", os.path.realpath(os.path.dirname(__file__) + "../runtimes/basic_csharp"))
+        self.runtime_dir = os.environ.get("RUNTIME_DIR", os.path.realpath(os.path.dirname(__file__) + "/../runtimes/basic_csharp"))
 
     def translate_type(self, T):
         t = None
