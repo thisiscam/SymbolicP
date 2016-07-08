@@ -12,9 +12,9 @@ public struct PBool : IPType<PBool>, IEquatable<PBool> {
         return new PBool(value); 
     } 
 
-    public static implicit operator bool(PBool integer) 
+    public static implicit operator bool(PBool b) 
     { 
-        return integer.value; 
+        return b.value; 
     }
 
 	public static PBool operator ==(PBool a, PBool b) 

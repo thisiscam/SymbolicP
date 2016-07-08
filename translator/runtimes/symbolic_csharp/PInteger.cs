@@ -1,21 +1,16 @@
 using System;
 
-public struct PInteger : IPType<PInteger>, IEquatable<PInteger> { 
-    int value;
+public struct PInteger : IPType<PInteger> { 
+    SymbolicInteger value;
 
-    public PInteger(int value) 
+    public PInteger(SymbolicInteger value) 
     { 
         this.value = value; 
     } 
 
-    public static implicit operator PInteger(int value) 
+    public static implicit operator PInteger(SymbolicInteger value) 
     { 
         return new PInteger(value); 
-    } 
-
-    public static implicit operator int(PInteger integer) 
-    { 
-        return integer.value; 
     }
 
     public static PInteger operator +(PInteger a, PInteger b) 
@@ -68,15 +63,12 @@ public struct PInteger : IPType<PInteger>, IEquatable<PInteger> {
         return new PBool(a.value <= b.value); 
     }
 
-    public bool Equals(PInteger other)
+    public SymbolicBool Equals(PInteger other)
 	{
 	    return this.value == other.value;
 	}
-	public override bool Equals(object obj)
-	{
-	    return obj is PInteger && this.value == ((PInteger)obj).value;
-	}
-	public override int GetHashCode()
+
+	public override SymbolicInteger GetHashCode()
 	{
 	    return this.value.GetHashCode();
 	}

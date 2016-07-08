@@ -1,5 +1,7 @@
 from .ast_to_pprogram import *
 from .translator_base import TranslatorBase
+from jinja2 import Template, Environment, FileSystemLoader
+import glob, shutil, uuid
 
 class PProgramToCSharpTranslator(TranslatorBase):
     type_to_csharp_type_name_map = {
@@ -20,6 +22,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     def __init__(self, *args):
         super(PProgramToCSharpTranslator, self).__init__(*args)
+        self.runtime_dir = os.environ.get("RUNTIME_DIR", "runtimes/basic_csharp")
 
     def translate_type(self, T):
         t = None
@@ -43,8 +46,17 @@ class PProgramToCSharpTranslator(TranslatorBase):
                 rtransitions_map[(state, machine.state_decls.get(to_state), fn_name, is_named, is_push)].append(on_e)
         return rtransitions_map
 
-    def translate_state(self, machine, state):
-        return "Machine{0}_S_{1}".format(machine.name, state.name)
+    def translate_state(self, machine, state, full_qualified=True):
+        if full_qualified:
+            return "Constants.Machine{0}_S_{1}".format(machine.name, state.name)
+        else:
+            return "Machine{0}_S_{1}".format(machine.name, state.name)
+
+    def translate_event(self, event, full_qualified=True):
+        if full_qualified:
+            return "Constants.{0}".format(event)
+        else:
+            return event
 
     def translate_default_exp(self, T):
         r = None
@@ -94,7 +106,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
     }
     def out_check_raise_exit(self, ret_type):
         default_exp = self.raise_return_type_to_default_exp_map.get(ret_type, "null")
-        self.out(" if(retcode == RAISED_EVENT) {{ return {0}; }}\n".format(default_exp))
+        self.out(" if(retcode == Constants.RAISED_EVENT) {{ return {0}; }}\n".format(default_exp))
 
     def out_fn_body(self, machine, fn_name):
         fn = machine.fun_decls[fn_name]
@@ -128,27 +140,39 @@ class PProgramToCSharpTranslator(TranslatorBase):
             self.out_fn_body(machine, fn_name)
         self.out("}\n")
 
+    def create_csproj(self):
+        runtime_srcs =  [os.path.basename(src) for src in glob.glob("{0}/*.cs".format(self.runtime_dir))]
+        generated_srcs = [os.path.basename(src) for src in glob.glob("{0}/*.cs".format(self.out_dir))]
+        env = Environment(loader=FileSystemLoader(self.runtime_dir))
+        csproj_template = env.get_template("template.csproj.in")
+        with open("{0}/{0}.csproj".format(self.out_dir), "w+") as csprojf:
+            csprojf.write(csproj_template.render(generated_srcs=generated_srcs, 
+                                                 runtime_srcs=runtime_srcs, 
+                                                 project_name=self.out_dir, 
+                                                 runtime_dir=os.path.abspath(self.runtime_dir),
+                                                 guid=str(uuid.uuid1()).upper()))
+
     def translate(self):
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
         # create ProjectMacros
-        with open(os.path.join(self.out_dir, "ProjectMacros.h"), 'w+') as macrosf:
+        with open(os.path.join(self.out_dir, "ProjectConstants.cs"), 'w+') as macrosf:
             self.stream = macrosf
-            self.out('#include "CommonMacros.h"\n\n')
+            self.out("public partial class Constants {\n")
             for i, e in enumerate(self.pprogram.events):
                 if e != "EVENT_NULL":
-                    self.out("#define {0} {1}\n".format(e, i))
+                    self.out("public const int {0} = {1};\n".format(e, i))
             for machine in self.pprogram.machines:
                 self.out("\n")
                 for i, s in enumerate(machine.state_decls.values()):
-                    self.out("#define {0} {1}\n".format(self.translate_state(machine, s), i))
+                    self.out("public const int {0} = {1};\n".format(self.translate_state(machine, s, full_qualified=False), i))
+            self.out("}")
         # generated .cs files for each machine
         for machine in self.pprogram.machines:
             self.current_visited_machine = machine
             classname = "Machine" + machine.name
             with open(os.path.join(self.out_dir, classname + ".cs"), 'w+') as csharpsrcf:
                 self.stream = csharpsrcf
-                self.out('#include "ProjectMacros.h"\n\n')
                 self.out("using System;\nusing System.Collections.Generic;\nusing System.Diagnostics;\n\n")
                 base_clase = "MonitorPMachine" if machine.is_spec else "PMachine"
                 self.out("class {0} : {1} {{\n".format(classname, base_clase))
@@ -198,10 +222,10 @@ class PProgramToCSharpTranslator(TranslatorBase):
                         else:
                             transition_fn_name = "{0}_on_{1}".format(state.name, "_".join(on_es))
                     for on_e in on_es:
-                        self.out("this.Transitions[{0},{1}] = {2};\n".format(self.translate_state(machine, state), on_e, transition_fn_name))
+                        self.out("this.Transitions[{0},{1}] = {2};\n".format(self.translate_state(machine, state), self.translate_event(on_e), transition_fn_name))
                 for state in machine.state_decls.values():
                     for ignored_event in state.ignored_events:
-                        self.out("this.Transitions[{0},{1}] = Transition_Ignore;\n".format(self.translate_state(machine, state), ignored_event))
+                        self.out("this.Transitions[{0},{1}] = Transition_Ignore;\n".format(self.translate_state(machine, state), self.translate_event(ignored_event)))
                 # Exit Functions
                 self.out("this.ExitFunctions = new ExitFunction[{0}];\n".format(len(machine.state_decls)))
                 for state in machine.state_decls.values():
@@ -244,7 +268,6 @@ class PProgramToCSharpTranslator(TranslatorBase):
                 if machine.is_main:
                     with open(os.path.join(self.out_dir, "MachineController.cs"), "w+") as ms:
                         self.stream = ms
-                        self.out('#include "ProjectMacros.h"\n\n')
                         self.out("class MachineController {\n\n")
                         spec_machines = filter(lambda m: m.is_spec, self.pprogram.machines)
                         for spec_machine in spec_machines:
@@ -259,13 +282,14 @@ class PProgramToCSharpTranslator(TranslatorBase):
                             self.out("public static void AnnounceEvent(int e, IPType payload) {\n")
                             self.out("switch(e) {")
                             for observed_event, observing_machines in self.pprogram.observes_map.items():
-                                self.out("case {0}: {{\n".format(observed_event))
+                                self.out("case {0}: {{\n".format(self.translate_event(observed_event)))
                                 for m in observing_machines:
-                                    self.out("{0}.ServeEvent({1}, payload);\n".format(m.name.lower(), observed_event))
+                                    self.out("{0}.ServeEvent({1}, payload);\n".format(m.name.lower(), self.translate_event(observed_event)))
                                 self.out("break;\n")
                                 self.out("}\n")
                             self.out("}\n}\n")
                         self.out("}\n")
+        self.create_csproj()
     
     def allocate_local_var(self):
         var = "tmp{0}".format(self.tmp_var_cnt)
@@ -310,7 +334,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#stmt_pop.
     def visitStmt_pop(self, ctx, **kwargs):
-        self.out("this.PopState(); retcode = RAISED_EVENT; return;\n")
+        self.out("this.PopState(); retcode = Constants.RAISED_EVENT; return;\n")
 
     # Visit a parse tree produced by pParser#stmt_stmt_list.
     def visitStmt_stmt_list(self, ctx, **kwargs):
@@ -444,13 +468,13 @@ class PProgramToCSharpTranslator(TranslatorBase):
     # Visit a parse tree produced by pParser#stmt_raise.
     def visitStmt_raise(self, ctx, **kwargs):
         c1 = ctx.getChild(1).accept(self, **kwargs)
-        self.out("this.RaiseEvent({0}, null); retcode = RAISED_EVENT; return;\n".format(c1))
+        self.out("this.RaiseEvent({0}, null); retcode = Constants.RAISED_EVENT; return;\n".format(c1))
 
     # Visit a parse tree produced by pParser#stmt_raise_with_arguments.
     def visitStmt_raise_with_arguments(self, ctx, **kwargs):
         c1 = ctx.getChild(1).accept(self, **kwargs)
         c3 = ctx.getChild(3).accept(self, **kwargs)
-        self.out("this.RaiseEvent({0}, {1}); retcode = RAISED_EVENT; return;\n".format(c1, c3))
+        self.out("this.RaiseEvent({0}, {1}); retcode = Constants.RAISED_EVENT; return;\n".format(c1, c3))
 
 
     # Visit a parse tree produced by pParser#stmt_send.
@@ -594,8 +618,10 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#exp_id.
     def visitExp_id(self, ctx, **kwargs):
-        return self.exp_emit_do_copy(ctx, ctx.getChild(0).getText(), **kwargs)
-        
+        if ctx.exp_type is PTypeEvent:
+            return self.translate_event(ctx.getChild(0).getText())
+        else:
+            return self.exp_emit_do_copy(ctx, ctx.getChild(0).getText(), **kwargs)
 
     # Visit a parse tree produced by pParser#exp_getattr.
     def visitExp_getattr(self, ctx, **_kwargs):
