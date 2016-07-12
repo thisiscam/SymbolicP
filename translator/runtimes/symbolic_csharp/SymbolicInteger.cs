@@ -23,7 +23,19 @@ public struct SymbolicInteger {
 		return this.abstractValue != null;
 	}
 
-    public static implicit operator SymbolicInteger(int value)
+	public int ConcreteValue {
+		get { 
+			return concreteValue;
+		}
+	}
+
+	public BitVecExpr AbstractValue { 
+		get { 
+			return abstractValue;
+		} 
+	}
+
+	public static implicit operator SymbolicInteger(int value)
     { 
         return new SymbolicInteger(value);
     }
@@ -31,22 +43,23 @@ public struct SymbolicInteger {
     public static implicit operator int(SymbolicInteger integer) 
     { 
 		if(integer.IsAbstract()) {
-			throw new SystemException ("Cannot convert abstract value to int");
+			return SymbolicEngine.SE.NextIndex(integer.abstractValue);
+        } else {
+            return integer.concreteValue;
         }
-		return integer.concreteValue;
     }
 
     public static SymbolicInteger operator +(SymbolicInteger a, SymbolicInteger b) 
     {
         if(a.IsAbstract()) {
             if(b.IsAbstract()) {
-                return new SymbolicInteger(Z3Wrapper.ctx.MkBVAdd(a.abstractValue, b.abstractValue));
+                return new SymbolicInteger(SymbolicEngine.ctx.MkBVAdd(a.abstractValue, b.abstractValue));
             } else {
-                return new SymbolicInteger(Z3Wrapper.ctx.MkBVAdd(a.abstractValue, Z3Wrapper.ctx.MkBV(b.concreteValue, INT_SIZE)));
+                return new SymbolicInteger(SymbolicEngine.ctx.MkBVAdd(a.abstractValue, SymbolicEngine.ctx.MkBV(b.concreteValue, INT_SIZE)));
             }
         } else {
             if(b.IsAbstract()) {
-                return new SymbolicInteger(Z3Wrapper.ctx.MkBVAdd(Z3Wrapper.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
+                return new SymbolicInteger(SymbolicEngine.ctx.MkBVAdd(SymbolicEngine.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
             } else {
                 return new SymbolicInteger(a.concreteValue + b.concreteValue); 
             }
@@ -57,13 +70,13 @@ public struct SymbolicInteger {
     { 
         if(a.IsAbstract()) {
             if(b.IsAbstract()) {
-                return new SymbolicInteger(Z3Wrapper.ctx.MkBVSub(a.abstractValue, b.abstractValue));
+                return new SymbolicInteger(SymbolicEngine.ctx.MkBVSub(a.abstractValue, b.abstractValue));
             } else {
-                return new SymbolicInteger(Z3Wrapper.ctx.MkBVSub(a.abstractValue, Z3Wrapper.ctx.MkBV(b.concreteValue, INT_SIZE)));
+                return new SymbolicInteger(SymbolicEngine.ctx.MkBVSub(a.abstractValue, SymbolicEngine.ctx.MkBV(b.concreteValue, INT_SIZE)));
             }
         } else {
             if(b.IsAbstract()) {
-                return new SymbolicInteger(Z3Wrapper.ctx.MkBVSub(Z3Wrapper.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
+                return new SymbolicInteger(SymbolicEngine.ctx.MkBVSub(SymbolicEngine.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
             } else {
                 return new SymbolicInteger(a.concreteValue - b.concreteValue); 
             }
@@ -74,13 +87,13 @@ public struct SymbolicInteger {
     { 
         if(a.IsAbstract()) {
             if(b.IsAbstract()) {
-                return new SymbolicInteger(Z3Wrapper.ctx.MkBVSDiv(a.abstractValue, b.abstractValue));
+                return new SymbolicInteger(SymbolicEngine.ctx.MkBVSDiv(a.abstractValue, b.abstractValue));
             } else {
-                return new SymbolicInteger(Z3Wrapper.ctx.MkBVSDiv(a.abstractValue, Z3Wrapper.ctx.MkBV(b.concreteValue, INT_SIZE)));
+                return new SymbolicInteger(SymbolicEngine.ctx.MkBVSDiv(a.abstractValue, SymbolicEngine.ctx.MkBV(b.concreteValue, INT_SIZE)));
             }
         } else {
             if(b.IsAbstract()) {
-                return new SymbolicInteger(Z3Wrapper.ctx.MkBVSDiv(Z3Wrapper.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
+                return new SymbolicInteger(SymbolicEngine.ctx.MkBVSDiv(SymbolicEngine.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
             } else {
                 return new SymbolicInteger(a.concreteValue / b.concreteValue); 
             }
@@ -91,13 +104,13 @@ public struct SymbolicInteger {
     { 
         if(a.IsAbstract()) {
             if(b.IsAbstract()) {
-                return new SymbolicInteger(Z3Wrapper.ctx.MkBVMul(a.abstractValue, b.abstractValue));
+                return new SymbolicInteger(SymbolicEngine.ctx.MkBVMul(a.abstractValue, b.abstractValue));
             } else {
-                return new SymbolicInteger(Z3Wrapper.ctx.MkBVMul(a.abstractValue, Z3Wrapper.ctx.MkBV(b.concreteValue, INT_SIZE)));
+                return new SymbolicInteger(SymbolicEngine.ctx.MkBVMul(a.abstractValue, SymbolicEngine.ctx.MkBV(b.concreteValue, INT_SIZE)));
             }
         } else {
             if(b.IsAbstract()) {
-                return new SymbolicInteger(Z3Wrapper.ctx.MkBVMul(Z3Wrapper.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
+                return new SymbolicInteger(SymbolicEngine.ctx.MkBVMul(SymbolicEngine.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
             } else {
                 return new SymbolicInteger(a.concreteValue * b.concreteValue); 
             }
@@ -108,13 +121,13 @@ public struct SymbolicInteger {
     { 
         if(a.IsAbstract()) {
             if(b.IsAbstract()) {
-                return new SymbolicBool(Z3Wrapper.ctx.MkEq(a.abstractValue, b.abstractValue));
+                return new SymbolicBool(SymbolicEngine.ctx.MkEq(a.abstractValue, b.abstractValue));
             } else {
-                return new SymbolicBool(Z3Wrapper.ctx.MkEq(a.abstractValue, Z3Wrapper.ctx.MkBV(b.concreteValue, INT_SIZE)));
+                return new SymbolicBool(SymbolicEngine.ctx.MkEq(a.abstractValue, SymbolicEngine.ctx.MkBV(b.concreteValue, INT_SIZE)));
             }
         } else {
             if(b.IsAbstract()) {
-                return new SymbolicBool(Z3Wrapper.ctx.MkEq(Z3Wrapper.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
+                return new SymbolicBool(SymbolicEngine.ctx.MkEq(SymbolicEngine.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
             } else {
                 return new SymbolicBool(a.concreteValue == b.concreteValue); 
             }
@@ -125,13 +138,13 @@ public struct SymbolicInteger {
     { 
         if(a.IsAbstract()) {
             if(b.IsAbstract()) {
-                return new SymbolicBool(Z3Wrapper.ctx.MkNot(Z3Wrapper.ctx.MkEq(a.abstractValue, b.abstractValue)));
+                return new SymbolicBool(SymbolicEngine.ctx.MkNot(SymbolicEngine.ctx.MkEq(a.abstractValue, b.abstractValue)));
             } else {
-                return new SymbolicBool(Z3Wrapper.ctx.MkNot(Z3Wrapper.ctx.MkEq(a.abstractValue, Z3Wrapper.ctx.MkBV(b.concreteValue, INT_SIZE))));
+                return new SymbolicBool(SymbolicEngine.ctx.MkNot(SymbolicEngine.ctx.MkEq(a.abstractValue, SymbolicEngine.ctx.MkBV(b.concreteValue, INT_SIZE))));
             }
         } else {
             if(b.IsAbstract()) {
-                return new SymbolicBool(Z3Wrapper.ctx.MkNot(Z3Wrapper.ctx.MkEq(Z3Wrapper.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue)));
+                return new SymbolicBool(SymbolicEngine.ctx.MkNot(SymbolicEngine.ctx.MkEq(SymbolicEngine.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue)));
             } else {
                 return new SymbolicBool(a.concreteValue != b.concreteValue); 
             }
@@ -142,13 +155,13 @@ public struct SymbolicInteger {
     { 
         if(a.IsAbstract()) {
             if(b.IsAbstract()) {
-                return new SymbolicBool(Z3Wrapper.ctx.MkBVSGT(a.abstractValue, b.abstractValue));
+                return new SymbolicBool(SymbolicEngine.ctx.MkBVSGT(a.abstractValue, b.abstractValue));
             } else {
-                return new SymbolicBool(Z3Wrapper.ctx.MkBVSGT(a.abstractValue, Z3Wrapper.ctx.MkBV(b.concreteValue, INT_SIZE)));
+                return new SymbolicBool(SymbolicEngine.ctx.MkBVSGT(a.abstractValue, SymbolicEngine.ctx.MkBV(b.concreteValue, INT_SIZE)));
             }
         } else {
             if(b.IsAbstract()) {
-                return new SymbolicBool(Z3Wrapper.ctx.MkBVSGT(Z3Wrapper.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
+                return new SymbolicBool(SymbolicEngine.ctx.MkBVSGT(SymbolicEngine.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
             } else {
                 return new SymbolicBool(a.concreteValue > b.concreteValue); 
             }
@@ -159,13 +172,13 @@ public struct SymbolicInteger {
     { 
         if(a.IsAbstract()) {
             if(b.IsAbstract()) {
-                return new SymbolicBool(Z3Wrapper.ctx.MkBVSGE(a.abstractValue, b.abstractValue));
+                return new SymbolicBool(SymbolicEngine.ctx.MkBVSGE(a.abstractValue, b.abstractValue));
             } else {
-                return new SymbolicBool(Z3Wrapper.ctx.MkBVSGE(a.abstractValue, Z3Wrapper.ctx.MkBV(b.concreteValue, INT_SIZE)));
+                return new SymbolicBool(SymbolicEngine.ctx.MkBVSGE(a.abstractValue, SymbolicEngine.ctx.MkBV(b.concreteValue, INT_SIZE)));
             }
         } else {
             if(b.IsAbstract()) {
-                return new SymbolicBool(Z3Wrapper.ctx.MkBVSGE(Z3Wrapper.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
+                return new SymbolicBool(SymbolicEngine.ctx.MkBVSGE(SymbolicEngine.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
             } else {
                 return new SymbolicBool(a.concreteValue >= b.concreteValue); 
             }
@@ -176,13 +189,13 @@ public struct SymbolicInteger {
     { 
         if(a.IsAbstract()) {
             if(b.IsAbstract()) {
-                return new SymbolicBool(Z3Wrapper.ctx.MkBVSLT(a.abstractValue, b.abstractValue));
+                return new SymbolicBool(SymbolicEngine.ctx.MkBVSLT(a.abstractValue, b.abstractValue));
             } else {
-                return new SymbolicBool(Z3Wrapper.ctx.MkBVSLT(a.abstractValue, Z3Wrapper.ctx.MkBV(b.concreteValue, INT_SIZE)));
+                return new SymbolicBool(SymbolicEngine.ctx.MkBVSLT(a.abstractValue, SymbolicEngine.ctx.MkBV(b.concreteValue, INT_SIZE)));
             }
         } else {
             if(b.IsAbstract()) {
-                return new SymbolicBool(Z3Wrapper.ctx.MkBVSLT(Z3Wrapper.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
+                return new SymbolicBool(SymbolicEngine.ctx.MkBVSLT(SymbolicEngine.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
             } else {
                 return new SymbolicBool(a.concreteValue < b.concreteValue); 
             }
@@ -193,13 +206,13 @@ public struct SymbolicInteger {
     { 
         if(a.IsAbstract()) {
             if(b.IsAbstract()) {
-                return new SymbolicBool(Z3Wrapper.ctx.MkBVSLE(a.abstractValue, b.abstractValue));
+                return new SymbolicBool(SymbolicEngine.ctx.MkBVSLE(a.abstractValue, b.abstractValue));
             } else {
-                return new SymbolicBool(Z3Wrapper.ctx.MkBVSLE(a.abstractValue, Z3Wrapper.ctx.MkBV(b.concreteValue, INT_SIZE)));
+                return new SymbolicBool(SymbolicEngine.ctx.MkBVSLE(a.abstractValue, SymbolicEngine.ctx.MkBV(b.concreteValue, INT_SIZE)));
             }
         } else {
             if(b.IsAbstract()) {
-                return new SymbolicBool(Z3Wrapper.ctx.MkBVSLE(Z3Wrapper.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
+                return new SymbolicBool(SymbolicEngine.ctx.MkBVSLE(SymbolicEngine.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
             } else {
                 return new SymbolicBool(a.concreteValue <= b.concreteValue); 
             }
