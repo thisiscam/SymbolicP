@@ -1,5 +1,3 @@
 antlr4-python2-runtime==4.5.3
 ddt==1.0.3
-Jinja2==2.8
-MarkupSafe==0.23
 ordered-set==2.0.1

@@ -1,6 +1,6 @@
 from .ast_to_pprogram import *
 from .translator_base import TranslatorBase
-from jinja2 import Template, Environment, FileSystemLoader
+from quik import FileLoader
 import glob, shutil, uuid
 
 class PProgramToCSharpTranslator(TranslatorBase):
@@ -143,15 +143,19 @@ class PProgramToCSharpTranslator(TranslatorBase):
     def create_csproj(self):
         runtime_srcs =  [os.path.basename(src) for src in glob.glob("{0}/*.cs".format(self.runtime_dir))]
         generated_srcs = [os.path.basename(src) for src in glob.glob("{0}/*.cs".format(self.out_dir))]
-        env = Environment(loader=FileSystemLoader(self.runtime_dir))
-        csproj_template = env.get_template("template.csproj.in")
+        loader = FileLoader(self.runtime_dir)
+        csproj_template = loader.load_template("template.csproj.in")
         with open("{0}/{0}.csproj".format(self.out_dir), "w+") as csprojf:
-            csprojf.write(csproj_template.render(generated_srcs=generated_srcs, 
-                                                 runtime_srcs=runtime_srcs, 
-                                                 project_name=self.out_dir, 
-                                                 runtime_dir=os.path.abspath(self.runtime_dir),
-                                                 lib_dir=os.path.abspath(os.path.dirname(__file__) + "/../lib"),
-                                                 guid=str(uuid.uuid1()).upper()))
+            csprojf.write(csproj_template.render(
+                {
+                    'generated_srcs': generated_srcs, 
+                    'runtime_srcs': runtime_srcs, 
+                    'project_name': self.out_dir, 
+                    'runtime_dir': os.path.abspath(self.runtime_dir),
+                    'lib_dir': os.path.abspath(os.path.dirname(__file__) + "/../lib"),
+                    'guid': str(uuid.uuid1()).upper()
+                }
+            ))
 
     def translate(self):
         if not os.path.exists(self.out_dir):
