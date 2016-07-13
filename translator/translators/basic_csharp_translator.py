@@ -9,7 +9,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
         PTypeBool: "PBool",
         PTypeInt: "PInteger",
         PTypeMachine: "PMachine",
-        PTypeEvent: "PInteger"
+        PTypeEvent: "PInteger",
+        PTypeAny: "IPType"
     }
 
     type_to_default_exp_map = {
@@ -126,7 +127,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
         fn_node = machine.fun_decls[fn_name]
         ret_type = fn_node.ret_type
         if fn_node.is_transition_handler:
-            self.out("private {0} {1} (IPType _payload) {{\n".format(self.translate_type(ret_type), fn_name))
+            self.out("private {0} {1} ({2} _payload) {{\n".format(self.translate_type(ret_type), fn_name, self.translate_type(PTypeAny)))
             self.out_arg_cast_for_function(machine, fn_name)
         else:
             self.out("private {0} {1} ({2}) {{\n".format(self.translate_type(ret_type), fn_name, 
@@ -241,7 +242,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
                     self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
                 else:
                     self.out("}\n")
-                    self.out("public override void StartMachine (Scheduler s, IPType payload) {\n")
+                    self.out("public override void StartMachine (Scheduler s, {0} payload) {{\n".format(self.translate_type(PTypeAny)))
                     self.out("base.StartMachine(s, payload);\n")
                     self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
                 self.out("}\n")
@@ -251,7 +252,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
                     if to_state or len(machine.fun_decls[with_fn_name].params) != 1:
                         if is_named or not with_fn_name:
                             transition_fn_name = "{0}_on_{1}".format(from_state.name, "_".join(on_es))
-                            self.out("private void {0} (IPType payload) {{\n".format(transition_fn_name))
+                            self.out("private void {0} ({1} payload) {{\n".format(transition_fn_name, self.translate_type(PTypeAny)))
                             if is_push:
                                 if with_fn_name:
                                     self.out_fn_call(machine, with_fn_name, last_stmt=False)
@@ -284,7 +285,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
                         self.out("public static PMachine CreateMainMachine() {{\nreturn new {0}();\n}}\n\n".format(classname))
                         if len(self.pprogram.observes_map) > 0:
                             self.out("/* Observers */\n")
-                            self.out("public static void AnnounceEvent(int e, IPType payload) {\n")
+                            self.out("public static void AnnounceEvent({0} e, {1} payload) {{\n".format(self.translate_type(PTypeEvent), self.translate_type(PTypeAny)))
                             self.out("switch(e) {")
                             for observed_event, observing_machines in self.pprogram.observes_map.items():
                                 self.out("case {0}: {{\n".format(self.translate_event(observed_event)))
