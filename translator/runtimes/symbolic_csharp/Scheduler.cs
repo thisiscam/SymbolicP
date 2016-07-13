@@ -104,7 +104,7 @@ class Scheduler {
     }
 
     static int Main(string[] args) {
-        int maxExplorationSteps = 20;
+        int maxExplorationSteps = 100;
         Random rng = new Random();
 
         int iteration = 0;

@@ -153,7 +153,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
                     'runtime_srcs': runtime_srcs, 
                     'project_name': self.out_dir, 
                     'runtime_dir': os.path.abspath(self.runtime_dir),
-                    'lib_dir': os.path.abspath(os.path.dirname(__file__) + "/../lib"),
+                    'lib_dir': os.path.abspath(os.path.dirname(__file__) + "/../libraries"),
                     'guid': str(uuid.uuid1()).upper()
                 }
             ))
