@@ -6,7 +6,7 @@ abstract class PMachine : IPType<PMachine> {
     protected delegate void ExitFunction();
 
     protected int retcode;
-    protected List<int> states = new List<int>();
+	protected List<SymbolicInteger> states = new List<SymbolicInteger>();
 
     private Scheduler scheduler;
 
@@ -24,9 +24,9 @@ abstract class PMachine : IPType<PMachine> {
     }
     
     /* Returns the index that can serve this event */
-    public int CanServeEvent(int e) {
-        for(int i=0; i < this.states.Count; i++) {
-            int state = this.states[i];
+	public SymbolicInteger CanServeEvent(PInteger e) {
+		for(SymbolicInteger i=0; i < this.states.Count; i++) {
+			SymbolicInteger state = this.states[i];
             if(!this.DeferedSet[state, e] && this.Transitions[state, e] != null) {
                 return i;
             }
@@ -34,9 +34,9 @@ abstract class PMachine : IPType<PMachine> {
         return -1;
     }
 
-    protected void RaiseEvent(int e, IPType payload) {
-        for(int i=0; i < this.states.Count; i++) {
-            int state = this.states[i];
+    protected void RaiseEvent(PInteger e, IPType payload) {
+		for(SymbolicInteger i=0; i < this.states.Count; i++) {
+			SymbolicInteger state = this.states[i];
             if(this.Transitions[state, e] != null) {
                 this.RunStateMachine(i, e, payload);
                 return;
@@ -45,7 +45,7 @@ abstract class PMachine : IPType<PMachine> {
         throw new SystemException("Unhandled event");
     }
 
-    protected void SendMsg(PMachine other, int e, IPType payload) {
+    protected void SendMsg(PMachine other, PInteger e, IPType payload) {
         this.scheduler.SendMsg(this, other, e, payload);
     }
 
@@ -56,31 +56,31 @@ abstract class PMachine : IPType<PMachine> {
 
     protected void PopState() {
         this.retcode = Constants.EXECUTE_FINISHED;
-        int current_state = this.states[0];
+		SymbolicInteger current_state = this.states[0];
         this.states.RemoveAt(0);
         if(this.ExitFunctions[current_state] != null) {
             this.ExitFunctions[current_state]();
         }
     }
 
-    protected bool RandomBool() {
+	protected SymbolicBool RandomBool() {
         return this.scheduler.RandomBool();
     }
 
-    protected void Assert(bool cond, string msg) {
+	protected void Assert(SymbolicBool cond, string msg) {
         if(!cond) {
             throw new SystemException(msg);
         }
     }
 
-    protected void Assert(bool cond) {
+	protected void Assert(SymbolicBool cond) {
         if(!cond) {
             throw new SystemException("Assertion failure");
         }
     }
 
-    public void RunStateMachine(int state_idx, int e, IPType payload) {
-        int state = this.states[state_idx];
+	public void RunStateMachine(SymbolicInteger state_idx, PInteger e, IPType payload) {
+		SymbolicInteger state = this.states[state_idx];
         if(this.IsGotoTransition[state, e]) {
             this.states.RemoveRange(0, state_idx);
         }
@@ -96,4 +96,8 @@ abstract class PMachine : IPType<PMachine> {
     public PMachine DeepCopy() {
         return this;
     }
+
+	public SymbolicInteger GetHashCode() {
+		return new SymbolicInteger(base.GetHashCode ());
+	}
 }

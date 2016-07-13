@@ -3,6 +3,7 @@ using Microsoft.Z3;
 
 public struct SymbolicInteger {
     public const int INT_SIZE = 32;
+	public static readonly Sort bitVecSort = SymbolicEngine.ctx.MkBitVecSort(SymbolicInteger.INT_SIZE);
 
     int concreteValue;
     BitVecExpr abstractValue;
@@ -219,6 +220,23 @@ public struct SymbolicInteger {
         }
     }
 
+	public static SymbolicInteger operator ^(SymbolicInteger a, SymbolicInteger b) 
+	{ 
+		if(a.IsAbstract()) {
+			if(b.IsAbstract()) {
+				return new SymbolicInteger(SymbolicEngine.ctx.MkBVXOR(a.abstractValue, b.abstractValue));
+			} else {
+				return new SymbolicInteger(SymbolicEngine.ctx.MkBVXOR(a.abstractValue, SymbolicEngine.ctx.MkBV(b.concreteValue, INT_SIZE)));
+			}
+		} else {
+			if(b.IsAbstract()) {
+				return new SymbolicInteger(SymbolicEngine.ctx.MkBVXOR(SymbolicEngine.ctx.MkBV(a.concreteValue, INT_SIZE), b.abstractValue));
+			} else {
+				return new SymbolicInteger(a.concreteValue ^ b.concreteValue); 
+			}
+		}
+	}
+
 	public SymbolicBool Equals(SymbolicInteger other)
     {
         return this == other;
@@ -228,4 +246,9 @@ public struct SymbolicInteger {
     {
 		return this;
     }
+
+	public override string ToString ()
+	{
+		return string.Format ("[SymbolicInteger: ConcreteValue={0}, AbstractValue={1}]", ConcreteValue, AbstractValue);
+	}
 }

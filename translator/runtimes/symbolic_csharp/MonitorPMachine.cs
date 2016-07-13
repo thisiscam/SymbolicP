@@ -6,7 +6,7 @@ abstract class MonitorPMachine {
     protected delegate void ExitFunction();
 
 	protected int retcode;
-    protected List<int> states = new List<int>();
+	protected List<SymbolicInteger> states = new List<SymbolicInteger>();
 
     protected bool[,] DeferedSet;
 
@@ -14,9 +14,9 @@ abstract class MonitorPMachine {
     protected TransitionFunction[,] Transitions;
     protected ExitFunction[] ExitFunctions;
 
-    public void ServeEvent(int e, IPType payload) {
-        for(int i=0; i < this.states.Count; i++) {
-            int state = this.states[i];
+	public void ServeEvent(SymbolicInteger e, IPType payload) {
+		for(SymbolicInteger i=0; i < this.states.Count; i++) {
+			SymbolicInteger state = this.states[i];
             if(this.Transitions[state, e] != null) {
                 if(this.IsGotoTransition[state, e]) {
                     this.states.RemoveRange(0, i);
@@ -34,13 +34,13 @@ abstract class MonitorPMachine {
         return;
     }
 
-    protected void Assert(bool cond, string msg) {
+	protected void Assert(SymbolicBool cond, string msg) {
         if(!cond) {
             throw new SystemException(msg);
         }
     }
 
-    protected void Assert(bool cond) {
+	protected void Assert(SymbolicBool cond) {
         if(!cond) {
             throw new SystemException("Assertion failure");
         }

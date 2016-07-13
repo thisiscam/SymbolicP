@@ -43,16 +43,12 @@ public struct BoolPathConstraint : IPathConstraint {
 				break;
 			}
 		}
+		solver.Push();
+		solver.Assert(this.explored ? abstractVal : SymbolicEngine.ctx.MkNot(abstractVal));
 	}
 	public bool Done { get { return done; }}
 	
 	public bool CurrentBool(Solver solver, BoolExpr abstractVal) { 
-		solver.Push();
-		if(explored) {
-			solver.Assert(abstractVal);
-		} else {
-			solver.Assert(SymbolicEngine.ctx.MkNot(abstractVal));
-		}
 		return explored;
 	}
 
@@ -84,27 +80,31 @@ public struct IntPathConstraint : IPathConstraint {
 		notEqs = new System.Collections.Generic.List<BoolExpr> ();
 		var status = solver.Check();
 		Debug.Assert(status == Status.SATISFIABLE);
-		BitVecNum result = (BitVecNum)solver.Model.Evaluate(abstractVal);
+		var tmp = solver.Model.Evaluate (abstractVal);
+		BitVecNum result = (BitVecNum)tmp;
 		var eq = SymbolicEngine.ctx.MkEq(abstractVal, result);
 		var not_eq = SymbolicEngine.ctx.MkNot(eq);
 		currentEq = eq;
 		currentVal = result.Int;
-		if(solver.Check(not_eq) == Status.UNSATISFIABLE) {
+		solver.Push ();
+		solver.Assert (not_eq);
+		if(solver.Check () == Status.UNSATISFIABLE) {
 			nextVal = null;
 		} else {
 			notEqs.Add(not_eq);
 			nextVal = (BitVecNum)solver.Model.Evaluate(abstractVal);
 		}
+		solver.Pop ();
+		solver.Assert(currentEq);
+		solver.Push();
 	}
-	public bool Done { get { return nextVal != null; }}
+	public bool Done { get { return nextVal == null; }}
 
 	public bool CurrentBool(Solver solver, BoolExpr abstractVal) { 
 		throw new SystemException("Invalid get value from int path constraint"); 
 	}
 
 	public int CurrentInt(Solver solver, BitVecExpr abstractVal) {
-		solver.Push();
-		solver.Assert(currentEq);	
 		return currentVal;
 	}
 
@@ -120,13 +120,16 @@ public struct IntPathConstraint : IPathConstraint {
 		currentEq = SymbolicEngine.ctx.MkEq(abstractVal, nextVal);
 		currentVal = nextVal.Int;
 		var not_eq = SymbolicEngine.ctx.MkNot(currentEq);
-		if(solver.Check(not_eq) == Status.UNSATISFIABLE) {
+		solver.Assert (not_eq);
+		if(solver.Check() == Status.UNSATISFIABLE) {
 			nextVal = null;
 		} else {
 			notEqs.Add(not_eq);
-			nextVal = (BitVecNum)solver.Model.Evaluate(abstractVal);
+			nextVal = (BitVecNum) solver.Model.Evaluate (abstractVal);
 		}
+		solver.Pop ();
 		solver.Assert(currentEq);
+		solver.Push ();
 		return currentVal;
 	}
 

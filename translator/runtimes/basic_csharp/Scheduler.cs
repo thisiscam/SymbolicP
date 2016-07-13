@@ -85,7 +85,7 @@ class Scheduler {
         return true;
     }
 
-    public void SendMsg(PMachine source, PMachine target, int e, IPType payload) {
+    public void SendMsg(PMachine source, PMachine target, PInteger e, IPType payload) {
         source.sendQueue.Add(new SendQueueItem(target, e, payload));
     }
 

@@ -9,16 +9,16 @@ class PList<T> : List<T>, IPType<PList<T>>, IEquatable<PList<T>> where T : IPTyp
 
 	public PList<T> DeepCopy() {
 		PList<T> r = new PList<T>();
-		for(int i=0; i < this.Count; i++) {
+		for(SymbolicInteger i=0; i < this.Count; i++) {
 			r.Add(this[i].DeepCopy());
 		}
 		return r;
 	}
 	
-	public override int GetHashCode()
+	public SymbolicInteger GetHashCode()
     {
-    	int ret = 1;
-        for(int i=0; i < this.Count; i++) {
+		SymbolicInteger ret = 1;
+		for(SymbolicInteger i=0; i < this.Count; i++) {
         	ret = ret * 31 + this[i].GetHashCode();
         }
         return ret;

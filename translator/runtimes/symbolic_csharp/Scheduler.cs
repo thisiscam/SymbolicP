@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Microsoft.Z3;
 
 class Scheduler {
 
@@ -31,17 +32,17 @@ class Scheduler {
     private bool ChooseAndRunMachine() {
         // Collect all servable events
         List<SchedulerChoice> choices = new List<SchedulerChoice>();
-        for(int i=0; i < this.machines.Count; i++) {
+		for(SymbolicInteger i=0; i < this.machines.Count; i++) {
             PMachine machine = machines[i];
             // Collect from send queue
             List<SendQueueItem> sendQueue = machine.sendQueue;
-            for(int j=0; j < sendQueue.Count; j++) {
+			for(SymbolicInteger j=0; j < sendQueue.Count; j++) {
                 SendQueueItem item = sendQueue[j];
                 if(item.e == Constants.EVENT_NEW_MACHINE) {
                     choices.Add(new SchedulerChoice(machine, j, -1));
                     break;
                 } else {
-                    int state_idx = item.target.CanServeEvent(item.e);
+					SymbolicInteger state_idx = item.target.CanServeEvent(item.e);
                     if (state_idx >= 0) {
                         choices.Add(new SchedulerChoice(machine, j, state_idx));
                         break;
@@ -49,7 +50,7 @@ class Scheduler {
                 }
             }
             // Machine is state that can serve null event?
-            int null_state_idx = machine.CanServeEvent(Constants.EVENT_NULL);
+			SymbolicInteger null_state_idx = machine.CanServeEvent(Constants.EVENT_NULL);
             if(null_state_idx >= 0) {
                 Debugger.Break();
                 choices.Add(new SchedulerChoice(machine, -1, null_state_idx));
@@ -60,9 +61,9 @@ class Scheduler {
         }
 
         // Choose one and remove from send queue
-        int idx = this.rng.Next(0, choices.Count);
+		var idx = SymbolicEngine.SE.NewSymbolicIntVar("SI", 0, choices.Count);
         SchedulerChoice chosen = choices[idx];
-        int sourceMachineSendQueueIndex = chosen.sourceMachineSendQueueIndex;
+		SymbolicInteger sourceMachineSendQueueIndex = chosen.sourceMachineSendQueueIndex;
         if (sourceMachineSendQueueIndex < 0) {
             PMachine chosenTargetMachine = chosen.sourceMachine;
             Console.WriteLine(chosenTargetMachine.ToString() + chosenTargetMachine.GetHashCode() + " executes EVENT_NULL");
@@ -85,7 +86,7 @@ class Scheduler {
         return true;
     }
 
-    public void SendMsg(PMachine source, PMachine target, int e, IPType payload) {
+    public void SendMsg(PMachine source, PMachine target, PInteger e, IPType payload) {
         source.sendQueue.Add(new SendQueueItem(target, e, payload));
     }
 
@@ -93,9 +94,8 @@ class Scheduler {
         source.sendQueue.Add(new SendQueueItem(newMachine, Constants.EVENT_NEW_MACHINE, payload));
     }
 
-    public bool RandomBool() {
-        /* Hack for now, need to decide on a better structure for "$" sign semantics of P */
-        return this.rng.NextDouble() > 0.5;
+	public SymbolicBool RandomBool() {
+		return SymbolicEngine.SE.NewSymbolicBoolVar ("RB");
     }
 
     private void StartMachine(PMachine machine, IPType payload) {
@@ -104,11 +104,11 @@ class Scheduler {
     }
 
     static int Main(string[] args) {
-        int maxExplorationSteps = 500;
+        int maxExplorationSteps = 20;
         Random rng = new Random();
 
         int iteration = 0;
-        while(true) {
+		while(true) {
             Console.WriteLine(String.Format("========BEGIN NEW TRACE {0}=========", iteration));
             Scheduler scheduler = new Scheduler(rng);
 
@@ -122,8 +122,10 @@ class Scheduler {
             }
             Console.WriteLine("===========END TRACE===========");
             iteration ++;
+			if (!SymbolicEngine.SE.Reset ()) {
+				break;
+			}
         }
-        
         return 0;
     }
 }

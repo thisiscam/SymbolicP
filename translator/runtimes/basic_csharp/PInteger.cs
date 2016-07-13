@@ -68,6 +68,11 @@ public struct PInteger : IPType<PInteger>, IEquatable<PInteger> {
         return new PBool(a.value <= b.value); 
     }
 
+	public static PInteger operator ^(PInteger a, PInteger b) 
+    { 
+		return new PInteger(a.value ^ b.value); 
+    }
+
     public bool Equals(PInteger other)
 	{
 	    return this.value == other.value;

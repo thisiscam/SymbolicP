@@ -24,7 +24,7 @@ abstract class PMachine : IPType<PMachine> {
     }
     
     /* Returns the index that can serve this event */
-    public int CanServeEvent(int e) {
+    public int CanServeEvent(PInteger e) {
         for(int i=0; i < this.states.Count; i++) {
             int state = this.states[i];
             if(!this.DeferedSet[state, e] && this.Transitions[state, e] != null) {
@@ -34,7 +34,7 @@ abstract class PMachine : IPType<PMachine> {
         return -1;
     }
 
-    protected void RaiseEvent(int e, IPType payload) {
+    protected void RaiseEvent(PInteger e, IPType payload) {
         for(int i=0; i < this.states.Count; i++) {
             int state = this.states[i];
             if(this.Transitions[state, e] != null) {
@@ -45,7 +45,7 @@ abstract class PMachine : IPType<PMachine> {
         throw new SystemException("Unhandled event");
     }
 
-    protected void SendMsg(PMachine other, int e, IPType payload) {
+    protected void SendMsg(PMachine other, PInteger e, IPType payload) {
         this.scheduler.SendMsg(this, other, e, payload);
     }
 
@@ -79,7 +79,7 @@ abstract class PMachine : IPType<PMachine> {
         }
     }
 
-    public void RunStateMachine(int state_idx, int e, IPType payload) {
+    public void RunStateMachine(int state_idx, PInteger e, IPType payload) {
         int state = this.states[state_idx];
         if(this.IsGotoTransition[state, e]) {
             this.states.RemoveRange(0, state_idx);

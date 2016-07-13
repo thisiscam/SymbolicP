@@ -14,7 +14,7 @@ abstract class MonitorPMachine {
     protected TransitionFunction[,] Transitions;
     protected ExitFunction[] ExitFunctions;
 
-    public void ServeEvent(int e, IPType payload) {
+    public void ServeEvent(PInteger e, IPType payload) {
         for(int i=0; i < this.states.Count; i++) {
             int state = this.states[i];
             if(this.Transitions[state, e] != null) {

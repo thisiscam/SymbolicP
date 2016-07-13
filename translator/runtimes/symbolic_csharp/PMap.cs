@@ -6,8 +6,8 @@ public class PMap<K, V> : Dictionary<K, V>, IEquatable<PMap<K, V>>, IPType<PMap<
 		where V : IPType<V>
 {
 	public PMap() : base() { }
-	public PMap(int capacity) : base(capacity) { }
-	public PMap(int capacity, IEqualityComparer<K> comparer) : base(capacity, comparer) { }
+	public PMap(SymbolicInteger capacity) : base(capacity) { }
+	public PMap(SymbolicInteger capacity, IEqualityComparer<K> comparer) : base(capacity, comparer) { }
 
 
 	public void Insert(PTuple<K, V> t)
@@ -24,15 +24,15 @@ public class PMap<K, V> : Dictionary<K, V>, IEquatable<PMap<K, V>>, IPType<PMap<
 	    return ret;
 	}
 
-	public override int GetHashCode()
-    {
-    	int ret = 1;
-        foreach (KeyValuePair<K, V> entry in this)
-	    {
-	        ret = ret * 31 + (entry.Key.GetHashCode() ^ entry.Value.GetHashCode());
-	    }
-        return ret;
-    }
+	public SymbolicInteger GetHashCode()
+	{
+		SymbolicInteger ret = 1;
+		foreach (KeyValuePair<K, V> entry in this)
+		{
+			ret = ret * 31 + (entry.Key.GetHashCode() ^ entry.Value.GetHashCode());
+		}
+		return ret;
+	}
 
     public override bool Equals(object obj)
     {

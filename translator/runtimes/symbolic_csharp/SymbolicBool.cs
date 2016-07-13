@@ -19,7 +19,6 @@ public struct SymbolicBool {
         return abstractValue != null;
     }
 
-
 	public bool ConcreteValue {
 		get { 
 			return concreteValue;
@@ -37,14 +36,13 @@ public struct SymbolicBool {
         return new SymbolicBool(value); 
     } 
 
-    public static implicit operator bool(SymbolicBool b) 
+    public static implicit operator bool(SymbolicBool op) 
     { 
-    	if(!b.IsAbstract()) {
-    		return b.concreteValue;
-    	} else {
-    		throw new SystemException("Cannot convert abstract bool");
-    	}
-
+		if (op.IsAbstract ()) {
+			return SymbolicEngine.SE.NextBranch (op.abstractValue);
+		} else {
+			return op.ConcreteValue;
+		}
     }
 
 	public static SymbolicBool operator ==(SymbolicBool a, SymbolicBool b) 
@@ -83,12 +81,20 @@ public struct SymbolicBool {
 		
 	public static bool operator true(SymbolicBool op)
 	{
-		return SymbolicEngine.SE.NextBranch(op.abstractValue);
+		if (op.IsAbstract ()) {
+			return SymbolicEngine.SE.NextBranch (op.abstractValue);
+		} else {
+			return op.ConcreteValue;
+		}
 	}
 
 	public static bool operator false(SymbolicBool op)
 	{
-		return !SymbolicEngine.SE.NextBranch(op.abstractValue);
+		if (op.IsAbstract ()) {
+			return SymbolicEngine.SE.NextBranch (SymbolicEngine.ctx.MkNot (op.abstractValue));
+		} else {
+			return op.ConcreteValue;
+		}
 	}
 
     public SymbolicBool Equals(SymbolicBool other)
@@ -103,5 +109,10 @@ public struct SymbolicBool {
 		} else {
 			return new SymbolicInteger(this.concreteValue ? 1 : 0);
 		}
+	}
+
+	public override string ToString ()
+	{
+		return string.Format ("[SymbolicBool: ConcreteValue={0}, AbstractValue={1}]", ConcreteValue, AbstractValue);
 	}
 }

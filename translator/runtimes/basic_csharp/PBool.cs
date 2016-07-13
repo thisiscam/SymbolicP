@@ -27,6 +27,21 @@ public struct PBool : IPType<PBool>, IEquatable<PBool> {
         return new PBool(a.value != b.value); 
     }
 
+	public static PBool operator !(PBool a) 
+	{ 
+		return new PBool(!a.value); 
+	}
+
+	public static PBool operator &(PBool a, PBool b) 
+	{ 
+		return new PBool(a.value & b.value); 
+	}
+
+	public static PBool operator |(PBool a, PBool b) 
+	{ 
+		return new PBool(a.value | b.value); 
+	}
+
     public bool Equals(PBool other)
 	{
 	    return this.value == other.value;

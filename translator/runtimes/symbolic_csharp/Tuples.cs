@@ -9,7 +9,7 @@ public class PTuple<T1> : IPType<PTuple<T1>>, IEquatable<PTuple<T1>>
 	public PTuple<T1> DeepCopy() {
 		return new PTuple<T1>(Item1.DeepCopy());
 	}
-	public override int GetHashCode()
+	public SymbolicInteger GetHashCode()
     {
         return Item1.GetHashCode();
     }
@@ -44,7 +44,7 @@ public class PTuple<T1, T2> : IPType<PTuple<T1, T2>>, IEquatable<PTuple<T1, T2>>
 						Item1.DeepCopy(),
 						Item2.DeepCopy());
 	}
-	public override int GetHashCode()
+	public SymbolicInteger GetHashCode()
     {
         return Item1.GetHashCode() ^ Item2.GetHashCode();
     }
@@ -83,7 +83,7 @@ public class PTuple<T1, T2, T3> : IPType<PTuple<T1, T2, T3>>, IEquatable<PTuple<
 								Item2.DeepCopy(),
 								Item3.DeepCopy());
 	}
-	public override int GetHashCode()
+	public SymbolicInteger GetHashCode()
     {
         return Item1.GetHashCode() ^ Item2.GetHashCode() ^ Item3.GetHashCode();
     }
@@ -126,7 +126,7 @@ public class PTuple<T1, T2, T3, T4> : IPType<PTuple<T1, T2, T3, T4>>, IEquatable
 									Item3.DeepCopy(),
 									Item4.DeepCopy());
 	}
-	public override int GetHashCode()
+	public SymbolicInteger GetHashCode()
     {
         return Item1.GetHashCode() ^ Item2.GetHashCode() ^ Item3.GetHashCode() ^ Item4.GetHashCode();
     }
@@ -173,7 +173,7 @@ public class PTuple<T1, T2, T3, T4, T5> : IPType<PTuple<T1, T2, T3, T4, T5>>, IE
 									Item4.DeepCopy(),
 									Item5.DeepCopy());
 	}
-	public override int GetHashCode()
+	public SymbolicInteger GetHashCode()
     {
         return Item1.GetHashCode() ^ Item2.GetHashCode() ^ Item3.GetHashCode() ^ Item4.GetHashCode() ^ Item5.GetHashCode();
     }
