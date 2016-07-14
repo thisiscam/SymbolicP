@@ -64,6 +64,7 @@ public class SymbolicEngine {
 			idx++;
 			return constraint.CurrentInt (solver, abstractVal);
 		} else {
+			Debug.Assert (pathConstraints [idx].Done == false);
 			int chosen = pathConstraints [idx].NextInt (solver, abstractVal);
 			idx++;
 			return chosen;

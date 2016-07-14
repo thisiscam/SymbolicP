@@ -89,4 +89,9 @@ public struct PInteger : IPType<PInteger>, IEquatable<PInteger> {
     public PInteger DeepCopy() {
     	return this;
     }
+
+	public override string ToString ()
+	{
+		return value.ToString ();
+	}
 }
