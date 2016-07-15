@@ -34,13 +34,13 @@ abstract class MonitorPMachine {
         return;
     }
 
-    protected void Assert(bool cond, string msg) {
+	protected void Assert(PBool cond, string msg) {
         if(!cond) {
             throw new SystemException(msg);
         }
     }
 
-    protected void Assert(bool cond) {
+	protected void Assert(PBool cond) {
         if(!cond) {
             throw new SystemException("Assertion failure");
         }

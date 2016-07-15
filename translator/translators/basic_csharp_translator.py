@@ -307,7 +307,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
         t = ctx.getChild(3).accept(self, **kwargs)
         var_list = ctx.getChild(1).accept(self, **kwargs)
         self.current_visited_fn.local_decls.update({i : t for i in var_list})
-        self.out("{0} {1};", self.translate_type(t), ",".join("{0}={1}".format(var,self.translate_default_exp(t)) for var in var_list))
+        self.out("{0} {1};\n".format(self.translate_type(t), ",".join("{0}={1}".format(var,self.translate_default_exp(t)) for var in var_list)))
 
 
     # Visit a parse tree produced by pParser#local_var_decl_list.

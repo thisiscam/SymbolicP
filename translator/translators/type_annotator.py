@@ -16,6 +16,21 @@ class PProgramTypeAnnotator(PTypeTranslatorVisitor):
         self.current_visited_fn = fn
         fn.stmt_block.accept(self)
 
+    # Visit a parse tree produced by pParser#local_var_decl.
+    def visitLocal_var_decl(self, ctx, **kwargs):
+        t = ctx.getChild(3).accept(self, **kwargs)
+        var_list = ctx.getChild(1).accept(self, **kwargs)
+        self.current_visited_fn.local_decls.update({i : t for i in var_list})
+
+
+    # Visit a parse tree produced by pParser#local_var_list.
+    def visitLocal_var_list(self, ctx, **kwargs):
+        if ctx.getChildCount() == 1:
+            return [ctx.getChild(0).getText()]
+        else:
+            return self.ctx.getChild(2).accept(self, **kwargs).append(ctx.getChild(0).getText())
+
+
     def visitBinary_Exp(ret_type):
         def wrapped(self, ctx):
             if ctx.getChildCount() > 1:

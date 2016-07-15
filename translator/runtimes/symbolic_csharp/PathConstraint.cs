@@ -39,7 +39,8 @@ public struct BoolPathConstraint : IPathConstraint {
 			}
 			default: {
 				explored = true;
-				done = false;
+				done = true;
+				Debug.Assert ("Not reachable");
 				break;
 			}
 		}

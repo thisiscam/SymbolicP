@@ -42,7 +42,7 @@ class Scheduler {
                     choices.Add(new SchedulerChoice(machine, j, -1));
                     break;
                 } else {
-					SymbolicInteger state_idx = item.target.CanServeEvent(item.e);
+					int state_idx = item.target.CanServeEvent(item.e);
                     if (state_idx >= 0) {
                         choices.Add(new SchedulerChoice(machine, j, state_idx));
                         break;
@@ -104,7 +104,7 @@ class Scheduler {
     }
 
     static int Main(string[] args) {
-        int maxExplorationSteps = 20;
+        int maxExplorationSteps = 40;
         Random rng = new Random();
 
         int iteration = 0;

@@ -1,28 +1,19 @@
 using System;
 
 public struct PInteger : IPType<PInteger>, IEquatable<PInteger> { 
-    SymbolicInteger value;
+    int value;
 
-    public PInteger(SymbolicInteger value) 
+    public PInteger(int value) 
     { 
         this.value = value; 
     } 
 
-	public static implicit operator PInteger(int value) {
-		return new PInteger (new SymbolicInteger(value));
-	}
-
-    public static implicit operator PInteger(SymbolicInteger value) 
+    public static implicit operator PInteger(int value) 
     { 
         return new PInteger(value); 
     }
 
 	public static implicit operator int(PInteger value) 
-	{ 
-		return value.value;
-	}
-
-	public static implicit operator SymbolicInteger(PInteger value) 
 	{ 
 		return value.value;
 	}
@@ -77,10 +68,10 @@ public struct PInteger : IPType<PInteger>, IEquatable<PInteger> {
         return new PBool(a.value <= b.value); 
     }
 
-	public static PInteger operator ^(PInteger a, PInteger b)
-	{
-		return new PInteger (a.value ^ b.value);
-	}
+	public static PInteger operator ^(PInteger a, PInteger b) 
+    { 
+		return new PInteger(a.value ^ b.value); 
+    }
 
     public bool Equals(PInteger other)
 	{
@@ -98,4 +89,9 @@ public struct PInteger : IPType<PInteger>, IEquatable<PInteger> {
     public PInteger DeepCopy() {
     	return this;
     }
+
+	public override string ToString ()
+	{
+		return value.ToString ();
+	}
 }
