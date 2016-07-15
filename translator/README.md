@@ -29,9 +29,6 @@ And when you are done:
 
     $ python -m scripts.translate tests/PingPong.p
 
-This wil generate a folder PingPong, filled with translated .cs sources. Currently, you need to copy over the runtime sources and do a manual compilation:
+This wil generate a folder PingPong, filled with translated .cs sources and a .csproj file. You should be able to build the project by opening the .csproj file or with msbuild/xbuild
 
-    $ cp runtimes/basic_csharp_runtime/* PingPong/
-    $ make -C PingPong
-
-You should now have an executable under PingPong
+You should now have an executable under PingPong/bin/
