@@ -32,11 +32,11 @@ class Scheduler {
     private bool ChooseAndRunMachine() {
         // Collect all servable events
         List<SchedulerChoice> choices = new List<SchedulerChoice>();
-		for(SymbolicInteger i=0; i < this.machines.Count; i++) {
+		for(int i=0; i < this.machines.Count; i++) {
             PMachine machine = machines[i];
             // Collect from send queue
             List<SendQueueItem> sendQueue = machine.sendQueue;
-			for(SymbolicInteger j=0; j < sendQueue.Count; j++) {
+			for(int j=0; j < sendQueue.Count; j++) {
                 SendQueueItem item = sendQueue[j];
                 if(item.e == Constants.EVENT_NEW_MACHINE) {
                     choices.Add(new SchedulerChoice(machine, j, -1));
@@ -50,7 +50,7 @@ class Scheduler {
                 }
             }
             // Machine is state that can serve null event?
-			SymbolicInteger null_state_idx = machine.CanServeEvent(Constants.EVENT_NULL);
+			int null_state_idx = machine.CanServeEvent(Constants.EVENT_NULL);
             if(null_state_idx >= 0) {
                 Debugger.Break();
                 choices.Add(new SchedulerChoice(machine, -1, null_state_idx));
@@ -61,9 +61,9 @@ class Scheduler {
         }
 
         // Choose one and remove from send queue
-		var idx = SymbolicEngine.SE.NewSymbolicIntVar("SI", 0, choices.Count);
+		SymbolicInteger idx = SymbolicEngine.SE.NewSymbolicIntVar("SI", 0, choices.Count);
         SchedulerChoice chosen = choices[idx];
-		SymbolicInteger sourceMachineSendQueueIndex = chosen.sourceMachineSendQueueIndex;
+		int sourceMachineSendQueueIndex = chosen.sourceMachineSendQueueIndex;
         if (sourceMachineSendQueueIndex < 0) {
             PMachine chosenTargetMachine = chosen.sourceMachine;
             Console.WriteLine(chosenTargetMachine.ToString() + chosenTargetMachine.GetHashCode() + " executes EVENT_NULL");
@@ -104,7 +104,7 @@ class Scheduler {
     }
 
     static int Main(string[] args) {
-        int maxExplorationSteps = 40;
+        int maxExplorationSteps = 200;
         Random rng = new Random();
 
         int iteration = 0;

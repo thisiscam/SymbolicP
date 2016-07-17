@@ -1,11 +1,11 @@
 using System;
 
-public struct PInteger : IPType<PInteger>, IEquatable<PInteger> { 
-    int value;
+public struct PInteger : IPType<PInteger> { 
+	SymbolicInteger value;
 
     public PInteger(int value) 
     { 
-        this.value = value; 
+		this.value = new SymbolicInteger(value); 
     } 
 
     public static implicit operator PInteger(int value) 
@@ -73,17 +73,14 @@ public struct PInteger : IPType<PInteger>, IEquatable<PInteger> {
 		return new PInteger(a.value ^ b.value); 
     }
 
-    public bool Equals(PInteger other)
+	public SymbolicBool PTypeEquals(PInteger other)
 	{
-	    return this.value == other.value;
+		return this.value == other.value;
 	}
-	public override bool Equals(object obj)
+
+	public SymbolicInteger PTypeGetHashCode()
 	{
-	    return obj is PInteger && this.value == ((PInteger)obj).value;
-	}
-	public SymbolicInteger GetHashCode()
-	{
-	    return this.value.GetHashCode();
+		return this.value;
 	}
 
     public PInteger DeepCopy() {

@@ -122,7 +122,6 @@ class PProgramToCSharpTranslator(TranslatorBase):
             t_str = self.translate_type(t)
             self.out("{0} {1} = ({2})_payload;\n".format(t_str, p, t_str))
 
-
     def out_fn_decl(self, machine, fn_name):
         fn_node = machine.fun_decls[fn_name]
         ret_type = fn_node.ret_type

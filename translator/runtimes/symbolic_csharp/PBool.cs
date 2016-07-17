@@ -1,6 +1,7 @@
 using System;
+using Microsoft.Z3;
 
-public struct PBool : IPType<PBool>, IEquatable<PBool> {
+public struct PBool : IPType<PBool> {
 	SymbolicBool value;
 
 	public PBool(SymbolicBool value) {
@@ -50,25 +51,26 @@ public struct PBool : IPType<PBool>, IEquatable<PBool> {
 
 	public static bool operator true(PBool op)
 	{
-		return op.value;
+		return op.value ? true : false;
 	}
 
 	public static bool operator false(PBool op)
 	{
-		return op.value;
+		return !op.value ? true : false;
 	}
 
-    public bool Equals(PBool other)
+	public SymbolicBool PTypeEquals(PBool other)
 	{
-	    return this.value == other.value;
+		return this.value == other.value;
 	}
-	public override bool Equals(object obj)
+
+	public SymbolicInteger PTypeGetHashCode()
 	{
-	    return obj is PBool && this.value == ((PBool)obj).value;
-	}
-	public SymbolicInteger GetHashCode()
-	{
-	    return this.value.GetHashCode();
+		if (this.value.IsAbstract()) {
+			return new SymbolicInteger((BitVecExpr)SymbolicEngine.ctx.MkITE(this.value.AbstractValue, SymbolicEngine.ctx.MkBV(1, SymbolicInteger.INT_SIZE), SymbolicEngine.ctx.MkBV(0, SymbolicInteger.INT_SIZE)));
+		} else {
+			return new SymbolicInteger(this.value.ConcreteValue ? 1 : 0);
+		}
 	}
 
 	public PBool DeepCopy() {

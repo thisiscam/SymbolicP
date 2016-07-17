@@ -1,59 +1,194 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
-public class PMap<K, V> : Dictionary<K, V>, IEquatable<PMap<K, V>>, IPType<PMap<K, V>> 
+public class PMap<K, V> : IPType<PMap<K, V>> 
 		where K : IPType<K> 
 		where V : IPType<V>
 {
-	public PMap() : base() { }
-	public PMap(SymbolicInteger capacity) : base(capacity) { }
-	public PMap(SymbolicInteger capacity, IEqualityComparer<K> comparer) : base(capacity, comparer) { }
+	private class MapEntry<K, V> {
+		SymbolicInteger hash;
+		K key;
+		V value;
+		MapEntry<K, V> next;
 
+		public K Key { get { return key; } }
+		public SymbolicInteger Hash { get { return hash; } }
+		public V Value { 
+			get { 
+				return value; 
+			}
+			set { 
+				this.value = value;
+			}
+		}
+		public MapEntry<K,V> Next { 
+			get { 
+				return next; 
+			} 
+			set { 
+				this.next = value;
+			}
+		}
+
+		public MapEntry(K k, SymbolicInteger hash, V v, MapEntry<K,V> next) {
+			this.key = k;
+			this.hash = hash;
+			this.value = v;
+			this.next = next;
+		}
+	}
+
+	private int _capacity;
+	private int _count;
+	private MapEntry<K,V>[] data;
+
+	private static double LOAD_FACTOR = 0.7;
+	private static double RESIZE_RATIO = 2.0;
+	private static int DEFAULT_INITIAL_CAPACITY = 4;
+
+	public PMap():this(PMap<K,V>.DEFAULT_INITIAL_CAPACITY) { }
+
+	public PMap(int capacity) { 
+		this._capacity = capacity;
+		this._count = 0;
+		this.data = new MapEntry<K,V>[capacity];
+	}
+		
+	public int Count { get { return _count; } }
+
+	private void Insert(K k, V v) {
+		SymbolicInteger hash = k.PTypeGetHashCode ();
+		SymbolicInteger idx = hash % this._capacity;
+		MapEntry<K, V> firstEntry = this.data [idx];
+		for (MapEntry<K, V> iter = firstEntry; iter != null; firstEntry = firstEntry.Next) {
+			if (iter.Hash == hash && iter.Key.PTypeEquals (k)) {
+				throw new SystemException ("Reinsertion of key" + k.ToString() + "into PMap");
+			}
+		}
+
+		this.ResizeIfNecessary ();
+
+		this.data [idx] = new MapEntry<K,V> (k, hash, v, firstEntry);
+		this._count++;
+	}
+
+	private V Get(K k) {
+		SymbolicInteger hash = k.PTypeGetHashCode ();
+		SymbolicInteger idx = hash % this._capacity;
+		MapEntry<K, V> firstEntry = this.data [idx];
+		for (MapEntry<K, V> iter = firstEntry; iter != null; firstEntry = firstEntry.Next) {
+			if (iter.Hash == hash && iter.Key.PTypeEquals (k)) {
+				return iter.Value;
+			}
+		}
+		throw new SystemException ("Key does not exist in dictionary");
+	}
+
+	private void Set(K k, V v) {
+		SymbolicInteger hash = k.PTypeGetHashCode ();
+		SymbolicInteger idx = hash % this._capacity;
+		MapEntry<K, V> firstEntry = this.data [idx];
+		for (MapEntry<K, V> iter = firstEntry; iter != null; firstEntry = firstEntry.Next) {
+			if (iter.Hash == hash && iter.Key.PTypeEquals (k)) {
+				iter.Value = v;
+				return;
+			}
+		}
+
+		this.ResizeIfNecessary ();
+
+		this.data [idx] = new MapEntry<K,V> (k, hash, v, firstEntry);
+		this._count++;
+	}
+
+	private void ResizeIfNecessary () {
+		if (this._count / this._capacity > PMap<K,V>.LOAD_FACTOR) {
+			int new_capacity = (int)(this._capacity * PMap<K,V>.RESIZE_RATIO);
+			MapEntry<K,V>[] new_data = new MapEntry<K,V>[new_capacity];
+			for (int i = 0; i < this._capacity; i++) {
+				for (MapEntry<K,V> iter = this.data [i]; iter != null; iter = iter.Next) {
+					SymbolicInteger idx = iter.Hash % new_capacity;
+					new_data[idx] = new MapEntry<K,V>(iter.Key, iter.Hash, iter.Value, new_data[idx]);
+				}
+			}
+			this._capacity = new_capacity;
+			this.data = new_data;
+		}
+	}
+
+	public void Remove(K k) {
+		SymbolicInteger hash = k.PTypeGetHashCode ();
+		SymbolicInteger idx = hash % this._capacity;
+		MapEntry<K, V> firstEntry = this.data [idx];
+		if (firstEntry.Hash == hash && firstEntry.Key.PTypeEquals (k)) {
+			this.data [idx] = firstEntry.Next;
+			return;
+		} else {
+			for (MapEntry<K, V> iter = firstEntry; iter != null; firstEntry = firstEntry.Next) {
+				if (iter.Next.Hash == hash && iter.Next.Key.PTypeEquals (k)) {
+					iter.Next = iter.Next.Next;
+					return;
+				}
+			}	
+		}
+	}
 
 	public void Insert(PTuple<K, V> t)
     {
-        this.Add(t.Item1, t.Item2);
+        this.Insert(t.Item1, t.Item2);
     }
 
+	public V this [K key] {
+		get {
+			return this.Get (key);
+		}
+		set {
+			this.Set (key, value);
+		}
+	}
+
 	public PMap<K, V> DeepCopy() {
-		PMap<K, V> ret = new PMap<K, V>(this.Count, this.Comparer);
-	    foreach (KeyValuePair<K, V> entry in this)
-	    {
-	        ret.Add(entry.Key, entry.Value.DeepCopy());
-	    }
+		PMap<K, V> ret = new PMap<K, V>(this._capacity);
+		for (int i = 0; i < this._capacity; i++) {
+			ret.data[i] = CopyEntryChain (this.data [i]);
+		}
 	    return ret;
 	}
 
-	public SymbolicInteger GetHashCode()
+	private MapEntry<K, V> CopyEntryChain(MapEntry<K, V> entry) {
+		if (entry == null) {
+			return null;
+		} else {
+			return new MapEntry<K, V>(entry.Key, entry.Hash, entry.Value.DeepCopy(), CopyEntryChain (entry.Next));
+		}
+	}
+
+	public SymbolicInteger PTypeGetHashCode()
 	{
 		SymbolicInteger ret = 1;
-		foreach (KeyValuePair<K, V> entry in this)
-		{
-			ret = ret * 31 + (entry.Key.GetHashCode() ^ entry.Value.GetHashCode());
+		for (int i = 0; i < this._capacity; i++) {
+			var entry = this.data[i];
+			while(entry != null) {
+				ret += entry.Key.GetHashCode() ^ entry.Value.GetHashCode();
+			} 
 		}
 		return ret;
 	}
 
-    public override bool Equals(object obj)
-    {
-        if (obj == null || GetType() != obj.GetType())
-        {
-            return false;
-        }
-        return Equals((PMap<K, V>)obj);
-    }
-
-    public bool Equals(PMap<K, V> other)
+	public SymbolicBool PTypeEquals(PMap<K, V> other)
     {
     	if(this.Count != other.Count) {
     		return false;
     	}
-        foreach (KeyValuePair<K, V> entry in this)
-	    {
-	     	if(!ContainsKey(entry.Key) || !entry.Value.Equals(other[entry.Key])) {
-	     		return false;
-	     	}   
-	    }
+		for (int i = 0; i < this._capacity; i++) {
+			var entry = this.data[i];
+			while(entry != null) {
+				if(other.Get(entry.Key) != null || !entry.Value.PTypeEquals(other[entry.Key])) {
+					return false;
+				}
+			}
+		}
         return true;
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Z3;
+using System.Diagnostics;
 
 public struct SymbolicInteger {
     public const int INT_SIZE = 32;
@@ -236,16 +237,6 @@ public struct SymbolicInteger {
 			}
 		}
 	}
-
-	public SymbolicBool Equals(SymbolicInteger other)
-    {
-        return this == other;
-    }
-
-    public SymbolicInteger GetHashCode()
-    {
-		return this;
-    }
 
 	public override string ToString ()
 	{

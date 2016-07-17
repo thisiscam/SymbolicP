@@ -45,12 +45,14 @@ public class List<T> {
 			this._count++;
 		}
 	}
+
 	public void RemoveAt(int idx) {
 		for (int i = idx + 1; i < this._count; i++) {
 			this.data [i - 1] = this.data [i];
 		}
 		this._count--;
 	}
+
 	public void RemoveRange(int start, int count) {
 		for (int i = start + count; i < this._count; i++) {
 			this.data [i - count] = this.data [i];

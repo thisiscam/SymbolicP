@@ -20,11 +20,15 @@ public struct BoolPathConstraint : IPathConstraint {
 	bool done;
 	
 	public BoolPathConstraint(Solver solver, BoolExpr abstractVal) {
-		var solverResult = solver.Check(abstractVal);
+		solver.Push ();
+		solver.Assert(abstractVal);
+		var solverResult = solver.Check();
+		solver.Pop ();
 		switch(solverResult) {
 			case Status.SATISFIABLE: {
 				explored = true;
 				done = true;
+				solver.Assert(abstractVal);
 				break;
 			}
 			case Status.UNSATISFIABLE: {
@@ -35,18 +39,19 @@ public struct BoolPathConstraint : IPathConstraint {
 			case Status.UNKNOWN: {
 				explored = true;
 				done = false;
+				solver.Assert(SymbolicEngine.ctx.MkNot(abstractVal));
 				break;
 			}
 			default: {
 				explored = true;
 				done = true;
-				Debug.Assert ("Not reachable");
+				solver.Assert(abstractVal);
 				break;
 			}
 		}
 		solver.Push();
-		solver.Assert(this.explored ? abstractVal : SymbolicEngine.ctx.MkNot(abstractVal));
 	}
+
 	public bool Done { get { return done; }}
 	
 	public bool CurrentBool(Solver solver, BoolExpr abstractVal) { 

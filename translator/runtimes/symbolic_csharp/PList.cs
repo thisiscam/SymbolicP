@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-class PList<T> : List<T>, IPType<PList<T>>, IEquatable<PList<T>> where T : IPType<T>{
+class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>{
 	public void Insert(PTuple<PInteger, T> t)
     {
         this.Insert(t.Item1, t.Item2);
@@ -15,34 +15,25 @@ class PList<T> : List<T>, IPType<PList<T>>, IEquatable<PList<T>> where T : IPTyp
 		return r;
 	}
 	
-	public SymbolicInteger GetHashCode()
+	public SymbolicInteger PTypeGetHashCode()
     {
 		SymbolicInteger ret = 1;
-		for(SymbolicInteger i=0; i < this.Count; i++) {
-        	ret = ret * 31 + this[i].GetHashCode();
+		for(int i=0; i < this.Count; i++) {
+			ret = ret * 31 + this[i].PTypeGetHashCode();
         }
         return ret;
     }
 
-    public override bool Equals(object obj)
+	public SymbolicBool PTypeEquals(PList<T> other)
     {
-        if (obj == null || GetType() != obj.GetType())
-        {
-            return false;
-        }
-        return Equals((PList<T>)obj);
-    }
-
-    public bool Equals(PList<T> other)
-    {
-    	if(this.Count != other.Count) {
-    		return false;
-    	}
-    	for(int i=0; i < this.Count; i++) {
-        	if(!this[i].Equals(other[i])) {
-        		return false;
-        	}
-        }
-        return true;
+		if(this.Count != other.Count) {
+			return false;
+		}
+		for(int i=0; i < this.Count; i++) {
+			if(!this[i].PTypeEquals(other[i])) {
+				return false;
+			}
+		}
+		return true;
     }
 }

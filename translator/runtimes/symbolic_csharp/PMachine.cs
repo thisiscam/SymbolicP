@@ -63,7 +63,7 @@ abstract class PMachine : IPType<PMachine> {
         }
     }
 
-    protected bool RandomBool() {
+	protected PBool RandomBool() {
         return this.scheduler.RandomBool();
     }
 
@@ -96,4 +96,12 @@ abstract class PMachine : IPType<PMachine> {
     public PMachine DeepCopy() {
         return this;
     }
+
+	public SymbolicInteger PTypeGetHashCode() {
+		return this.GetHashCode ();
+	}
+
+	public SymbolicBool PTypeEquals(PMachine other) {
+		return this == other;
+	}
 }
