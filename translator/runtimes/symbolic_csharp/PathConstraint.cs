@@ -20,33 +20,31 @@ public struct BoolPathConstraint : IPathConstraint {
 	bool done;
 	
 	public BoolPathConstraint(Solver solver, BoolExpr abstractVal) {
-		solver.Push ();
-		solver.Assert(abstractVal);
-		var solverResult = solver.Check();
-		solver.Pop ();
-		switch(solverResult) {
-			case Status.SATISFIABLE: {
+		solver.Check ();
+		var solverResult = solver.Model.Evaluate(abstractVal);
+		switch(solverResult.BoolValue) {
+			case Z3_lbool.Z3_L_TRUE: {
 				explored = true;
 				done = true;
 				solver.Assert(abstractVal);
 				break;
 			}
-			case Status.UNSATISFIABLE: {
+			case Z3_lbool.Z3_L_FALSE: {
 				explored = false;
 				done = true;
+				solver.Assert(SymbolicEngine.ctx.MkNot(abstractVal));
 				break;
 			}
-			case Status.UNKNOWN: {
+			case Z3_lbool.Z3_L_UNDEF: {
 				explored = true;
 				done = false;
-				solver.Assert(SymbolicEngine.ctx.MkNot(abstractVal));
+				solver.Assert(abstractVal);
 				break;
 			}
 			default: {
 				explored = true;
-				done = true;
-				solver.Assert(abstractVal);
-				break;
+				done = false;
+				throw new SystemException ("Unreachable");
 			}
 		}
 		solver.Push();

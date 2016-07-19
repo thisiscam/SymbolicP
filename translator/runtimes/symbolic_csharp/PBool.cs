@@ -51,12 +51,12 @@ public struct PBool : IPType<PBool> {
 
 	public static bool operator true(PBool op)
 	{
-		return op.value ? true : false;
+		return op.value;
 	}
 
 	public static bool operator false(PBool op)
 	{
-		return !op.value ? true : false;
+		return !op.value;
 	}
 
 	public SymbolicBool PTypeEquals(PBool other)

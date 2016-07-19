@@ -23,7 +23,7 @@ public class SymbolicEngine {
 		boolVarRecoveredIdx = 0;
 		for(int i=pathConstraints.Count-1; i >=0; i--) {
 			if(!pathConstraints[i].Done) {
-				solver.Pop((uint)(pathConstraints.Count - i));
+				solver.Pop((uint)(pathConstraints.Count - i - 1));
 				pathConstraints.RemoveRange(i + 1, pathConstraints.Count - i - 1);
 				return true;
 			}
@@ -46,8 +46,9 @@ public class SymbolicEngine {
 		} else {
 			/* Forcing branch to other evaluation */
 			Debug.Assert (pathConstraints [idx].Done == false);
+			bool ret = pathConstraints [idx].NextBool (solver, abstractVal);
 			idx++;
-			return pathConstraints [idx].NextBool (solver, abstractVal);
+			return ret;
 		}
 	}
 
