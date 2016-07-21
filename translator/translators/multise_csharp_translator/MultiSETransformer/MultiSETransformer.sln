@@ -1,0 +1,17 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiSETransformer", "MultiSETransformer.csproj", "{F301EBF0-59ED-4533-8153-C8110F5DE017}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F301EBF0-59ED-4533-8153-C8110F5DE017}.Debug|x86.ActiveCfg = Debug|x86
+		{F301EBF0-59ED-4533-8153-C8110F5DE017}.Debug|x86.Build.0 = Debug|x86
+		{F301EBF0-59ED-4533-8153-C8110F5DE017}.Release|x86.ActiveCfg = Release|x86
+		{F301EBF0-59ED-4533-8153-C8110F5DE017}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+EndGlobal
