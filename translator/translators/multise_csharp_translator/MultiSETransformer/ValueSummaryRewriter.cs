@@ -171,7 +171,7 @@ namespace MultiSETransformer
 					if (node.Operand.IsKind (SyntaxKind.NumericLiteralExpression) || node.Operand.IsKind (SyntaxKind.TrueLiteralExpression) || node.Operand.IsKind (SyntaxKind.FalseLiteralExpression) || node.Operand.IsKind (SyntaxKind.StringLiteralExpression)) {
 						return base.VisitPrefixUnaryExpression (node);
 					} else {
-						var left = node.Operand as ExpressionSyntax;
+						var left = node.Operand.Accept(this) as ExpressionSyntax;
 						var lambdaParameters = SyntaxFactory.ParameterList().AddParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("_")));
 						var lambdaExpression = SyntaxFactory.ParenthesizedLambdaExpression(parameterList: lambdaParameters, body: node.WithOperand(SyntaxFactory.IdentifierName("_")));
 						return SyntaxFactory.InvocationExpression (
@@ -197,7 +197,7 @@ namespace MultiSETransformer
 					if (node.Operand.IsKind (SyntaxKind.NumericLiteralExpression) || node.Operand.IsKind (SyntaxKind.TrueLiteralExpression) || node.Operand.IsKind (SyntaxKind.FalseLiteralExpression) || node.Operand.IsKind (SyntaxKind.StringLiteralExpression)) {
 						return base.VisitPostfixUnaryExpression (node);
 					} else {
-						var left = node.Operand as ExpressionSyntax;
+						var left = node.Operand.Accept(this) as ExpressionSyntax;
 						var lambdaParameters = SyntaxFactory.ParameterList().AddParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("_")));
 						var lambdaExpression = SyntaxFactory.ParenthesizedLambdaExpression(parameterList: lambdaParameters, body: node.WithOperand(SyntaxFactory.IdentifierName("_")));
 						return SyntaxFactory.InvocationExpression (

@@ -84,7 +84,7 @@ if __name__ == "__main__":
 class pJavaParser(object):
 	def parse(self, filename):
 		jar_path = os.path.dirname(__file__)
-		cmd = ["java", "-jar", jar_path + "/pparser.jar", filename]
+		cmd = ["java", "-jar", os.path.join(jar_path, "pparser.jar"), filename]
 		with TemporaryFile() as outfile:
 			subprocess.call(cmd, stdout=outfile)
 			outfile.seek(0)

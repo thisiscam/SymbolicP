@@ -24,7 +24,7 @@ namespace MultiSETransformer
 			for (int pass = 0; pass < ValueSummaryRewriter.NUM_PASSES; pass++) {
 				foreach (SyntaxTree sourceTree in test.SyntaxTrees) 
 				{
-					if (transformSources.Contains(new FileInfo (sourceTree.FilePath).Name)) {
+					if (transformSources.Contains(sourceTree.FilePath)) {
 						SyntaxTree tree = sourceTree;
 						SemanticModel model;
 						SyntaxNode newSource = null;
@@ -39,7 +39,6 @@ namespace MultiSETransformer
 			foreach (SyntaxTree sourceTree in test.SyntaxTrees) {
 				var newFile = Path.Combine (outputPath.FullName, Path.GetFileName(sourceTree.FilePath));
 				File.WriteAllText(newFile, sourceTree.GetRoot().ToFullString());
-				Console.WriteLine(sourceTree.GetRoot().ToFullString());
 			}
 		}
 
