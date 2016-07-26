@@ -21,9 +21,10 @@ class PProgramToCSharpTranslator(TranslatorBase):
         PTypeEvent: "EVENT_NULL"
     }
 
+    runtime_dir = os.environ.get("RUNTIME_DIR", os.path.realpath(os.path.dirname(__file__) + "/../runtimes/basic_csharp"))
+
     def __init__(self, *args):
         super(PProgramToCSharpTranslator, self).__init__(*args)
-        self.runtime_dir = os.environ.get("RUNTIME_DIR", os.path.realpath(os.path.dirname(__file__) + "/../runtimes/basic_csharp"))
 
     def translate_type(self, T):
         t = None
@@ -157,9 +158,11 @@ class PProgramToCSharpTranslator(TranslatorBase):
                 }
             ))
 
-    def translate(self):
+    def make_output_dir(self):
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
+
+    def create_proj_macros(self):
         # create ProjectMacros
         with open(os.path.join(self.out_dir, "ProjectConstants.cs"), 'w+') as macrosf:
             self.stream = macrosf
@@ -172,6 +175,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
                 for i, s in enumerate(machine.state_decls.values()):
                     self.out("public const int {0} = {1};\n".format(self.translate_state(machine, s, full_qualified=False), i))
             self.out("}")
+
+    def generate_foreach_machine(self):
         # generated .cs files for each machine
         for machine in self.pprogram.machines:
             self.current_visited_machine = machine
@@ -241,8 +246,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
                     self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
                 else:
                     self.out("}\n")
-                    self.out("public override void StartMachine (Scheduler s, {0} payload) {{\n".format(self.translate_type(PTypeAny)))
-                    self.out("base.StartMachine(s, payload);\n")
+                    self.out("public override void StartMachine (Scheduler scheduler, {0} payload) {{\n".format(self.translate_type(PTypeAny)))
+                    self.out("this.scheduler = scheduler;\n")
                     self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
                 self.out("}\n")
 
@@ -294,7 +299,12 @@ class PProgramToCSharpTranslator(TranslatorBase):
                                 self.out("}\n")
                             self.out("}\n}\n")
                         self.out("}\n")
-        self.create_csproj()
+
+    pipline = [make_output_dir, create_proj_macros, generate_foreach_machine, create_csproj]
+
+    def translate(self):
+        for procedure in self.pipline:
+            procedure(self)
     
     def allocate_local_var(self):
         var = "tmp{0}".format(self.tmp_var_cnt)

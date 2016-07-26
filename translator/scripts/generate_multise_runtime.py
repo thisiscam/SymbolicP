@@ -16,6 +16,7 @@ def main():
                     "PBool.cs"
                 }
     transform_srcs = filter(lambda s: os.path.basename(s) not in ignore_srcs, all_srcs)
+    print ",".join([src for src in transform_srcs])
     valuesummary_transform(symbolic_runtime_dir, multise_runtime_dir, transform_srcs)
 
 if __name__ == '__main__':

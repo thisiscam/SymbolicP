@@ -17,28 +17,29 @@
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Externalconsole>true</Externalconsole>
     <PlatformTarget>x86</PlatformTarget>
+    <Commandlineparameters>../../../../../runtimes/symbolic_csharp ../../../../../runtimes/multise_csharp  ../../../../../runtimes/symbolic_csharp/Constants.cs,../../../../../runtimes/symbolic_csharp/IPType.cs,../../../../../runtimes/symbolic_csharp/List.cs,../../../../../runtimes/symbolic_csharp/MonitorPMachine.cs,../../../../../runtimes/symbolic_csharp/PList.cs,../../../../../runtimes/symbolic_csharp/PMachine.cs,../../../../../runtimes/symbolic_csharp/PMap.cs,../../../../../runtimes/symbolic_csharp/Scheduler.cs,../../../../../runtimes/symbolic_csharp/SendQueueItem.cs,../../../../../runtimes/symbolic_csharp/Tuples.cs</Commandlineparameters>
+    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <DebugType>full</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Externalconsole>true</Externalconsole>
     <PlatformTarget>x86</PlatformTarget>
+    <ConsolePause>false</ConsolePause>
+    <Commandlineparameters>../../../../../runtimes/symbolic_csharp ../../../../../runtimes/multise_csharp  ../../../../../runtimes/symbolic_csharp/Constants.cs,../../../../../runtimes/symbolic_csharp/IPType.cs,../../../../../runtimes/symbolic_csharp/List.cs,../../../../../runtimes/symbolic_csharp/MonitorPMachine.cs,../../../../../runtimes/symbolic_csharp/PList.cs,../../../../../runtimes/symbolic_csharp/PMachine.cs,../../../../../runtimes/symbolic_csharp/PMap.cs,../../../../../runtimes/symbolic_csharp/Scheduler.cs,../../../../../runtimes/symbolic_csharp/SendQueueItem.cs,../../../../../runtimes/symbolic_csharp/Tuples.cs</Commandlineparameters>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="Microsoft.CodeAnalysis.CSharp">
-      <HintPath>..\..\..\..\..\..\Documents\roslyn\Binaries\Debug\csccore\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CodeAnalysis">
-      <HintPath>..\..\..\..\..\..\Documents\roslyn\Binaries\Debug\csccore\Microsoft.CodeAnalysis.dll</HintPath>
-    </Reference>
     <Reference Include="System.Collections.Immutable">
       <HintPath>Libs\System.Collections.Immutable.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.CSharp">
+      <HintPath>Libs\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis">
+      <HintPath>Libs\Microsoft.CodeAnalysis.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -50,4 +51,105 @@
   <Target Name="AfterBuild">
     <Copy SourceFiles="$(OutputPath)\$(AssemblyName).exe" DestinationFiles="$(AssemblyName).exe" />
   </Target>
+  <ItemGroup>
+    <None Include="..\..\..\runtimes\symbolic_csharp\Constants.cs">
+      <Link>symbolic_csharp\Constants.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\IPType.cs">
+      <Link>symbolic_csharp\IPType.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\List.cs">
+      <Link>symbolic_csharp\List.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\MonitorPMachine.cs">
+      <Link>symbolic_csharp\MonitorPMachine.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\PBool.cs">
+      <Link>symbolic_csharp\PBool.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\PInteger.cs">
+      <Link>symbolic_csharp\PInteger.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\PList.cs">
+      <Link>symbolic_csharp\PList.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\PMachine.cs">
+      <Link>symbolic_csharp\PMachine.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\PMap.cs">
+      <Link>symbolic_csharp\PMap.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\PathConstraint.cs">
+      <Link>symbolic_csharp\PathConstraint.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\Scheduler.cs">
+      <Link>symbolic_csharp\Scheduler.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\SendQueueItem.cs">
+      <Link>symbolic_csharp\SendQueueItem.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\SymbolicBool.cs">
+      <Link>symbolic_csharp\SymbolicBool.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\SymbolicEngine.cs">
+      <Link>symbolic_csharp\SymbolicEngine.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\SymbolicInteger.cs">
+      <Link>symbolic_csharp\SymbolicInteger.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\symbolic_csharp\Tuples.cs">
+      <Link>symbolic_csharp\Tuples.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\Constants.cs">
+      <Link>multise_csharp\Constants.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\IPType.cs">
+      <Link>multise_csharp\IPType.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\List.cs">
+      <Link>multise_csharp\List.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\MonitorPMachine.cs">
+      <Link>multise_csharp\MonitorPMachine.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\PBool.cs">
+      <Link>multise_csharp\PBool.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\PInteger.cs">
+      <Link>multise_csharp\PInteger.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\PList.cs">
+      <Link>multise_csharp\PList.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\PMachine.cs">
+      <Link>multise_csharp\PMachine.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\PMap.cs">
+      <Link>multise_csharp\PMap.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\PathConstraint.cs">
+      <Link>multise_csharp\PathConstraint.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\Scheduler.cs">
+      <Link>multise_csharp\Scheduler.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\SendQueueItem.cs">
+      <Link>multise_csharp\SendQueueItem.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\SymbolicBool.cs">
+      <Link>multise_csharp\SymbolicBool.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\SymbolicEngine.cs">
+      <Link>multise_csharp\SymbolicEngine.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\SymbolicInteger.cs">
+      <Link>multise_csharp\SymbolicInteger.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\Tuples.cs">
+      <Link>multise_csharp\Tuples.cs</Link>
+    </None>
+    <None Include="..\..\..\runtimes\multise_csharp\ValueSummary.cs">
+      <Link>multise_csharp\ValueSummary.cs</Link>
+    </None>
+  </ItemGroup>
 </Project>

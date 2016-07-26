@@ -8,11 +8,11 @@ class PList<T> : List<T>, IPType<PList<T>>, IEquatable<PList<T>> where T : IPTyp
     }
 
 	public PList<T> DeepCopy() {
-		PList<T> r = new PList<T>();
+		PList<T> ret = new PList<T>();
 		for(int i=0; i < this.Count; i++) {
-			r.Add(this[i].DeepCopy());
+			ret.Add(this[i].DeepCopy());
 		}
-		return r;
+		return ret;
 	}
 	
 	public override int GetHashCode()

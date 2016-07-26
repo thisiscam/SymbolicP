@@ -19,8 +19,8 @@ abstract class PMachine : IPType<PMachine> {
 
     public List<SendQueueItem> sendQueue = new List<SendQueueItem>();
 
-    public virtual void StartMachine(Scheduler s, IPType payload) {
-        this.scheduler = s;
+    public virtual void StartMachine(Scheduler scheduler, IPType payload) {
+        this.scheduler = scheduler;
     }
     
     /* Returns the index that can serve this event */

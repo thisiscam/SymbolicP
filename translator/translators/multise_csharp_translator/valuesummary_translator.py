@@ -11,11 +11,16 @@ else:
 	transformer_cmd = ["mono", transformer_exe]
 	ld_library_path_var = "MONO_PATH"
 
-def valuesummary_transform(include_files_path, output_path, transform_files):
-	cmd = transformer_cmd + [include_files_path, output_path, ",".join(transform_files)]
+def valuesummary_transform(include_files, output_path, transform_files, no_copy_srcs=None):
+	if not isinstance(include_files, str):
+		include_files = ",".join(include_files)
+	cmd = transformer_cmd + [include_files, output_path, ",".join(transform_files)]
+	if no_copy_srcs:
+		cmd += [",".join(no_copy_srcs)]
 	env = os.environ.copy()
 	if ld_library_path_var in env:
 		env[ld_library_path_var] += os.pathsep + transformer_lib_path
 	else:
 		env[ld_library_path_var] = transformer_lib_path
-	subprocess.call(cmd, env=env)
+	print " ".join(cmd)
+	subprocess.check_call(cmd, env=env)

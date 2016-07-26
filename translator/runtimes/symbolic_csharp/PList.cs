@@ -8,11 +8,11 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>{
     }
 
 	public PList<T> DeepCopy() {
-		PList<T> r = new PList<T>();
+		PList<T> ret = new PList<T>();
 		for(SymbolicInteger i=0; i < this.Count; i++) {
-			r.Add(this[i].DeepCopy());
+			ret.Add(this[i].DeepCopy());
 		}
-		return r;
+		return ret;
 	}
 	
 	public SymbolicInteger PTypeGetHashCode()
