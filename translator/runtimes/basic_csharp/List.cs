@@ -27,8 +27,8 @@ public class List<T> {
 		if (this._count >= this._capacity) {
 			int new_capacity = this._capacity * 2;
 			T[] new_data = new T[new_capacity];
-			int i;
-			for (i = 0; i < idx; i++) {
+			int i = 0;
+			for (; i < idx; i++) {
 				new_data [i] = this.data [i];
 			}
 			new_data [i] = item;

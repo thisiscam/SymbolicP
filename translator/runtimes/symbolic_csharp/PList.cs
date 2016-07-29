@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 
-class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>{
+class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T> {
 	public void Insert(PTuple<PInteger, T> t)
     {
-        this.Insert(t.Item1, t.Item2);
+		this.Insert((SymbolicInteger)t.Item1, t.Item2);
     }
 
 	public PList<T> DeepCopy() {

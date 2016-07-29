@@ -1,7 +1,7 @@
 using System;
 
 public struct PInteger : IPType<PInteger> { 
-	SymbolicInteger value;
+	public SymbolicInteger value;
 
     public PInteger(int value) 
     { 
@@ -15,6 +15,14 @@ public struct PInteger : IPType<PInteger> {
 
 	public static implicit operator int(PInteger value) 
 	{ 
+		return value.value;
+	}
+
+    public static explicit operator PInteger(SymbolicInteger value) {
+        return new PInteger(value);
+    }
+
+	public static explicit operator SymbolicInteger(PInteger value) {
 		return value.value;
 	}
 

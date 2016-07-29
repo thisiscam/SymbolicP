@@ -59,12 +59,12 @@ public struct PBool : IPType<PBool> {
 		return !op.value;
 	}
 
-	public SymbolicBool PTypeEquals(PBool other)
+	public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PBool> other)
 	{
-		return this.value == other.value;
+		return this.value == other.value.value;
 	}
 
-	public SymbolicInteger PTypeGetHashCode()
+	public ValueSummary<SymbolicInteger> PTypeGetHashCode()
 	{
 		if (this.value.IsAbstract()) {
 			return new SymbolicInteger((BitVecExpr)SymbolicEngine.ctx.MkITE(this.value.AbstractValue, SymbolicEngine.ctx.MkBV(1, SymbolicInteger.INT_SIZE), SymbolicEngine.ctx.MkBV(0, SymbolicInteger.INT_SIZE)));
@@ -73,7 +73,7 @@ public struct PBool : IPType<PBool> {
 		}
 	}
 
-	public PBool DeepCopy() {
+	public ValueSummary<PBool> DeepCopy() {
 		return this;
 	}
 }

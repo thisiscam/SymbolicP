@@ -1,4 +1,4 @@
-import glob, os
+import glob, os, shutil
 from translators.multise_csharp_translator import valuesummary_transform
 
 runtimes_dir = os.path.join(os.path.dirname(__file__), "../runtimes/")
@@ -13,11 +13,15 @@ def main():
                     "SymbolicEngine.cs", 
                     "PathConstraint.cs",
                     "PInteger.cs",
-                    "PBool.cs"
+                    "Program.cs",
+                    "Scheduler.cs",
+                    "PBool.cs",
                 }
     transform_srcs = filter(lambda s: os.path.basename(s) not in ignore_srcs, all_srcs)
-    print ",".join([src for src in transform_srcs])
-    valuesummary_transform(symbolic_runtime_dir, multise_runtime_dir, transform_srcs)
+    nocopy_srcs = ignore_srcs
+    nocopy_srcs = filter(lambda s: os.path.basename(s) in nocopy_srcs, all_srcs)
+    print "Transforming runtime..."
+    valuesummary_transform(symbolic_runtime_dir, multise_runtime_dir, transform_srcs, nocopy_srcs)
 
 if __name__ == '__main__':
     main()

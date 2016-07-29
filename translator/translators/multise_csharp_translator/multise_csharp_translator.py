@@ -19,7 +19,9 @@ class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
                     "SymbolicEngine.cs", 
                     "PathConstraint.cs",
                     "PInteger.cs",
-                    "PBool.cs"
+                    "Program.cs",
+                    "Scheduler.cs",
+                    "PBool.cs",
                 }
         all_srcs = runtime_srcs + generated_srcs
         transform_srcs = filter(lambda s: os.path.basename(s) not in ignore_srcs, all_srcs)

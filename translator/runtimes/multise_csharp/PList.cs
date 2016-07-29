@@ -3,48 +3,48 @@ using System.Collections.Generic;
 
 class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
 {
-    public void Insert(ValueSummary<PList<T>> self, ValueSummary<PTuple<PInteger, T>> t)
+    public void Insert(ValueSummary<PTuple<PInteger, T>> t)
     {
-        self.InvokeMethod<int, T>((_, s, a0, a1) => _.Insert(s, a0, a1), t.GetField<PInteger>(_ => _.Item1), t.GetField<T>(_ => _.Item2));
+        this.Insert(t.GetField<PInteger>(_ => _.Item1).Cast<SymbolicInteger>(_ => (SymbolicInteger)_), t.GetField<T>(_ => _.Item2));
     }
 
-    public ValueSummary<PList<T>> DeepCopy(ValueSummary<PList<T>> self)
+    public ValueSummary<PList<T>> DeepCopy()
     {
         ValueSummary<PList<T>> ret = new ValueSummary<PList<T>>(new PList<T>());
-        for (ValueSummary<SymbolicInteger> i = 0; i.InvokeBinary<SymbolicInteger, bool>((l, r) => l < r, self.GetField<int>(_ => _.Count)); i.InvokeMethod((_) => _++))
+        for (ValueSummary<SymbolicInteger> i = (SymbolicInteger)0; i.InvokeBinary<int, bool>((l, r) => l < r, this.Count).Cond(); i.Increment())
         {
-            ret.InvokeMethod<T>((_, s, a0) => _.Add(s, a0), self.GetIndex((_, a0) => _[a0], i).InvokeDynamic((_, s) => _.DeepCopy(s)));
+            ret.InvokeMethod<T>((_, a0) => _.Add(a0), this[i].InvokeMethod((_) => _.DeepCopy()));
         }
 
         return ret;
     }
 
-    public ValueSummary<SymbolicInteger> PTypeGetHashCode(ValueSummary<PList<T>> self)
+    public ValueSummary<SymbolicInteger> PTypeGetHashCode()
     {
-        ValueSummary<SymbolicInteger> ret = 1;
-        for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, self.GetField<int>(_ => _.Count)); i.InvokeMethod((_) => _++))
+        ValueSummary<SymbolicInteger> ret = (SymbolicInteger)1;
+        for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this.Count).Cond(); i.Increment())
         {
-            ret.Assign(ret.InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l * r, 31).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l + r, self.GetIndex((_, a0) => _[a0], i).InvokeDynamic((_, s) => _.PTypeGetHashCode(s))));
+            ret.Assign<SymbolicInteger>(ret.InvokeBinary<int, SymbolicInteger>((l, r) => l * r, 31).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l + r, this[i].InvokeMethod((_) => _.PTypeGetHashCode())));
         }
 
         return ret;
     }
 
-    public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PList<T>> self, ValueSummary<PList<T>> other)
+    public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PList<T>> other)
     {
-        if (self.GetField<int>(_ => _.Count).InvokeBinary<int, bool>((l, r) => l != r, other.GetField<int>(_ => _.Count)))
+        if (this.Count.InvokeBinary<int, bool>((l, r) => l != r, other.GetField<int>(_ => _.Count)).Cond())
         {
-            return false;
+            return (SymbolicBool)false;
         }
 
-        for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, self.GetField<int>(_ => _.Count)); i.InvokeMethod((_) => _++))
+        for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this.Count).Cond(); i.Increment())
         {
-            if (self.GetIndex((_, a0) => _[a0], i).InvokeDynamic<T>((_, s, a0) => _.PTypeEquals(s, a0), other.GetIndex((_, a0) => _[a0], i)).InvokeMethod((_) => !_))
+            if (this[i].InvokeMethod<T, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.InvokeMethod<int, T>((_, a0) => _[a0], i)).InvokeUnary<bool>(_ => !_).Cond())
             {
-                return false;
+                return (SymbolicBool)false;
             }
         }
 
-        return true;
+        return (SymbolicBool)true;
     }
 }

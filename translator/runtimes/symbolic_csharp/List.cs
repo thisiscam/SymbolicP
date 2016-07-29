@@ -23,12 +23,12 @@ public class List<T> {
 		}
 	}
 
-	public void Insert(int idx, T item) {
+	public void Insert(SymbolicInteger idx, T item) {
 		if (this._count >= this._capacity) {
 			int new_capacity = this._capacity * 2;
 			T[] new_data = new T[new_capacity];
-			int i;
-			for (i = 0; i < idx; i++) {
+			int i = 0;
+			for (; i < idx; i++) {
 				new_data [i] = this.data [i];
 			}
 			new_data [i] = item;
@@ -61,6 +61,15 @@ public class List<T> {
 	}
 
 	public T this[int index] { 
+		get {
+			return this.data [index];
+		} 
+		set {
+			this.data [index] = value;
+		}
+	}
+
+	public T this[SymbolicInteger index] { 
 		get {
 			return this.data [index];
 		} 

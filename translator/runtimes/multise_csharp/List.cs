@@ -4,92 +4,105 @@ public class List<T>
     internal ValueSummary<int> _count = 0;
     internal ValueSummary<int> _capacity = List<T>.INITIAL_CAPACITY;
     ValueSummary<ValueSummary<T>[]> data = new ValueSummary<T>[List<T>.INITIAL_CAPACITY];
-    public void Add(ValueSummary<List<T>> self, ValueSummary<T> item)
+    public void Add(ValueSummary<T> item)
     {
-        if (self.GetField<int>(_ => _._count).InvokeBinary<int, bool>((l, r) => l >= r, self.GetField<int>(_ => _._capacity)))
+        if (this._count.InvokeBinary<int, bool>((l, r) => l >= r, this._capacity).Cond())
         {
-            ValueSummary<int> new_capacity = self.GetField<int>(_ => _._capacity).InvokeBinary<int, int>((l, r) => l * r, 2);
+            ValueSummary<int> new_capacity = this._capacity.InvokeBinary<int, int>((l, r) => l * r, 2);
             ValueSummary<ValueSummary<T>[]> new_data = new ValueSummary<T>[new_capacity];
-            for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, self.GetField<int>(_ => _._count)); i.InvokeMethod((_) => _++))
+            for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Cond(); i.Increment())
             {
-                new_data.GetIndex((_, a0) => _[a0], i).Assign(self.GetField<T[]>(_ => _.data).GetIndex((_, a0) => _[a0], i));
+                new_data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i, this.data.GetIndex<int, T>((_, a0) => _[a0], i));
             }
 
-            new_data.GetIndex((_, a0) => _[a0], this.GetField<int>(_ => _._count)).Assign(item);
-            self.GetField<T[]>(_ => _.data).Assign(new_data);
-            self.GetField<int>(_ => _._capacity).Assign(new_capacity);
-            self.GetField<int>(_ => _._count).InvokeMethod((_) => _++);
+            new_data.SetIndex<int, T>((_, a0, r) => _[a0] = r, this._count, item);
+            this.data = new_data;
+            this._capacity = new_capacity;
+            this._count.Increment();
         }
         else
         {
-            self.GetField<T[]>(_ => _.data).GetIndex((_, a0) => _[a0], this.GetField<int>(_ => _._count)).Assign(item);
-            self.GetField<int>(_ => _._count).InvokeMethod((_) => _++);
+            this.data.SetIndex<int, T>((_, a0, r) => _[a0] = r, this._count, item);
+            this._count.Increment();
         }
     }
 
-    public void Insert(ValueSummary<List<T>> self, ValueSummary<int> idx, ValueSummary<T> item)
+    public void Insert(ValueSummary<SymbolicInteger> idx, ValueSummary<T> item)
     {
-        if (self.GetField<int>(_ => _._count).InvokeBinary<int, bool>((l, r) => l >= r, self.GetField<int>(_ => _._capacity)))
+        if (this._count.InvokeBinary<int, bool>((l, r) => l >= r, this._capacity).Cond())
         {
-            ValueSummary<int> new_capacity = self.GetField<int>(_ => _._capacity).InvokeBinary<int, int>((l, r) => l * r, 2);
+            ValueSummary<int> new_capacity = this._capacity.InvokeBinary<int, int>((l, r) => l * r, 2);
             ValueSummary<ValueSummary<T>[]> new_data = new ValueSummary<T>[new_capacity];
-            ValueSummary<int> i;
-            for (i.Assign(0); i.InvokeBinary<int, bool>((l, r) => l < r, idx); i.InvokeMethod((_) => _++))
+            ValueSummary<int> i = 0;
+            for (; i.InvokeBinary<SymbolicInteger, bool>((l, r) => l < r, idx).Cond(); i.Increment())
             {
-                new_data.GetIndex((_, a0) => _[a0], i).Assign(self.GetField<T[]>(_ => _.data).GetIndex((_, a0) => _[a0], i));
+                new_data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i, this.data.GetIndex<int, T>((_, a0) => _[a0], i));
             }
 
-            new_data.GetIndex((_, a0) => _[a0], i).Assign(item);
-            for (; i.InvokeBinary<int, bool>((l, r) => l < r, self.GetField<int>(_ => _._capacity)); i.InvokeMethod((_) => _++))
+            new_data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i, item);
+            for (; i.InvokeBinary<int, bool>((l, r) => l < r, this._capacity).Cond(); i.Increment())
             {
-                new_data.GetIndex((_, a0) => _[a0], i.InvokeBinary<int, int>((l, r) => l + r, 1)).Assign(self.GetField<T[]>(_ => _.data).GetIndex((_, a0) => _[a0], i));
+                new_data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i.InvokeBinary<int, int>((l, r) => l + r, 1), this.data.GetIndex<int, T>((_, a0) => _[a0], i));
             }
 
-            self.GetField<int>(_ => _._capacity).Assign(new_capacity);
-            self.GetField<int>(_ => _._count).InvokeMethod((_) => _++);
+            this._capacity = new_capacity;
+            this._count.Increment();
         }
         else
         {
-            for (ValueSummary<int> i = self.GetField<int>(_ => _._count); i.InvokeBinary<int, bool>((l, r) => l > r, idx); i.InvokeMethod((_) => _--))
+            for (ValueSummary<int> i = this._count; i.InvokeBinary<SymbolicInteger, bool>((l, r) => l > r, idx).Cond(); i.Decrement())
             {
-                self.GetField<T[]>(_ => _.data).GetIndex((_, a0) => _[a0], i).Assign(self.GetField<T[]>(_ => _.data).GetIndex((_, a0) => _[a0], i.InvokeBinary<int, int>((l, r) => l - r, 1)));
+                this.data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i, this.data.GetIndex<int, T>((_, a0) => _[a0], i.InvokeBinary<int, int>((l, r) => l - r, 1)));
             }
 
-            self.GetField<T[]>(_ => _.data).GetIndex((_, a0) => _[a0], idx).Assign(item);
-            self.GetField<int>(_ => _._count).InvokeMethod((_) => _++);
+            this.data.SetIndex<SymbolicInteger, T>((_, a0, r) => _[a0] = r, idx, item);
+            this._count.Increment();
         }
     }
 
-    public void RemoveAt(ValueSummary<List<T>> self, ValueSummary<int> idx)
+    public void RemoveAt(ValueSummary<int> idx)
     {
-        for (ValueSummary<int> i = idx.InvokeBinary<int, int>((l, r) => l + r, 1); i.InvokeBinary<int, bool>((l, r) => l < r, self.GetField<int>(_ => _._count)); i.InvokeMethod((_) => _++))
+        for (ValueSummary<int> i = idx.InvokeBinary<int, int>((l, r) => l + r, 1); i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Cond(); i.Increment())
         {
-            self.GetField<T[]>(_ => _.data).GetIndex((_, a0) => _[a0], i.InvokeBinary<int, int>((l, r) => l - r, 1)).Assign(self.GetField<T[]>(_ => _.data).GetIndex((_, a0) => _[a0], i));
+            this.data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i.InvokeBinary<int, int>((l, r) => l - r, 1), this.data.GetIndex<int, T>((_, a0) => _[a0], i));
         }
 
-        self.GetField<int>(_ => _._count).InvokeMethod((_) => _--);
+        this._count.Decrement();
     }
 
-    public void RemoveRange(ValueSummary<List<T>> self, ValueSummary<int> start, ValueSummary<int> count)
+    public void RemoveRange(ValueSummary<int> start, ValueSummary<int> count)
     {
-        for (ValueSummary<int> i = start.InvokeBinary<int, int>((l, r) => l + r, count); i.InvokeBinary<int, bool>((l, r) => l < r, self.GetField<int>(_ => _._count)); i.InvokeMethod((_) => _++))
+        for (ValueSummary<int> i = start.InvokeBinary<int, int>((l, r) => l + r, count); i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Cond(); i.Increment())
         {
-            self.GetField<T[]>(_ => _.data).GetIndex((_, a0) => _[a0], i.InvokeBinary<int, int>((l, r) => l - r, count)).Assign(self.GetField<T[]>(_ => _.data).GetIndex((_, a0) => _[a0], i));
+            this.data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i.InvokeBinary<int, int>((l, r) => l - r, count), this.data.GetIndex<int, T>((_, a0) => _[a0], i));
         }
 
-        self.GetField<int>(_ => _._count).Assign(count);
+        this._count -= count;
     }
 
-    public T this[ValueSummary<int> index]
+    public ValueSummary<T> this[ValueSummary<int> index]
     {
         get
         {
-            return this.data.GetIndex((_, a0) => _[a0], index);
+            return this.data.GetIndex<int, T>((_, a0) => _[a0], index);
         }
 
         set
         {
-            this.data.GetIndex((_, a0) => _[a0], index).Assign(value);
+            this.data.SetIndex<int, T>((_, a0, r) => _[a0] = r, index, value);
+        }
+    }
+
+    public ValueSummary<T> this[ValueSummary<SymbolicInteger> index]
+    {
+        get
+        {
+            return this.data.GetIndex<SymbolicInteger, T>((_, a0) => _[a0], index);
+        }
+
+        set
+        {
+            this.data.SetIndex<SymbolicInteger, T>((_, a0, r) => _[a0] = r, index, value);
         }
     }
 

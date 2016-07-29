@@ -1,10 +1,10 @@
 public interface IPType
 {
-    ValueSummary<SymbolicInteger> PTypeGetHashCode(ValueSummary<IPType> self);
+    ValueSummary<SymbolicInteger> PTypeGetHashCode();
 }
 
 public interface IPType<T> : IPType
 {
-    ValueSummary<T> DeepCopy(ValueSummary<IPType<T>> self);
-    ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<IPType<T>> self, ValueSummary<T> other);
+    ValueSummary<T> DeepCopy();
+    ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<T> other);
 }

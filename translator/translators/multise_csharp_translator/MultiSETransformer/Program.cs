@@ -47,7 +47,7 @@ namespace MultiSETransformer
 				}
 			}
 			foreach (SyntaxTree sourceTree in test.SyntaxTrees) {
-				if (noCopySrcs.Contains (sourceTree.FilePath)) {
+				if (noCopySrcs.Contains (sourceTree.FilePath) || !transformSources.Contains(sourceTree.FilePath)) {
 					continue;
 				}
 				var newFile = Path.Combine (outputPath.FullName, Path.GetFileName(sourceTree.FilePath));

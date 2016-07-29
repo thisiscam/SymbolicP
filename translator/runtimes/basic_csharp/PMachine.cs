@@ -8,7 +8,7 @@ abstract class PMachine : IPType<PMachine> {
     protected int retcode;
     protected List<int> states = new List<int>();
 
-    private Scheduler scheduler;
+    protected Scheduler scheduler;
 
     protected bool[,] DeferedSet;
 

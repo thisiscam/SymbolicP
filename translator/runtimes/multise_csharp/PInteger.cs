@@ -1,7 +1,7 @@
 using System;
 
 public struct PInteger : IPType<PInteger> { 
-	SymbolicInteger value;
+	public SymbolicInteger value;
 
     public PInteger(int value) 
     { 
@@ -15,6 +15,14 @@ public struct PInteger : IPType<PInteger> {
 
 	public static implicit operator int(PInteger value) 
 	{ 
+		return value.value;
+	}
+
+    public static explicit operator PInteger(SymbolicInteger value) {
+        return new PInteger(value);
+    }
+
+	public static explicit operator SymbolicInteger(PInteger value) {
 		return value.value;
 	}
 
@@ -73,17 +81,17 @@ public struct PInteger : IPType<PInteger> {
 		return new PInteger(a.value ^ b.value); 
     }
 
-	public SymbolicBool PTypeEquals(PInteger other)
+	public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PInteger> other)
 	{
-		return this.value == other.value;
+		return this.value == other.value.value;
 	}
 
-	public SymbolicInteger PTypeGetHashCode()
+	public ValueSummary<SymbolicInteger> PTypeGetHashCode()
 	{
 		return this.value;
 	}
 
-    public PInteger DeepCopy() {
+    public ValueSummary<PInteger> DeepCopy() {
     	return this;
     }
 

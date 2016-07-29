@@ -6,11 +6,11 @@ public class PMap<K, V> : IPType<PMap<K, V>>
 		where K : IPType<K> 
 		where V : IPType<V>
 {
-	private class MapEntry<K, V> {
+	private class MapEntry {
 		SymbolicInteger hash;
 		K key;
 		V value;
-		MapEntry<K, V> next;
+		MapEntry next;
 
 		public K Key { get { return key; } }
 		public SymbolicInteger Hash { get { return hash; } }
@@ -22,7 +22,7 @@ public class PMap<K, V> : IPType<PMap<K, V>>
 				this.value = value;
 			}
 		}
-		public MapEntry<K,V> Next { 
+		public MapEntry Next { 
 			get { 
 				return next; 
 			} 
@@ -31,7 +31,7 @@ public class PMap<K, V> : IPType<PMap<K, V>>
 			}
 		}
 
-		public MapEntry(K k, SymbolicInteger hash, V v, MapEntry<K,V> next) {
+		public MapEntry(K k, SymbolicInteger hash, V v, MapEntry next) {
 			this.key = k;
 			this.hash = hash;
 			this.value = v;
@@ -41,7 +41,7 @@ public class PMap<K, V> : IPType<PMap<K, V>>
 
 	private int _capacity;
 	private int _count;
-	private MapEntry<K,V>[] data;
+	private MapEntry[] data;
 
 	private static double LOAD_FACTOR = 0.7;
 	private static double RESIZE_RATIO = 2.0;
@@ -52,7 +52,7 @@ public class PMap<K, V> : IPType<PMap<K, V>>
 	public PMap(int capacity) { 
 		this._capacity = capacity;
 		this._count = 0;
-		this.data = new MapEntry<K,V>[capacity];
+		this.data = new MapEntry[capacity];
 	}
 		
 	public int Count { get { return _count; } }
@@ -60,8 +60,8 @@ public class PMap<K, V> : IPType<PMap<K, V>>
 	private void Insert(K k, V v) {
 		SymbolicInteger hash = k.PTypeGetHashCode ();
 		SymbolicInteger idx = hash % this._capacity;
-		MapEntry<K, V> firstEntry = this.data [idx];
-		for (MapEntry<K, V> iter = firstEntry; iter != null; firstEntry = firstEntry.Next) {
+		MapEntry firstEntry = this.data [idx];
+		for (MapEntry iter = firstEntry; iter != null; firstEntry = firstEntry.Next) {
 			if (iter.Hash == hash && iter.Key.PTypeEquals (k)) {
 				throw new SystemException ("Reinsertion of key" + k.ToString() + "into PMap");
 			}
@@ -69,15 +69,15 @@ public class PMap<K, V> : IPType<PMap<K, V>>
 
 		this.ResizeIfNecessary ();
 
-		this.data [idx] = new MapEntry<K,V> (k, hash, v, firstEntry);
+		this.data [idx] = new MapEntry (k, hash, v, firstEntry);
 		this._count++;
 	}
 
 	private V Get(K k) {
 		SymbolicInteger hash = k.PTypeGetHashCode ();
 		SymbolicInteger idx = hash % this._capacity;
-		MapEntry<K, V> firstEntry = this.data [idx];
-		for (MapEntry<K, V> iter = firstEntry; iter != null; firstEntry = firstEntry.Next) {
+		MapEntry firstEntry = this.data [idx];
+		for (MapEntry iter = firstEntry; iter != null; firstEntry = firstEntry.Next) {
 			if (iter.Hash == hash && iter.Key.PTypeEquals (k)) {
 				return iter.Value;
 			}
@@ -88,8 +88,8 @@ public class PMap<K, V> : IPType<PMap<K, V>>
 	private void Set(K k, V v) {
 		SymbolicInteger hash = k.PTypeGetHashCode ();
 		SymbolicInteger idx = hash % this._capacity;
-		MapEntry<K, V> firstEntry = this.data [idx];
-		for (MapEntry<K, V> iter = firstEntry; iter != null; firstEntry = firstEntry.Next) {
+		MapEntry firstEntry = this.data [idx];
+		for (MapEntry iter = firstEntry; iter != null; firstEntry = firstEntry.Next) {
 			if (iter.Hash == hash && iter.Key.PTypeEquals (k)) {
 				iter.Value = v;
 				return;
@@ -98,18 +98,18 @@ public class PMap<K, V> : IPType<PMap<K, V>>
 
 		this.ResizeIfNecessary ();
 
-		this.data [idx] = new MapEntry<K,V> (k, hash, v, firstEntry);
+		this.data [idx] = new MapEntry (k, hash, v, firstEntry);
 		this._count++;
 	}
 
 	private void ResizeIfNecessary () {
 		if (this._count / this._capacity > PMap<K,V>.LOAD_FACTOR) {
 			int new_capacity = (int)(this._capacity * PMap<K,V>.RESIZE_RATIO);
-			MapEntry<K,V>[] new_data = new MapEntry<K,V>[new_capacity];
+			MapEntry[] new_data = new MapEntry[new_capacity];
 			for (int i = 0; i < this._capacity; i++) {
-				for (MapEntry<K,V> iter = this.data [i]; iter != null; iter = iter.Next) {
+				for (MapEntry iter = this.data [i]; iter != null; iter = iter.Next) {
 					SymbolicInteger idx = iter.Hash % new_capacity;
-					new_data[idx] = new MapEntry<K,V>(iter.Key, iter.Hash, iter.Value, new_data[idx]);
+					new_data[idx] = new MapEntry(iter.Key, iter.Hash, iter.Value, new_data[idx]);
 				}
 			}
 			this._capacity = new_capacity;
@@ -120,12 +120,12 @@ public class PMap<K, V> : IPType<PMap<K, V>>
 	public void Remove(K k) {
 		SymbolicInteger hash = k.PTypeGetHashCode ();
 		SymbolicInteger idx = hash % this._capacity;
-		MapEntry<K, V> firstEntry = this.data [idx];
+		MapEntry firstEntry = this.data [idx];
 		if (firstEntry.Hash == hash && firstEntry.Key.PTypeEquals (k)) {
 			this.data [idx] = firstEntry.Next;
 			return;
 		} else {
-			for (MapEntry<K, V> iter = firstEntry; iter != null; firstEntry = firstEntry.Next) {
+			for (MapEntry iter = firstEntry; iter != null; firstEntry = firstEntry.Next) {
 				if (iter.Next.Hash == hash && iter.Next.Key.PTypeEquals (k)) {
 					iter.Next = iter.Next.Next;
 					return;
@@ -156,11 +156,11 @@ public class PMap<K, V> : IPType<PMap<K, V>>
 	    return ret;
 	}
 
-	private MapEntry<K, V> CopyEntryChain(MapEntry<K, V> entry) {
+	private MapEntry CopyEntryChain(MapEntry entry) {
 		if (entry == null) {
 			return null;
 		} else {
-			return new MapEntry<K, V>(entry.Key, entry.Hash, entry.Value.DeepCopy(), CopyEntryChain (entry.Next));
+			return new MapEntry(entry.Key, entry.Hash, entry.Value.DeepCopy(), CopyEntryChain (entry.Next));
 		}
 	}
 
@@ -168,9 +168,9 @@ public class PMap<K, V> : IPType<PMap<K, V>>
 	{
 		SymbolicInteger ret = 1;
 		for (int i = 0; i < this._capacity; i++) {
-			var entry = this.data[i];
+			MapEntry entry = this.data[i];
 			while(entry != null) {
-				ret += entry.Key.GetHashCode() ^ entry.Value.GetHashCode();
+				ret += entry.Key.PTypeGetHashCode() ^ entry.Value.PTypeGetHashCode();
 			} 
 		}
 		return ret;
@@ -182,7 +182,7 @@ public class PMap<K, V> : IPType<PMap<K, V>>
     		return false;
     	}
 		for (int i = 0; i < this._capacity; i++) {
-			var entry = this.data[i];
+			MapEntry entry = this.data[i];
 			while(entry != null) {
 				if(other.Get(entry.Key) != null || !entry.Value.PTypeEquals(other[entry.Key])) {
 					return false;

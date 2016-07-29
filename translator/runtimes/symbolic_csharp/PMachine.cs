@@ -8,7 +8,7 @@ abstract class PMachine : IPType<PMachine> {
     protected int retcode;
     protected List<int> states = new List<int>();
 
-    private Scheduler scheduler;
+    protected Scheduler scheduler;
 
     protected bool[,] DeferedSet;
 
@@ -64,7 +64,7 @@ abstract class PMachine : IPType<PMachine> {
     }
 
 	protected PBool RandomBool() {
-        return this.scheduler.RandomBool();
+        return (PBool)this.scheduler.RandomBool();
     }
 
 	protected void Assert(PBool cond, string msg) {
@@ -98,10 +98,10 @@ abstract class PMachine : IPType<PMachine> {
     }
 
 	public SymbolicInteger PTypeGetHashCode() {
-		return this.GetHashCode ();
+		return new SymbolicInteger(this.GetHashCode ());
 	}
 
 	public SymbolicBool PTypeEquals(PMachine other) {
-		return this == other;
+		return other == this;
 	}
 }
