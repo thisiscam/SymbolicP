@@ -4,7 +4,7 @@ public class List<T> {
 	internal int _count = 0;
 	internal int _capacity = List<T>.INITIAL_CAPACITY;
 
-	T[] data = new T[List<T>.INITIAL_CAPACITY];
+	protected T[] data = new T[List<T>.INITIAL_CAPACITY];
 
 	public void Add(T item) {
 		if (this._count >= this._capacity) {

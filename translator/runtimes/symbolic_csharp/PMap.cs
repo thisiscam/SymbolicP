@@ -139,6 +139,18 @@ public class PMap<K, V> : IPType<PMap<K, V>>
         this.Insert(t.Item1, t.Item2);
     }
 
+    public PBool ContainsKey(K k) {
+    	SymbolicInteger hash = k.PTypeGetHashCode ();
+		SymbolicInteger idx = hash % this._capacity;
+		MapEntry firstEntry = this.data [idx];
+		for (MapEntry iter = firstEntry; iter != null; firstEntry = firstEntry.Next) {
+			if (iter.Hash == hash && iter.Key.PTypeEquals (k)) {
+				return true;
+			}
+		}
+		return false;
+    }
+
 	public V this [K key] {
 		get {
 			return this.Get (key);

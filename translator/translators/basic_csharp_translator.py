@@ -282,7 +282,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
                         spec_machines = filter(lambda m: m.is_spec, self.pprogram.machines)
                         for spec_machine in spec_machines:
                             self.out("static MonitorPMachine {m_name} = new Machine{m_type}();\n".format(
-                                m_name=spec_machine.name.lower(), 
+                                m_name="monitor_" + spec_machine.name.lower(), 
                                 m_type=spec_machine.name)
                             )
                         self.out("\n")
@@ -294,7 +294,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
                             for observed_event, observing_machines in self.pprogram.observes_map.items():
                                 self.out("case {0}: {{\n".format(self.translate_event(observed_event)))
                                 for m in observing_machines:
-                                    self.out("{0}.ServeEvent({1}, payload);\n".format(m.name.lower(), self.translate_event(observed_event)))
+                                    self.out("{0}.ServeEvent({1}, payload);\n".format("monitor_" + m.name.lower(), self.translate_event(observed_event)))
                                 self.out("break;\n")
                                 self.out("}\n")
                             self.out("}\n}\n")

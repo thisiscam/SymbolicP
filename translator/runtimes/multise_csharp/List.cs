@@ -3,13 +3,13 @@ public class List<T>
     const int INITIAL_CAPACITY = 4;
     internal ValueSummary<int> _count = 0;
     internal ValueSummary<int> _capacity = List<T>.INITIAL_CAPACITY;
-    ValueSummary<ValueSummary<T>[]> data = new ValueSummary<T>[List<T>.INITIAL_CAPACITY];
+    protected ValueSummary<ValueSummary<T>[]> data = ValueSummary<T>.NewVSArray(List<T>.INITIAL_CAPACITY);
     public void Add(ValueSummary<T> item)
     {
         if (this._count.InvokeBinary<int, bool>((l, r) => l >= r, this._capacity).Cond())
         {
             ValueSummary<int> new_capacity = this._capacity.InvokeBinary<int, int>((l, r) => l * r, 2);
-            ValueSummary<ValueSummary<T>[]> new_data = new ValueSummary<T>[new_capacity];
+            ValueSummary<ValueSummary<T>[]> new_data = ValueSummary<T>.NewVSArray(new_capacity);
             for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Cond(); i.Increment())
             {
                 new_data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i, this.data.GetIndex<int, T>((_, a0) => _[a0], i));
@@ -32,7 +32,7 @@ public class List<T>
         if (this._count.InvokeBinary<int, bool>((l, r) => l >= r, this._capacity).Cond())
         {
             ValueSummary<int> new_capacity = this._capacity.InvokeBinary<int, int>((l, r) => l * r, 2);
-            ValueSummary<ValueSummary<T>[]> new_data = new ValueSummary<T>[new_capacity];
+            ValueSummary<ValueSummary<T>[]> new_data = ValueSummary<T>.NewVSArray(new_capacity);
             ValueSummary<int> i = 0;
             for (; i.InvokeBinary<SymbolicInteger, bool>((l, r) => l < r, idx).Cond(); i.Increment())
             {

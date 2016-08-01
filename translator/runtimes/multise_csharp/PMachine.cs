@@ -116,7 +116,7 @@ abstract class PMachine : IPType<PMachine>
 
     public ValueSummary<SymbolicInteger> PTypeGetHashCode()
     {
-        return new ValueSummary<ValueSummary<SymbolicInteger>>(new SymbolicInteger(this.GetHashCode()));
+        return new ValueSummary<SymbolicInteger>(new SymbolicInteger(this.GetHashCode()));
     }
 
     public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PMachine> other)

@@ -42,7 +42,7 @@ namespace MultiSETransformer
 						ValueSummaryRewriter rewriter = new ValueSummaryRewriter (pass, model, transformSources);
 						newSource = rewriter.Visit (sourceTree.GetRoot ()).NormalizeWhitespace ();
 						tree = tree.WithRootAndOptions (newSource, tree.Options);
-						test = test.ReplaceSyntaxTree (sourceTree, tree);					
+						test = test.ReplaceSyntaxTree (sourceTree, tree);
 					}
 				}
 			}

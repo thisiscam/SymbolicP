@@ -23,6 +23,7 @@ namespace MultiSETransformer
 		public static readonly string KW_PMACHINE_TRANSITIONS = "Transitions";
 		public static readonly string KW_PMACHINE_EXIT_FUNCTIONS = "ExitFunctions";
 		public static readonly string KW_PMACHINE_SENDQUEUE = "sendQueue";
+		public static readonly string KW_PMONITOR = "monitor_";
 
 		public static readonly HashSet<string> special_kw_fields = new HashSet<string> {
 //			KW_PMACHINE_STATES,
@@ -31,7 +32,8 @@ namespace MultiSETransformer
 			KW_PMACHINE_IS_GOTO_TRANSITION,
 			KW_PMACHINE_TRANSITIONS,
 			KW_PMACHINE_EXIT_FUNCTIONS,
-			KW_PMACHINE_SENDQUEUE
+			KW_PMACHINE_SENDQUEUE,
+			KW_PMONITOR
 		};
 
 		private int pass = 0;
@@ -97,7 +99,7 @@ namespace MultiSETransformer
 			if (noRewrite)
 				return node;
 
-			if(node.Declaration.Variables.Any((arg => special_kw_fields.Contains(arg.Identifier.Text)))){
+			if(node.Declaration.Variables.Any((arg => IsSpecialKW(arg.Identifier.Text)))){
 				return node;
 			}
 
@@ -283,7 +285,7 @@ namespace MultiSETransformer
 						return node.WithArgumentList (node.ArgumentList.Accept (this) as BracketedArgumentListSyntax);
 					} else if (node.Expression.ChildNodes ().Any ((n) => {
 						var s = model.GetSymbolInfo (n);
-						return s.Symbol != null && s.Symbol.Kind == SymbolKind.Field && special_kw_fields.Contains (s.Symbol.Name);
+						return s.Symbol != null && s.Symbol.Kind == SymbolKind.Field && IsSpecialKW(s.Symbol.Name);
 					}) && node.Expression.ChildNodes ().Any ((n) => n.IsKind(SyntaxKind.ThisExpression) )) {
 						return SyntaxFactory.InvocationExpression (
 							expression: SyntaxFactory.MemberAccessExpression (
@@ -293,7 +295,9 @@ namespace MultiSETransformer
 							argumentList: SyntaxFactory.ArgumentList((node.ArgumentList.Accept(this) as BracketedArgumentListSyntax).Arguments)
 						);
 					}
-					var elementType = model.GetTypeInfo (node).Type;
+					TypeSyntax elementType = null;
+					bool need_cast = false;
+					var converted_type = ConvertedType (node, ref need_cast, ref elementType);
 					var targetExpression = node.Expression.Accept(this) as ExpressionSyntax;
 					var lambdaParameters = SyntaxFactory.ParameterList().AddParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("_")));
 					var invocationTypeParams = SyntaxFactory.TypeArgumentList();
@@ -307,16 +311,21 @@ namespace MultiSETransformer
 						lambdaBodyInvocationArugments = lambdaBodyInvocationArugments.AddArguments (a);
 						invocationTypeParams = invocationTypeParams.AddArguments(t);
 					}
-					invocationTypeParams = invocationTypeParams.AddArguments (SyntaxFactory.ParseTypeName (elementType.ToDisplayString ()));
+					invocationTypeParams = invocationTypeParams.AddArguments (elementType);
 					var lambdaExpression = SyntaxFactory.ParenthesizedLambdaExpression(parameterList: lambdaParameters, body: node.WithExpression(SyntaxFactory.IdentifierName ("_")).WithArgumentList(lambdaBodyInvocationArugments));
 					var invoke_name = model.GetTypeInfo(node.Expression).Type.TypeKind == TypeKind.Array ? "GetIndex" : "InvokeMethod" ;
-					return SyntaxFactory.InvocationExpression (
+					var ret = SyntaxFactory.InvocationExpression (
 						expression: SyntaxFactory.MemberAccessExpression (
 							SyntaxKind.SimpleMemberAccessExpression, 
 							targetExpression, 
 							SyntaxFactory.GenericName (SyntaxFactory.Identifier(invoke_name), invocationTypeParams)),
 						argumentList: SyntaxFactory.ArgumentList((node.ArgumentList.Accept(this) as BracketedArgumentListSyntax).Arguments.Insert(0, SyntaxFactory.Argument(lambdaExpression)))
 					);
+					if (need_cast) {
+						return CastTypeNode (ret, converted_type);
+					} else {
+						return ret;
+					}
 				}
 			default:
 				{
@@ -330,25 +339,17 @@ namespace MultiSETransformer
 			if (noRewrite)
 				return node;
 			switch (pass) {
-			case 3:
+			case 1:
 				{
 					var originalNode = node;
-					node = base.VisitObjectCreationExpression (node) as ObjectCreationExpressionSyntax;
-//					var lambdaParameters = SyntaxFactory.ParameterList();
-//					var lambdaBodyInvocationArugments = SyntaxFactory.ArgumentList ();
-//					for (int i=0; i < node.ArgumentList.Arguments.Count; i++) {
-//						var p = SyntaxFactory.Parameter(SyntaxFactory.Identifier("a" + i.ToString()));
-//						var a = SyntaxFactory.Argument(SyntaxFactory.IdentifierName("a" + i.ToString()));
-//						lambdaParameters = lambdaParameters.AddParameters (p);
-//						lambdaBodyInvocationArugments = lambdaBodyInvocationArugments.AddArguments (a);
-//					}
-//					var lambdaExpression = SyntaxFactory.ParenthesizedLambdaExpression(parameterList: lambdaParameters, body: node.WithArgumentList(lambdaBodyInvocationArugments));
-					var type_info = model.GetTypeInfo (originalNode);
-					var converted_type = type_info.ConvertedType;
-					if (type_info.Type.BaseType != null && type_info.Type.BaseType.Name.Contains("PMachine")) {
-						converted_type = type_info.Type.BaseType;
+					bool need_cast = false;
+					TypeSyntax retType = null;
+					var converted_type = ConvertedType(node, ref need_cast, ref retType);
+					if (!need_cast) {
+						converted_type = retType;
 					}
-					return node.WithType (SyntaxFactory.GenericName (SyntaxFactory.Identifier (@"ValueSummary"), SyntaxFactory.TypeArgumentList().AddArguments(SyntaxFactory.ParseTypeName(converted_type.ToDisplayString())))).WithArgumentList(SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(originalNode)));
+					node = base.VisitObjectCreationExpression (node) as ObjectCreationExpressionSyntax;
+					return node.WithType (SyntaxFactory.GenericName (SyntaxFactory.Identifier (@"ValueSummary"), SyntaxFactory.TypeArgumentList().AddArguments(converted_type))).WithArgumentList(SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(node)));
 				}
 			default:
 				{
@@ -357,6 +358,23 @@ namespace MultiSETransformer
 			}
 		}
 
+		public override SyntaxNode VisitArrayCreationExpression (ArrayCreationExpressionSyntax node)
+		{
+			if (noRewrite)
+				return node;
+			switch (pass) {
+			case 1:
+				{
+					node = base.VisitArrayCreationExpression (node) as ArrayCreationExpressionSyntax;
+					return SyntaxFactory.InvocationExpression (SyntaxFactory.MemberAccessExpression (SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.GenericName (SyntaxFactory.Identifier ("ValueSummary"), SyntaxFactory.TypeArgumentList ().AddArguments (node.Type.ElementType)), SyntaxFactory.IdentifierName ("NewVSArray")), SyntaxFactory.ArgumentList (SyntaxFactory.SeparatedList (node.Type.RankSpecifiers.First ().Sizes.Select((arg1, arg2) => SyntaxFactory.Argument(arg1)))));
+				}
+			default:
+				{
+					return base.VisitArrayCreationExpression (node);
+				}
+			}		
+		}
+		
 		public override SyntaxNode VisitPropertyDeclaration (PropertyDeclarationSyntax node)
 		{
 			if (noRewrite)
@@ -480,10 +498,17 @@ namespace MultiSETransformer
 		{
 			if (noRewrite)
 				return node;
+	
+			bool need_cast = false;
+			TypeSyntax nodeType = null, type = null;
+	
 			switch (pass) {
 			case 1:
 				{
 					if (node.Expression.IsKind (SyntaxKind.ThisExpression)) {
+						type = ConvertedType (node, ref need_cast, ref nodeType);
+						if(need_cast)
+							return CastTypeNode(base.VisitMemberAccessExpression (node) as MemberAccessExpressionSyntax, type);
 						return base.VisitMemberAccessExpression (node);
 					}
 					var symbol = model.GetSymbolInfo (node).Symbol;
@@ -522,22 +547,82 @@ namespace MultiSETransformer
 					string invoke_name = "GetField";
 					if (node.ChildNodes ().Any ((n) => {
 						var s = model.GetSymbolInfo (n);
-						return s.Symbol != null && s.Symbol.Kind == SymbolKind.Field && special_kw_fields.Contains (s.Symbol.Name);
+						return s.Symbol != null && s.Symbol.Kind == SymbolKind.Field && IsSpecialKW(s.Symbol.Name);
 					})) {
 						invoke_name = "GetConstField";
 					} 
-					var type = WrapType(SyntaxFactory.ParseTypeName(model.GetTypeInfo(node).Type.ToDisplayString().Replace("*", "")));
+					type = ConvertedType (node, ref need_cast, ref nodeType);
 					node = base.VisitMemberAccessExpression (node) as MemberAccessExpressionSyntax;
-					return SyntaxFactory.InvocationExpression (
-						expression: SyntaxFactory.MemberAccessExpression (SyntaxKind.SimpleMemberAccessExpression, node.Expression, SyntaxFactory.GenericName(SyntaxFactory.Identifier(invoke_name), SyntaxFactory.TypeArgumentList().AddArguments(type))),
-						argumentList: SyntaxFactory.ArgumentList ().AddArguments (SyntaxFactory.Argument (SyntaxFactory.SimpleLambdaExpression (SyntaxFactory.Parameter (SyntaxFactory.Identifier ("_")), node.WithExpression (SyntaxFactory.IdentifierName ("_")))))
-					);
+					if (need_cast) {
+						var ret = SyntaxFactory.InvocationExpression (
+							expression: SyntaxFactory.MemberAccessExpression (SyntaxKind.SimpleMemberAccessExpression, node.Expression, SyntaxFactory.GenericName(SyntaxFactory.Identifier(invoke_name), SyntaxFactory.TypeArgumentList().AddArguments(nodeType))),
+							argumentList: SyntaxFactory.ArgumentList ().AddArguments (SyntaxFactory.Argument (SyntaxFactory.SimpleLambdaExpression (SyntaxFactory.Parameter (SyntaxFactory.Identifier ("_")), node.WithExpression (SyntaxFactory.IdentifierName ("_")))))
+						);
+						return CastTypeNode (ret, type);
+					} else {
+						return SyntaxFactory.InvocationExpression (
+							expression: SyntaxFactory.MemberAccessExpression (SyntaxKind.SimpleMemberAccessExpression, node.Expression, SyntaxFactory.GenericName(SyntaxFactory.Identifier(invoke_name), SyntaxFactory.TypeArgumentList().AddArguments(type))),
+							argumentList: SyntaxFactory.ArgumentList ().AddArguments (SyntaxFactory.Argument (SyntaxFactory.SimpleLambdaExpression (SyntaxFactory.Parameter (SyntaxFactory.Identifier ("_")), node.WithExpression (SyntaxFactory.IdentifierName ("_")))))
+						);
+					}
 				}
 			default:
 				{
 					return base.VisitMemberAccessExpression (node);
 				}
 			}
+		}
+
+		private SyntaxNode CastTypeNode(ExpressionSyntax exp, TypeSyntax toType) {
+			var lambdaExpression = SyntaxFactory.SimpleLambdaExpression (SyntaxFactory.Parameter (SyntaxFactory.Identifier ("_")), SyntaxFactory.CastExpression (toType, SyntaxFactory.IdentifierName ("_")));
+			return SyntaxFactory.InvocationExpression (SyntaxFactory.MemberAccessExpression (SyntaxKind.SimpleMemberAccessExpression, exp, SyntaxFactory.GenericName (SyntaxFactory.Identifier ("Cast"), SyntaxFactory.TypeArgumentList ().AddArguments (toType))), SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(lambdaExpression)));
+		}
+
+		private TypeSyntax ConvertedType(SyntaxNode node, ref bool need_cast, ref TypeSyntax nodeType) {
+			var t = model.GetTypeInfo (node);
+			nodeType = WrapType (SyntaxFactory.ParseTypeName (t.Type.ToDisplayString ().Replace ('*', ' ')));
+			need_cast = false;
+			if (node.Parent.IsKind (SyntaxKind.Argument)) {
+				int arg_idx = -1;
+				if (node.Parent.Parent.IsKind (SyntaxKind.BracketedArgumentList)) {
+					arg_idx = (node.Parent.Parent as BracketedArgumentListSyntax).Arguments.IndexOf (arg => arg == node.Parent);
+				} else if (node.Parent.Parent.IsKind (SyntaxKind.ArgumentList)) {
+					arg_idx = (node.Parent.Parent as ArgumentListSyntax).Arguments.IndexOf (arg => arg == node.Parent);
+				} else {
+					throw new SystemException ("Should not reach here");
+				}
+				var symbol = model.GetSymbolInfo (node.Parent.Parent.Parent).Symbol;
+				string str = null;
+				if (symbol == null) {
+					return nodeType;
+				}
+				switch (symbol.Kind) {
+				case SymbolKind.Property:
+					{
+						str = (symbol as IPropertySymbol).OriginalDefinition.Parameters.ElementAt (arg_idx).Type.ToDisplayString ().Replace ('*', ' ');
+						break;
+					}
+				case SymbolKind.Method:
+					{
+						str = (symbol as IMethodSymbol).OriginalDefinition.Parameters.ElementAt (arg_idx).Type.ToDisplayString ().Replace ('*', ' ');
+						break;
+					}
+				default:
+					{
+						throw new SystemException ("Should not reach here");
+					}
+				}
+				if (str.StartsWith ("PMachine") || str.StartsWith ("IPType") || str.StartsWith("int") || str.StartsWith("PInteger") || str.StartsWith("SymbolicInteger") || str.StartsWith("bool") || str.StartsWith("SymbolicBool") || str.StartsWith("PBool")) {
+					if (!t.Type.ToDisplayString ().Equals (str)) {
+						need_cast = true;
+						return WrapType (SyntaxFactory.ParseTypeName (str));
+					}
+				} 
+			}
+			if (t.Type != t.ConvertedType) {
+				need_cast = true;
+			}
+			return WrapType (SyntaxFactory.ParseTypeName (t.ConvertedType.ToDisplayString ().Replace ('*', ' ')));
 		}
 
 		private TypeSyntax WrapType(TypeSyntax t) {
@@ -549,6 +634,10 @@ namespace MultiSETransformer
 				ret = t;	
 			}
 			return ret;
+		}
+
+		private bool IsSpecialKW(string name) {
+			return special_kw_fields.Any (kw => name.Contains (kw));
 		}
 
 		public override SyntaxNode VisitInvocationExpression (InvocationExpressionSyntax node)
@@ -563,16 +652,17 @@ namespace MultiSETransformer
 						var target = accessExpression.Expression;
 						var accessSymbol = model.GetSymbolInfo(accessExpression.Expression);
 						var method =  model.GetSymbolInfo (node).Symbol as IMethodSymbol;
-
 						if (method == null) {
 							return node;
-						} else if (accessExpression.Expression.IsKind(SyntaxKind.ThisExpression) || method.Locations.Any(loc => loc.IsInMetadata) || method.Locations.Any(loc => loc.IsInSource && !this.transformSources.Contains(loc.SourceTree.FilePath))) {
+						} else if (accessExpression.Expression.IsKind (SyntaxKind.ThisExpression) || method.Locations.Any (loc => loc.IsInMetadata) || method.Locations.Any (loc => loc.IsInSource && !this.transformSources.Contains (loc.SourceTree.FilePath))) {
 							if (accessExpression.Name.Identifier.Text.Contains ("ToString")) {
 								return base.VisitInvocationExpression (node);
 							}
-							return node.WithArgumentList(node.ArgumentList.Accept(this) as ArgumentListSyntax);
-						} else if (accessSymbol.Symbol != null && accessSymbol.Symbol.Kind == SymbolKind.Field && special_kw_fields.Contains (accessSymbol.Symbol.Name) && (accessExpression.Expression.IsKind(SyntaxKind.SimpleMemberAccessExpression) && (accessExpression.Expression as MemberAccessExpressionSyntax).Expression.IsKind(SyntaxKind.ThisExpression))) {
-								return node.WithArgumentList(node.ArgumentList.Accept(this) as ArgumentListSyntax);
+							return node.WithArgumentList (node.ArgumentList.Accept (this) as ArgumentListSyntax);
+						} else if (accessSymbol.Symbol != null && accessSymbol.Symbol.Kind == SymbolKind.Field && IsSpecialKW (accessSymbol.Symbol.Name)) {
+							return node.WithArgumentList (node.ArgumentList.Accept (this) as ArgumentListSyntax);
+						} else if (method.OriginalDefinition.IsStatic) {
+							return node.WithArgumentList (node.ArgumentList.Accept (this) as ArgumentListSyntax);
 						} else {
 							var targetExpression = target.Accept (this) as ExpressionSyntax;
 							var typeArguments = SyntaxFactory.TypeArgumentList ();
@@ -588,7 +678,9 @@ namespace MultiSETransformer
 								lambdaParameters = lambdaParameters.AddParameters (p);
 								lambdaBodyInvocationArugments = lambdaBodyInvocationArugments.AddArguments (a);
 							}
-							var retType = SyntaxFactory.ParseTypeName (model.GetTypeInfo (node).ConvertedType.ToDisplayString ());
+							TypeSyntax retType = null;
+							bool need_cast = false;
+							var converted_type = ConvertedType (node, ref need_cast, ref retType);
 							if (!((retType as PredefinedTypeSyntax) != null && (retType as PredefinedTypeSyntax).Keyword.IsKind (SyntaxKind.VoidKeyword))) {
 								typeArguments = typeArguments.AddArguments (retType);
 							}
@@ -601,10 +693,17 @@ namespace MultiSETransformer
 							}
 							invoke_name = "InvokeMethod";
 							SimpleNameSyntax invoke_name_and_type_params = node.ArgumentList.Arguments.Count > 0 ? (SimpleNameSyntax)SyntaxFactory.GenericName (SyntaxFactory.Identifier(invoke_name), typeArguments) : (SimpleNameSyntax)SyntaxFactory.IdentifierName(invoke_name);
-							return SyntaxFactory.InvocationExpression (
+
+							var ret =  SyntaxFactory.InvocationExpression (
 								expression: SyntaxFactory.MemberAccessExpression (SyntaxKind.SimpleMemberAccessExpression, targetExpression, invoke_name_and_type_params),
 								argumentList: node.ArgumentList.WithArguments ((node.ArgumentList.Accept (this) as ArgumentListSyntax).Arguments.Insert (0, SyntaxFactory.Argument (lambdaExpression)))
 							);
+
+							if (need_cast) {
+								return CastTypeNode (ret as ExpressionSyntax, converted_type);
+							} else {
+								return ret;
+							}
 						}
 					}
 					var retType2 = SyntaxFactory.ParseTypeName(model.GetTypeInfo(node).ConvertedType.ToDisplayString());
@@ -635,8 +734,8 @@ namespace MultiSETransformer
 						} else if (accessExpression.Name.Identifier.Text == "GetField" || accessExpression.Name.Identifier.Text == "GetConstField" ) {
 							return node.WithExpression (accessExpression.WithExpression(accessExpression.Expression.Accept(this) as ExpressionSyntax));
 						}
-						goto default;
 					}
+					goto default;
 				}
 			default:
 				{
@@ -657,7 +756,7 @@ namespace MultiSETransformer
 			if(node.Left.ChildNodes().Any (
 				n => { 
 					var s = model.GetSymbolInfo(n);
-					return s.Symbol != null && s.Symbol.Kind == SymbolKind.Field && special_kw_fields.Contains(s.Symbol.Name);
+					return s.Symbol != null && s.Symbol.Kind == SymbolKind.Field && IsSpecialKW(s.Symbol.Name);
 				}
 			)) {
 				return node;
@@ -776,7 +875,7 @@ namespace MultiSETransformer
 			if (noRewrite)
 				return node;
 			switch (pass) {
-			case 1:
+			case 3:
 				{
 					var cond = SyntaxFactory.InvocationExpression (SyntaxFactory.MemberAccessExpression (SyntaxKind.SimpleMemberAccessExpression, node.Condition.Accept(this) as ExpressionSyntax, SyntaxFactory.IdentifierName ("Cond")));
 					return (base.VisitIfStatement (node) as IfStatementSyntax).WithCondition (cond);
@@ -793,7 +892,7 @@ namespace MultiSETransformer
 			if (noRewrite)
 				return node;
 			switch (pass) {
-			case 1:
+			case 3:
 				{
 					var cond = SyntaxFactory.InvocationExpression (SyntaxFactory.MemberAccessExpression (SyntaxKind.SimpleMemberAccessExpression, node.Condition.Accept(this) as ExpressionSyntax, SyntaxFactory.IdentifierName ("Cond")));
 					return (base.VisitForStatement (node) as ForStatementSyntax).WithCondition (cond);
@@ -810,7 +909,7 @@ namespace MultiSETransformer
 			if (noRewrite)
 				return node;
 			switch (pass) {
-			case 1:
+			case 3:
 				{
 					var cond = SyntaxFactory.InvocationExpression (SyntaxFactory.MemberAccessExpression (SyntaxKind.SimpleMemberAccessExpression, node.Condition.Accept(this) as ExpressionSyntax, SyntaxFactory.IdentifierName ("Cond")));
 					return (base.VisitWhileStatement (node) as WhileStatementSyntax).WithCondition (cond);
@@ -820,6 +919,23 @@ namespace MultiSETransformer
 					return base.VisitWhileStatement (node);
 				}
 			}	
+		}
+
+		public override SyntaxNode VisitSwitchStatement (SwitchStatementSyntax node)
+		{
+			if (noRewrite)
+				return node;
+			switch (pass) {
+			case 3:
+				{
+					var cond = SyntaxFactory.InvocationExpression (SyntaxFactory.MemberAccessExpression (SyntaxKind.SimpleMemberAccessExpression, node.Expression.Accept(this) as ExpressionSyntax, SyntaxFactory.IdentifierName ("Switch")));
+					return (base.VisitSwitchStatement (node) as SwitchStatementSyntax).WithExpression (cond);
+				}
+			default:
+				{
+					return base.VisitSwitchStatement (node);
+				}
+			}
 		}
 	}
 }

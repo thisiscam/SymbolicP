@@ -75,7 +75,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
     {
         this._capacity = capacity;
         this._count = 0;
-        this.data = new ValueSummary<MapEntry>[capacity];
+        this.data = ValueSummary<MapEntry>.NewVSArray(capacity);
     }
 
     public ValueSummary<int> Count
@@ -143,8 +143,8 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
     {
         if (this._count.InvokeBinary<int, double>((l, r) => l / r, this._capacity).InvokeBinary<double, bool>((l, r) => l > r, PMap<K, V>.LOAD_FACTOR).Cond())
         {
-            ValueSummary<int> new_capacity = (this._capacity.InvokeBinary<double, double>((l, r) => l * r, PMap<K, V>.RESIZE_RATIO)).Cast<int>(_ => (int)_);
-            ValueSummary<ValueSummary<MapEntry>[]> new_data = new ValueSummary<MapEntry>[new_capacity];
+            ValueSummary<int> new_capacity = (this._capacity.Cast<double>(_ => (double)_).InvokeBinary<double, double>((l, r) => l * r, PMap<K, V>.RESIZE_RATIO)).Cast<int>(_ => (int)_);
+            ValueSummary<ValueSummary<MapEntry>[]> new_data = ValueSummary<MapEntry>.NewVSArray(new_capacity);
             for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._capacity).Cond(); i.Increment())
             {
                 for (ValueSummary<MapEntry> iter = this.data.GetIndex<int, PMap<K, V>.MapEntry>((_, a0) => _[a0], i); iter.InvokeBinary<object, bool>((l, r) => l != r, ValueSummary<object>.Null).Cond(); iter.Assign<PMap<K, V>.MapEntry>(iter.GetField<PMap<K, V>.MapEntry>(_ => _.Next)))
@@ -185,6 +185,22 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
     public void Insert(ValueSummary<PTuple<K, V>> t)
     {
         this.Insert(t.GetField<K>(_ => _.Item1), t.GetField<V>(_ => _.Item2));
+    }
+
+    public ValueSummary<PBool> ContainsKey(ValueSummary<K> k)
+    {
+        ValueSummary<SymbolicInteger> hash = k.InvokeMethod((_) => _.PTypeGetHashCode());
+        ValueSummary<SymbolicInteger> idx = hash.InvokeBinary<int, SymbolicInteger>((l, r) => l % r, this._capacity);
+        ValueSummary<MapEntry> firstEntry = this.data.GetIndex<SymbolicInteger, PMap<K, V>.MapEntry>((_, a0) => _[a0], idx);
+        for (ValueSummary<MapEntry> iter = firstEntry; iter.InvokeBinary<object, bool>((l, r) => l != r, ValueSummary<object>.Null).Cond(); firstEntry.Assign<PMap<K, V>.MapEntry>(firstEntry.GetField<PMap<K, V>.MapEntry>(_ => _.Next)))
+        {
+            if (iter.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash).InvokeBinary<SymbolicBool, bool>((l, r) => l && r, iter.GetField<K>(_ => _.Key).InvokeMethod<K, SymbolicBool>((_, a0) => _.PTypeEquals(a0), k)).Cond())
+            {
+                return (PBool)true;
+            }
+        }
+
+        return (PBool)false;
     }
 
     public ValueSummary<V> this[ValueSummary<K> key]
@@ -250,7 +266,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
             ValueSummary<MapEntry> entry = this.data.GetIndex<int, PMap<K, V>.MapEntry>((_, a0) => _[a0], i);
             while (entry.InvokeBinary<object, bool>((l, r) => l != r, ValueSummary<object>.Null).Cond())
             {
-                if (other.InvokeMethod<K, object>((_, a0) => _.Get(a0), entry.GetField<K>(_ => _.Key)).InvokeBinary<object, SymbolicBool>((l, r) => l != r, ValueSummary<object>.Null).InvokeBinary<SymbolicBool, bool>((l, r) => l || r, entry.GetField<V>(_ => _.Value).InvokeMethod<V, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.InvokeMethod<K, V>((_, a0) => _[a0], entry.GetField<K>(_ => _.Key))).InvokeUnary<SymbolicBool>(_ => !_)).Cond())
+                if (other.InvokeMethod<K, V>((_, a0) => _.Get(a0), entry.GetField<K>(_ => _.Key)).Cast<object>(_ => (object)_).InvokeBinary<object, SymbolicBool>((l, r) => l != r, ValueSummary<object>.Null).InvokeBinary<SymbolicBool, bool>((l, r) => l || r, entry.GetField<V>(_ => _.Value).InvokeMethod<V, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.InvokeMethod<K, V>((_, a0) => _[a0], entry.GetField<K>(_ => _.Key))).InvokeUnary<SymbolicBool>(_ => !_)).Cond())
                 {
                     return (SymbolicBool)false;
                 }

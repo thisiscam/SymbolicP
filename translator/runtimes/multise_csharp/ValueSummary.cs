@@ -12,25 +12,13 @@ public class ValueSummary<T> {
 		value = t;
 	}
 
-//	public ValueSummary(Func<T> f) {
-//		value = f.Invoke ();
-//	}
-//
-//	public ValueSummary(Func<ValueSummary<A1>, T> f, ValueSummary<A1> arg1) {
-//		value = f.Invoke (arg1);
-//	}
-//
-//	public ValueSummary(Func<ValueSummary<A1, A2>, T> f, ValueSummary<A1> arg1, ValueSummary<A2> arg2) {
-//		value = f.Invoke (arg1, arg2);
-//	}
-//
-//	public ValueSummary(Func<ValueSummary<A1, A2, A3>, T> f, ValueSummary<A1> arg1, ValueSummary<A2> arg2, ValueSummary<A3> arg3) {
-//		value = f.Invoke (arg1, arg2, arg3);
-//	}
-//
-//	public ValueSummary(Func<ValueSummary<A1, A2, A3, A4>, T> f, ValueSummary<A1> arg1, ValueSummary<A2> arg2, ValueSummary<A3> arg3, ValueSummary<A4> arg4) {
-//		value = f.Invoke (arg1, arg2, arg3, arg4);
-//	}
+	public static ValueSummary<ValueSummary<T>[]> NewVSArray(ValueSummary<int> size) {
+		ValueSummary<T>[] array = new ValueSummary<T>[size.value];
+		for (int i = 0; i < size.value; i++) {
+			array [i] = ValueSummary<T>.Null;
+		}
+		return new ValueSummary<ValueSummary<T>[]>(array);
+	}
 
 	public static implicit operator ValueSummary<T>(T t) 
 	{ 
@@ -246,5 +234,9 @@ public static class ValueSummaryExt {
 	}
 	public static bool Cond(this ValueSummary<PBool> b) {
 		return (SymbolicBool)b.value;
+	}
+
+	public static int Switch(this ValueSummary<PInteger> vs) {
+		return vs.value.value;
 	}
 }

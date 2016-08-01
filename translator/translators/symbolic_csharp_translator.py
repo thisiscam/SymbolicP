@@ -8,6 +8,8 @@ class PProgramToSymbolicCSharpTranslator(PProgramToCSharpTranslator):
         super(PProgramToCSharpTranslator, self).__init__(*args)
 
     def is_call_exp(self, exp_ast):
+        if exp_ast.is_token:
+            return False
         if exp_ast.getChildCount() == 1:
             return self.is_call_exp(exp_ast.getChild(0))
         else:

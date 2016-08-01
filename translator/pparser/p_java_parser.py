@@ -1,7 +1,10 @@
 from tempfile import TemporaryFile
 import subprocess, os
 
-class AntlrSExpCtx(object):
+class AntlrASTNode(object):
+    is_token = False
+
+class AntlrSExpCtx(AntlrASTNode):
     def __init__(self, name, childs):
         self.name = name
         self.childs = childs
@@ -23,13 +26,17 @@ class AntlrSExpCtx(object):
     def __repr__(self):
         return "Antlr_{0}Ctx{1}".format(self.name, self.childs)
 
-class Token(object):
+class Token(AntlrASTNode):
+    is_token = True
     def __init__(self, txt):
         self.text = txt
+
     def getText(self):
         return self.text
+
     def accept(self, visitor):
         return
+
     def __repr__(self):
         return "`{0}`".format(self.text)
 

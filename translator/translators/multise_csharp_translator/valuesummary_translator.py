@@ -22,5 +22,5 @@ def valuesummary_transform(include_files, output_path, transform_files, no_copy_
 		env[ld_library_path_var] += os.pathsep + transformer_lib_path
 	else:
 		env[ld_library_path_var] = transformer_lib_path
-	print " ".join(cmd)
+	# print " ".join(cmd)
 	subprocess.check_call(cmd, env=env)
