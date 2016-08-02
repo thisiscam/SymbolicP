@@ -197,12 +197,6 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
     def visitType_def_decl(self, ctx):
         raise ValueError("Typedef not supported")
 
-
-    # Visit a parse tree produced by pParser#include_decl.
-    def visitInclude_decl(self, ctx):
-        raise ValueError("Include not supported")
-
-
     # Visit a parse tree produced by pParser#event_decl.
     def visitEvent_decl(self, ctx):
         self.current_pprogram.events.add(ctx.getChild(1).getText())
