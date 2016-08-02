@@ -6,8 +6,9 @@ from ordered_set import OrderedSet
 from collections import defaultdict, OrderedDict
 
 def translate(options):
-    pparser = pJavaParser()
+    pparser = pJavaParser(options.search_dirs.split(","))
     ast = pparser.parse(options.input_file)
+    import pdb; pdb.set_trace()
     translator = options.translator(ast, options.out_dir)
     translator.translate()
 
@@ -24,6 +25,9 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--translator', type=str, dest="translator",
                         default="basic_csharp_translator",
                         help="which translator to use")
+    parser.add_argument('-I', '--include', type=str, dest="search_dirs", 
+                        default="",
+                        help="directories for the translator to search for P source files")
     parser.add_argument('input_file')
     options = parser.parse_args()
     process_options(options)
