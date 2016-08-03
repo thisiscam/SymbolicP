@@ -144,7 +144,6 @@ class IncludeFileHandlerVisitor(pVisitor):
         if potential_file_path:
             potential_file_path = os.path.abspath(potential_file_path)
             if potential_file_path in self.parser.included_files:
-                import pdb; pdb.set_trace()
                 return None
             self.parser.included_files.add(potential_file_path)
             ast = self.parser.parse(potential_file_path)

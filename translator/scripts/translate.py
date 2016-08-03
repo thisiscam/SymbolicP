@@ -8,7 +8,6 @@ from collections import defaultdict, OrderedDict
 def translate(options):
     pparser = pJavaParser(options.search_dirs.split(","))
     ast = pparser.parse(options.input_file)
-    import pdb; pdb.set_trace()
     translator = options.translator(ast, options.out_dir)
     translator.translate()
 
