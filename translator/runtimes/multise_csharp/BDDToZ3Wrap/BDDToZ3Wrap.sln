@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDDToZ3Wrap", "BDDToZ3Wrap.csproj", "{AD62BFA7-AFA7-42E6-9F84-BDAB5104953C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestBDDToZ3Wrap", "TestBDDToZ3Wrap\TestBDDToZ3Wrap.csproj", "{B1EEE265-9458-4829-A48C-44F8C4200D74}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuDDySharp", "..\..\..\libraries\BuDDySharp\BuDDySharp\BuDDySharp\BuDDySharp.csproj", "{7F126EA0-8883-4D30-AE59-01BABDBDB158}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7F126EA0-8883-4D30-AE59-01BABDBDB158}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F126EA0-8883-4D30-AE59-01BABDBDB158}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F126EA0-8883-4D30-AE59-01BABDBDB158}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F126EA0-8883-4D30-AE59-01BABDBDB158}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD62BFA7-AFA7-42E6-9F84-BDAB5104953C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD62BFA7-AFA7-42E6-9F84-BDAB5104953C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD62BFA7-AFA7-42E6-9F84-BDAB5104953C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD62BFA7-AFA7-42E6-9F84-BDAB5104953C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1EEE265-9458-4829-A48C-44F8C4200D74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1EEE265-9458-4829-A48C-44F8C4200D74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1EEE265-9458-4829-A48C-44F8C4200D74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1EEE265-9458-4829-A48C-44F8C4200D74}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

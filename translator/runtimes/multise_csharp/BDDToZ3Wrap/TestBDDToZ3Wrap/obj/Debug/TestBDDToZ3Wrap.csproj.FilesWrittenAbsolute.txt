@@ -1,0 +1,12 @@
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/runtimes/multise_csharp/BDDToZ3Wrap/TestBDDToZ3Wrap/obj/Debug/.NETFramework,Version=v4.5.AssemblyAttribute.cs
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/runtimes/multise_csharp/BDDToZ3Wrap/TestBDDToZ3Wrap/bin/Debug/TestBDDToZ3Wrap.exe.mdb
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/runtimes/multise_csharp/BDDToZ3Wrap/TestBDDToZ3Wrap/bin/Debug/TestBDDToZ3Wrap.exe
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/runtimes/multise_csharp/BDDToZ3Wrap/TestBDDToZ3Wrap/obj/Debug/TestBDDToZ3Wrap.exe
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/runtimes/multise_csharp/BDDToZ3Wrap/TestBDDToZ3Wrap/obj/Debug/TestBDDToZ3Wrap.exe.mdb
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/runtimes/multise_csharp/BDDToZ3Wrap/TestBDDToZ3Wrap/bin/Debug/libBDD_Z3_Wrap.so
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/runtimes/multise_csharp/BDDToZ3Wrap/TestBDDToZ3Wrap/bin/Debug/libbuddysharp.so
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/runtimes/multise_csharp/BDDToZ3Wrap/TestBDDToZ3Wrap/bin/Debug/Microsoft.Z3.dll
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/runtimes/multise_csharp/BDDToZ3Wrap/TestBDDToZ3Wrap/bin/Debug/BuDDySharp.dll
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/runtimes/multise_csharp/BDDToZ3Wrap/TestBDDToZ3Wrap/bin/Debug/BuDDySharp.dll.mdb
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/runtimes/multise_csharp/BDDToZ3Wrap/TestBDDToZ3Wrap/bin/Debug/BDDToZ3Wrap.dll
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/runtimes/multise_csharp/BDDToZ3Wrap/TestBDDToZ3Wrap/bin/Debug/BDDToZ3Wrap.dll.mdb
