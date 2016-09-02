@@ -425,41 +425,107 @@ public static class ValueSummaryExt {
 
 	private static bool CondConcreteHelper(bdd trueBDD, bdd falseBDD)
 	{
-		var trueFeasible = !trueBDD.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr (trueBDD.ToZ3Expr ()));
-		var falseFeasible = !falseBDD.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(falseBDD.ToZ3Expr()));
+		var trueFeasible = !trueBDD.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr (trueBDD.ToZ3Expr ());
+		var falseFeasible = !falseBDD.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(falseBDD.ToZ3Expr());
 		if(trueFeasible) {
 			if(falseFeasible) {
-				
+				PathConstraint.NewBranchPoint(trueBDD, PathConstraint.BranchPoint.State.Both);
+				return true;
 			} else {
-				
+				PathConstraint.NewBranchPoint(trueBDD, PathConstraint.BranchPoint.State.True);
+				return true;
 			}
 		} else {
 			if(falseFeasible) {
-				
+				PathConstraint.NewBranchPoint(trueBDD, PathConstraint.BranchPoint.State.False);
+				return false;
 			} else {
-				
+				Console.WriteLine("Error, if branch is not reachable in both branches");
+				Debugger.Break();
+				throw new Exception ("Not reachable");
 			}
 		}
 	}
 
 	public static bool Cond(this ValueSummary<bool> b) {
+		if (PathConstraint.IsRecovering()) {
+			return PathConstraint.TakeBranch ();
+		}
 		var pc = PathConstraint.GetPC ();
 		Debug.Assert (b.values.Count <= 2);
 		if (b.values.Count == 1) {
-			PathConstraint.AddAxiom (b.values [0].bddForm);
+			PathConstraint.AddAxiom (b.values [0].bddForm.And(pc));
 			return b.values [0].value;
 		} else {
 			if (b.values [0].value) {
-				CondConcreteHelper (b.values [0], b.values [1]);
+				return CondConcreteHelper (b.values [0].bddForm.And(pc), b.values [1].bddForm.And(pc));
 			} else {
-				CondConcreteHelper (b.values [1], b.values [0]);
+				return CondConcreteHelper (b.values [1].bddForm.And(pc), b.values [0].bddForm.And(pc));
 			}
 		}
 	}
+
 	public static bool Cond(this ValueSummary<SymbolicBool> b) {
-		return b.value;
+		if (PathConstraint.IsRecovering()) {
+			return PathConstraint.TakeBranch ();
+		}
+		var pc = PathConstraint.GetPC ();
+		bdd predTrue = BuDDySharp.BuDDySharp.bddfalse, predFalse = BuDDySharp.BuDDySharp.bddfalse;
+		foreach (var guardedBooleanVal in b.values) {
+			var guardedValuePcPred = guardedBooleanVal.bddForm.And (pc);
+			if (!guardedValuePcPred.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
+				if (guardedBooleanVal.value.IsAbstract ()) {
+					var c = guardedBooleanVal.value.AbstractValue.ToBDD ();
+					if(c.EqualEqual(BuDDySharp.BuDDySharp.bddtrue)) {
+						predTrue = predTrue.Or (guardedBooleanVal);
+					} else if(c.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+						predFalse = predFalse.Or (guardedValuePcPred);
+					} else {
+						var tmp = guardedBooleanVal.bddForm.And (c);
+						var trueFeasible = !tmp.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr (tmp.ToZ3Expr());
+						if (trueFeasible) {
+							predTrue = predTrue.Or (tmp);
+						}
+						tmp = tmp.Not();
+						var falseFeasible = !tmp.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr (tmp.ToZ3Expr ());
+						if (falseFeasible) {
+							predFalse = predFalse.Or (tmp);
+						}
+					}
+				} else {
+					if (guardedBooleanVal.value.ConcreteValue) {
+						predTrue = predTrue.Or (guardedValuePcPred);
+					} else {
+						predFalse = predFalse.Or (guardedValuePcPred);
+					}
+				}
+			}
+		}
+		if(predTrue != BuDDySharp.BuDDySharp.bddfalse) {
+			if(predFalse != BuDDySharp.BuDDySharp.bddfalse) {
+				PathConstraint.NewBranchPoint(predTrue, PathConstraint.BranchPoint.State.Both);
+				return true;
+			} else {
+				PathConstraint.NewBranchPoint(predTrue, PathConstraint.BranchPoint.State.True);
+				return true;
+			}
+		} else {
+			if(predFalse != BuDDySharp.BuDDySharp.bddfalse) {
+				PathConstraint.NewBranchPoint(predFalse, PathConstraint.BranchPoint.State.False);
+				return false;
+			} else {
+				Console.WriteLine("Error, if branch is not reachable in both branches");
+				Debugger.Break();
+				throw new Exception ("Not reachable");
+			}
+		}
 	}
 	public static bool Cond(this ValueSummary<PBool> b) {
-		return (SymbolicBool)b.value;
+		//TODO make this more efficient
+		var tmp = new ValueSummary<SymbolicBool> ();
+		foreach (var v in b.values) {
+			tmp.values.Add (v.bddForm, (SymbolicBool)v.value);
+		}
+		return Cond (tmp);
 	}
 }

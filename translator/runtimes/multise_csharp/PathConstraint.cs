@@ -28,7 +28,7 @@ public class PathConstraint
 			False
 		}
 
-		State state;
+		public State state;
 
 		public BranchPoint(State state) 
 		{
@@ -38,8 +38,10 @@ public class PathConstraint
 
 	public class Frame
 	{
-		public Stack<BranchPoint> BranchPoints = new Stack<BranchPoint> ();
+		public SCG.List<BranchPoint> BranchPoints = new SCG.List<BranchPoint> ();
 		public int idx = -1;
+
+		public bool is_recovering;
 
 		public int pcs_idx;
 
@@ -101,18 +103,61 @@ public class PathConstraint
 		pcs.RemoveRange (top.pcs_idx, pcs.Count - top.pcs_idx);
 	}
 
-	public static void NewBranchPoint(bdd trueBDD, bdd falseBDD) {
-		AddAxiom (trueBDD);
+	public static Frame GetCurrentFrame()
+	{
+		return frames.Peek ();
+	}
 
+	public static void NewBranchPoint(bdd branchBDD, BranchPoint.State kind) {
+		PushScope ();
+		AddAxiom (branchBDD);
+		var frame = GetCurrentFrame ();
+		frame.BranchPoints.Add (new BranchPoint(kind));
 	}
 
 	public static bool BacktrackInvocation()
 	{
-		if (frames.Peek ().BranchPoints.Count == 0) {
-			return false;
-		} else {
-			frames.Peek ().idx = 0;
-			return true;
+		var frame = GetCurrentFrame ();
+		int i;
+		for (i = frame.BranchPoints.Count - 1; i >= 0; i--) {
+			if (frame.BranchPoints [i].state == BranchPoint.State.Both) {
+				break;
+			}
+		}
+		frame.BranchPoints.RemoveRange(i + 1, frame.BranchPoints.Count - i);
+		frame.idx = 0;
+		return frame.BranchPoints.Count > 0;
+	}
+
+	public bool IsRecovering()
+	{
+		return GetCurrentFrame().is_recovering;
+	}
+
+	public bool TakeBranch()
+	{
+		var frame = GetCurrentFrame ();
+		var branch_point = frame.BranchPoints [frame.idx];
+		frame.idx++;
+		switch (branch_point.state) {
+		case BranchPoint.State.Both:
+			{
+				if (frame.BranchPoints.Count == frame.idx) {
+					branch_point.state = BranchPoint.State.False;
+					frame.is_recovering = false;
+					return false;
+				} else {
+					return true;
+				}
+			}
+		case BranchPoint.State.True:
+			{
+				return true;
+			}
+		case BranchPoint.State.False:
+			{
+				return false;
+			}
 		}
 	}
 
