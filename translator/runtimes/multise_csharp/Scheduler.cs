@@ -62,7 +62,7 @@ class Scheduler
 		}
 
 		ValueSummary<// Choose one and remove from send queue
-		SymbolicInteger> idx = SymbolicEngine.SE.NewSymbolicIntVar("SI", 0, choices.Count.value);
+		SymbolicInteger> idx = PathConstraint.NewSymbolicIntVar("SI", 0, choices.Count.value);
 		ValueSummary<SchedulerChoice> chosen = choices[idx];
 		ValueSummary<int> sourceMachineSendQueueIndex = chosen.GetField<int>(_ => _.sourceMachineSendQueueIndex);
 		if (sourceMachineSendQueueIndex.InvokeBinary<int, bool>((l, r) => l < r, 0).Cond())
@@ -106,7 +106,7 @@ class Scheduler
 
 	public ValueSummary<SymbolicBool> RandomBool()
 	{
-		return SymbolicEngine.SE.NewSymbolicBoolVar("RB");
+		return PathConstraint.NewSymbolicBoolVar("RB");
 	}
 
 	public void StartMachine(ValueSummary<PMachine> machine, ValueSummary<IPType> payload)

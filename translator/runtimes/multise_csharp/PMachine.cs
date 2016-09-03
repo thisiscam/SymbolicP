@@ -24,7 +24,7 @@ abstract class PMachine : IPType<PMachine>
         for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count)).Cond(); i.Increment())
         {
             ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], i);
-            if (this.DeferedSet.GetIndex(state, e).InvokeUnary<bool>(_ => !_).InvokeBinary<bool, bool>((l, r) => l && r, this.Transitions.GetIndex(state, e).InvokeBinary<PMachine.TransitionFunction, bool>((l, r) => l != r, ValueSummary<PMachine.TransitionFunction>.Null)).Cond())
+            if (this.DeferedSet.GetIndex(state, e).InvokeUnary<bool>(_ => !_).AndAnd(this.Transitions.GetIndex(state, e).InvokeBinary<PMachine.TransitionFunction, bool>((l, r) => l != r, ValueSummary<PMachine.TransitionFunction>.Null)).Cond())
             {
                 return i;
             }

@@ -12,17 +12,17 @@ public class List<T>
             ValueSummary<ValueSummary<T>[]> new_data = ValueSummary<T>.NewVSArray(new_capacity);
             for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Cond(); i.Increment())
             {
-                new_data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i, this.data.GetIndex<int, T>((_, a0) => _[a0], i));
+                new_data.SetIndex<T>(i, this.data.GetIndex<T>(i));
             }
 
-            new_data.SetIndex<int, T>((_, a0, r) => _[a0] = r, this._count, item);
+            new_data.SetIndex<T>(this._count, item);
             this.data = new_data;
             this._capacity = new_capacity;
             this._count.Increment();
         }
         else
         {
-            this.data.SetIndex<int, T>((_, a0, r) => _[a0] = r, this._count, item);
+            this.data.SetIndex<T>(this._count, item);
             this._count.Increment();
         }
     }
@@ -34,15 +34,15 @@ public class List<T>
             ValueSummary<int> new_capacity = this._capacity.InvokeBinary<int, int>((l, r) => l * r, 2);
             ValueSummary<ValueSummary<T>[]> new_data = ValueSummary<T>.NewVSArray(new_capacity);
             ValueSummary<int> i = 0;
-            for (; i.InvokeBinary<SymbolicInteger, bool>((l, r) => l < r, idx).Cond(); i.Increment())
+            for (; i.InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l < r, idx).Cond(); i.Increment())
             {
-                new_data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i, this.data.GetIndex<int, T>((_, a0) => _[a0], i));
+                new_data.SetIndex<T>(i, this.data.GetIndex<T>(i));
             }
 
-            new_data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i, item);
+            new_data.SetIndex<T>(i, item);
             for (; i.InvokeBinary<int, bool>((l, r) => l < r, this._capacity).Cond(); i.Increment())
             {
-                new_data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i.InvokeBinary<int, int>((l, r) => l + r, 1), this.data.GetIndex<int, T>((_, a0) => _[a0], i));
+                new_data.SetIndex<T>(i.InvokeBinary<int, int>((l, r) => l + r, 1), this.data.GetIndex<T>(i));
             }
 
             this._capacity = new_capacity;
@@ -50,12 +50,12 @@ public class List<T>
         }
         else
         {
-            for (ValueSummary<int> i = this._count; i.InvokeBinary<SymbolicInteger, bool>((l, r) => l > r, idx).Cond(); i.Decrement())
+            for (ValueSummary<int> i = this._count; i.InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l > r, idx).Cond(); i.Decrement())
             {
-                this.data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i, this.data.GetIndex<int, T>((_, a0) => _[a0], i.InvokeBinary<int, int>((l, r) => l - r, 1)));
+                this.data.SetIndex<T>(i, this.data.GetIndex<T>(i.InvokeBinary<int, int>((l, r) => l - r, 1)));
             }
 
-            this.data.SetIndex<SymbolicInteger, T>((_, a0, r) => _[a0] = r, idx, item);
+            this.data.SetIndex<T>(idx, item);
             this._count.Increment();
         }
     }
@@ -64,7 +64,7 @@ public class List<T>
     {
         for (ValueSummary<int> i = idx.InvokeBinary<int, int>((l, r) => l + r, 1); i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Cond(); i.Increment())
         {
-            this.data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i.InvokeBinary<int, int>((l, r) => l - r, 1), this.data.GetIndex<int, T>((_, a0) => _[a0], i));
+            this.data.SetIndex<T>(i.InvokeBinary<int, int>((l, r) => l - r, 1), this.data.GetIndex<T>(i));
         }
 
         this._count.Decrement();
@@ -74,7 +74,7 @@ public class List<T>
     {
         for (ValueSummary<int> i = start.InvokeBinary<int, int>((l, r) => l + r, count); i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Cond(); i.Increment())
         {
-            this.data.SetIndex<int, T>((_, a0, r) => _[a0] = r, i.InvokeBinary<int, int>((l, r) => l - r, count), this.data.GetIndex<int, T>((_, a0) => _[a0], i));
+            this.data.SetIndex<T>(i.InvokeBinary<int, int>((l, r) => l - r, count), this.data.GetIndex<T>(i));
         }
 
         this._count -= count;
@@ -84,12 +84,12 @@ public class List<T>
     {
         get
         {
-            return this.data.GetIndex<int, T>((_, a0) => _[a0], index);
+            return this.data.GetIndex<T>(index);
         }
 
         set
         {
-            this.data.SetIndex<int, T>((_, a0, r) => _[a0] = r, index, value);
+            this.data.SetIndex<T>(index, value);
         }
     }
 
@@ -97,12 +97,12 @@ public class List<T>
     {
         get
         {
-            return this.data.GetIndex<SymbolicInteger, T>((_, a0) => _[a0], index);
+            return this.data.GetIndex<T>(index);
         }
 
         set
         {
-            this.data.SetIndex<SymbolicInteger, T>((_, a0, r) => _[a0] = r, index, value);
+            this.data.SetIndex<T>(index, value);
         }
     }
 

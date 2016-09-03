@@ -20,19 +20,19 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
     {
         get
         {
-            return this.data.GetIndex<PInteger, T>((_, a0) => _[a0], index);
+            return this.data.GetIndex<T>(index);
         }
 
         set
         {
-            this.data.SetIndex<PInteger, T>((_, a0, r) => _[a0] = r, index, value);
+            this.data.SetIndex<T>(index, value);
         }
     }
 
     public ValueSummary<PList<T>> DeepCopy()
     {
         ValueSummary<PList<T>> ret = new ValueSummary<PList<T>>(new PList<T>());
-        for (ValueSummary<SymbolicInteger> i = (SymbolicInteger)0; i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Cond(); i.Increment())
+        for (ValueSummary<SymbolicInteger> i = (SymbolicInteger)0; i.InvokeBinary<int, SymbolicBool>((l, r) => l < r, this._count).Cond(); i.Increment())
         {
             ret.InvokeMethod<T>((_, a0) => _.Add(a0), this[i].InvokeMethod((_) => _.DeepCopy()));
         }
@@ -60,7 +60,7 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
 
         for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Cond(); i.Increment())
         {
-            if (this[i].InvokeMethod<T, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.InvokeMethod<int, T>((_, a0) => _[a0], i)).InvokeUnary<bool>(_ => !_).Cond())
+            if (this[i].InvokeMethod<T, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.InvokeMethod<int, T>((_, a0) => _[a0], i)).InvokeUnary<SymbolicBool>(_ => !_).Cond())
             {
                 return (SymbolicBool)false;
             }

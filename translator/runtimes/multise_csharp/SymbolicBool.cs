@@ -34,28 +34,19 @@ public struct SymbolicBool {
 	public static implicit operator SymbolicBool(bool value) 
     { 
         return new SymbolicBool(value); 
-    } 
-
-    public static implicit operator bool(SymbolicBool op) 
-    { 
-		if (op.IsAbstract ()) {
-			return SymbolicEngine.SE.NextBranch (op.abstractValue);
-		} else {
-			return op.ConcreteValue;
-		}
     }
 
 	public static SymbolicBool operator ==(SymbolicBool a, SymbolicBool b) 
     { 
     	if(a.IsAbstract()) {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(SymbolicEngine.ctx.MkEq(a.abstractValue, b.abstractValue));
+    			return new SymbolicBool(PathConstraint.ctx.MkEq(a.abstractValue, b.abstractValue));
     		} else {
-    			return new SymbolicBool(SymbolicEngine.ctx.MkEq(a.abstractValue, SymbolicEngine.ctx.MkBool(b.concreteValue)));
+    			return new SymbolicBool(PathConstraint.ctx.MkEq(a.abstractValue, PathConstraint.ctx.MkBool(b.concreteValue)));
     		}
     	} else {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(SymbolicEngine.ctx.MkEq(SymbolicEngine.ctx.MkBool(a.concreteValue), b.abstractValue));
+    			return new SymbolicBool(PathConstraint.ctx.MkEq(PathConstraint.ctx.MkBool(a.concreteValue), b.abstractValue));
 			} else {
 				return new SymbolicBool(a.concreteValue == b.concreteValue);
 			}
@@ -66,13 +57,13 @@ public struct SymbolicBool {
     { 
 		if(a.IsAbstract()) {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(SymbolicEngine.ctx.MkNot(SymbolicEngine.ctx.MkEq(a.abstractValue, b.abstractValue)));
+    			return new SymbolicBool(PathConstraint.ctx.MkNot(PathConstraint.ctx.MkEq(a.abstractValue, b.abstractValue)));
     		} else {
-    			return new SymbolicBool(SymbolicEngine.ctx.MkEq(a.abstractValue, SymbolicEngine.ctx.MkBool(!b.concreteValue)));
+    			return new SymbolicBool(PathConstraint.ctx.MkEq(a.abstractValue, PathConstraint.ctx.MkBool(!b.concreteValue)));
     		}
     	} else {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(SymbolicEngine.ctx.MkEq(SymbolicEngine.ctx.MkBool(!a.concreteValue), b.abstractValue));
+    			return new SymbolicBool(PathConstraint.ctx.MkEq(PathConstraint.ctx.MkBool(!a.concreteValue), b.abstractValue));
 			} else {
 				return new SymbolicBool(a.concreteValue != b.concreteValue);
 			}
@@ -83,13 +74,13 @@ public struct SymbolicBool {
 	{ 
 		if(a.IsAbstract()) {
 			if(b.IsAbstract()) {
-				return new SymbolicBool(SymbolicEngine.ctx.MkAnd(a.abstractValue, b.abstractValue));
+				return new SymbolicBool(PathConstraint.ctx.MkAnd(a.abstractValue, b.abstractValue));
 			} else {
-				return new SymbolicBool(SymbolicEngine.ctx.MkAnd(a.abstractValue, SymbolicEngine.ctx.MkBool(b.concreteValue)));
+				return new SymbolicBool(PathConstraint.ctx.MkAnd(a.abstractValue, PathConstraint.ctx.MkBool(b.concreteValue)));
 			}
 		} else {
 			if(b.IsAbstract()) {
-				return new SymbolicBool(SymbolicEngine.ctx.MkAnd(SymbolicEngine.ctx.MkBool(a.concreteValue), b.abstractValue));
+				return new SymbolicBool(PathConstraint.ctx.MkAnd(PathConstraint.ctx.MkBool(a.concreteValue), b.abstractValue));
 			} else {
 				return new SymbolicBool(a.concreteValue & b.concreteValue);
 			}
@@ -100,13 +91,13 @@ public struct SymbolicBool {
 	{ 
 		if(a.IsAbstract()) {
 			if(b.IsAbstract()) {
-				return new SymbolicBool(SymbolicEngine.ctx.MkAnd(a.abstractValue, b.abstractValue));
+				return new SymbolicBool(PathConstraint.ctx.MkAnd(a.abstractValue, b.abstractValue));
 			} else {
-				return new SymbolicBool(SymbolicEngine.ctx.MkAnd(a.abstractValue, SymbolicEngine.ctx.MkBool(b.concreteValue)));
+				return new SymbolicBool(PathConstraint.ctx.MkAnd(a.abstractValue, PathConstraint.ctx.MkBool(b.concreteValue)));
 			}
 		} else {
 			if(b.IsAbstract()) {
-				return new SymbolicBool(SymbolicEngine.ctx.MkAnd(SymbolicEngine.ctx.MkBool(a.concreteValue), b.abstractValue));
+				return new SymbolicBool(PathConstraint.ctx.MkAnd(PathConstraint.ctx.MkBool(a.concreteValue), b.abstractValue));
 			} else {
 				return new SymbolicBool(a.concreteValue | b.concreteValue);
 			}
@@ -116,28 +107,10 @@ public struct SymbolicBool {
 	public static SymbolicBool operator !(SymbolicBool a) 
 	{ 
 		if(a.IsAbstract()) {
-			return new SymbolicBool(SymbolicEngine.ctx.MkNot(a.abstractValue));
+			return new SymbolicBool(PathConstraint.ctx.MkNot(a.abstractValue));
 		} else {
 			return new SymbolicBool(!a.concreteValue);
 		}    
-	}
-		
-	public static bool operator true(SymbolicBool op)
-	{
-		if (op.IsAbstract ()) {
-			return SymbolicEngine.SE.NextBranch (op.abstractValue);
-		} else {
-			return op.concreteValue;
-		}
-	}
-
-	public static bool operator false(SymbolicBool op)
-	{
-		if (op.IsAbstract ()) {
-			return SymbolicEngine.SE.NextBranch (SymbolicEngine.ctx.MkNot (op.abstractValue));
-		} else {
-			return !op.concreteValue;
-		}
 	}
 
 	public override string ToString ()

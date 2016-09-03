@@ -158,6 +158,10 @@ public class PathConstraint
 			{
 				return false;
 			}
+		default:
+			{
+				throw new Exception ("Not reachable");
+			}
 		}
 	}
 
@@ -199,6 +203,22 @@ public class PathConstraint
 				Console.WriteLine ("Solver failure");
 				return true;
 			}
+		default:
+			{
+				throw new Exception ("Unreacable");
+			}
 		}
+	}
+
+	private static int solver_var_cnt = 0;
+	public static ValueSummary<SymbolicInteger> NewSymbolicIntVar(string prefix, int ge, int lt) {
+		var fresh_const = new SymbolicInteger((BitVecExpr)ctx.MkBVConst(String.Format("{0}_{1}", prefix, solver_var_cnt++), SymbolicInteger.INT_SIZE));
+		AddAxiom ((ge <= fresh_const).AbstractValue.ToBDD ().And((fresh_const < lt).AbstractValue.ToBDD()));
+		return new ValueSummary<SymbolicInteger> (fresh_const);
+	}
+
+	public static ValueSummary<SymbolicBool> NewSymbolicBoolVar(string prefix) {
+		var fresh_const = new SymbolicBool((BoolExpr)ctx.MkBoolConst(String.Format("{0}_{1}", prefix, solver_var_cnt++)));
+		return new ValueSummary<SymbolicBool> (fresh_const);
 	}
 }

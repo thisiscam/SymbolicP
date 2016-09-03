@@ -26,7 +26,7 @@ public class ValueSummary<T> {
 	private ValueSummary() { }
 
 	public ValueSummary(T t) {
-		value = t;
+		this.values.Add (new GuardedValue<T> (PathConstraint.GetPC (), t));
 	}
 
 	private ValueSummary(ValueSummary<T> t) {
@@ -363,6 +363,25 @@ public static class ValueSummaryExt {
 		return ret;
 	}
 
+	public static ValueSummary<R> GetIndex<R>(this ValueSummary<ValueSummary<R>[]> vs_array, ValueSummary<PInteger> index) {
+		var ret = new ValueSummary<R> ();
+		foreach(var guardedIndex in index.values) {
+			foreach(var guardedArray in vs_array.values) {
+				var bddForm = guardedArray.bddForm.And(guardedIndex.bddForm.And (PathConstraint.GetPC ()));
+				if (!bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
+					if (guardedIndex.value.value.IsAbstract ()) {
+						foreach (Tuple<bdd, int> t in PathConstraint.GetAllPossibleValues(guardedIndex.value.value.AbstractValue)) {
+							ret.Merge(guardedArray.value [t.Item2], bddForm.And(t.Item1));
+						}
+					} else {
+						ret.Merge (guardedArray.value [guardedIndex.value.value.ConcreteValue], bddForm);
+					}
+				}
+			}
+		}
+		return ret;
+	}
+
 	public static void SetIndex<R>(this ValueSummary<ValueSummary<R>[]> vs_array, ValueSummary<int> index, ValueSummary<R> val) {
 		foreach(var guardedIndex in index.values) {
 			foreach(var guardedArray in vs_array.values) {
@@ -385,6 +404,23 @@ public static class ValueSummaryExt {
 						}
 					} else {
 						guardedArray.value [guardedIndex.value.ConcreteValue].Assign (val, bddForm);
+					}
+				}
+			}
+		}
+	}
+
+	public static void SetIndex<R>(this ValueSummary<ValueSummary<R>[]> vs_array, ValueSummary<PInteger> index, ValueSummary<R> val) {
+		foreach(var guardedIndex in index.values) {
+			foreach(var guardedArray in vs_array.values) {
+				var bddForm = guardedArray.bddForm.And(guardedIndex.bddForm.And (PathConstraint.GetPC ()));
+				if (!bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
+					if (guardedIndex.value.value.IsAbstract ()) {
+						foreach (Tuple<bdd, int> t in PathConstraint.GetAllPossibleValues(guardedIndex.value.value.AbstractValue)) {
+							guardedArray.value [t.Item2].Assign (val, bddForm.And(t.Item1));
+						}
+					} else {
+						guardedArray.value [guardedIndex.value.value.ConcreteValue].Assign (val, bddForm);
 					}
 				}
 			}
