@@ -5,7 +5,7 @@ using SCG = System.Collections.Generic;
 using System.Diagnostics;
 using BDDToZ3Wrap;
 
-internal struct GuardedValue<T> {
+internal class GuardedValue<T> {
 	public bdd bddForm;
 	public T value;
 
@@ -13,47 +13,63 @@ internal struct GuardedValue<T> {
 		this.bddForm = bddForm;
 		this.value = value;
 	}
+
+	public GuardedValue(GuardedValue<T> other) {
+		this.bddForm = other.bddForm;
+		this.value = other.value;
+	}
 }
 
 public class ValueSummary<T> {
-	public static readonly ValueSummary<T> Null = new ValueSummary<T>();
 
 	internal SCG.List<GuardedValue<T>> values = new SCG.List<GuardedValue<T>> ();
 
-	internal T value;
-
 	#region constructor
-	private ValueSummary() { }
+	public ValueSummary() { }
 
 	public ValueSummary(T t) {
 		this.values.Add (new GuardedValue<T> (PathConstraint.GetPC (), t));
 	}
 
-	private ValueSummary(ValueSummary<T> t) {
-		values = new SCG.List<GuardedValue<T>> ();
-		foreach (var val in t.values) {
-			values.Add (new GuardedValue<T> (val.bddForm, val.value));
-		}
-	}
+	public static implicit operator T(ValueSummary<T> vs)
+	{
+		Debug.Assert (vs.values.Count == 1);
+		return vs.values [0].value;
+	}  
 
+	public static ValueSummary<T> InitializeFrom(ValueSummary<T> t) {
+		var ret = new ValueSummary<T>();
+		var pc = PathConstraint.GetPC ();
+		ret.values = new SCG.List<GuardedValue<T>> ();
+		foreach (var val in t.values) {
+			var bddForm = val.bddForm.And (pc);
+			if (!bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
+				ret.values.Add (new GuardedValue<T> (bddForm, val.value));
+			}
+		}
+		return ret;
+	}
 
 	public static ValueSummary<ValueSummary<T>[]> NewVSArray(ValueSummary<int> size) 
 	{
-		ValueSummary<T>[] array = new ValueSummary<T>[size.value];
-		for (int i = 0; i < size.value; i++) {
-			array [i] = ValueSummary<T>.Null;
+		var pc = PathConstraint.GetPC ();
+		var ret = new ValueSummary<ValueSummary<T>[]> ();
+		foreach (var guardedSize in size.values) {
+			var bddForm = pc.And (guardedSize.bddForm);
+			if (!bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
+				var array = new ValueSummary<T>[guardedSize.value];
+				for (int i = 0; i < guardedSize.value; i++) {
+					array [i] = new ValueSummary<T> (default(T));
+				}
+				ret.values.Add (new GuardedValue<ValueSummary<T>[]>(bddForm, array));
+			}
 		}
-		return new ValueSummary<ValueSummary<T>[]>(array);
+		return ret;
 	}
 
 	public static implicit operator ValueSummary<T>(T t) 
 	{ 
 		return new ValueSummary<T> (t);
-	}
-
-	public static implicit operator T(ValueSummary<T> vs) 
-	{
-		return vs.value;	
 	}
 
 	#endregion
@@ -94,22 +110,22 @@ public class ValueSummary<T> {
 		this.values.Add (new GuardedValue<T> (pred, val));
 	}
 
-	public void Assign(ValueSummary<T> val, bdd pred)
+	public void Update<T2>(ValueSummary<T2> val, bdd pred) where T2: T
 	{
 		foreach (var guardedVal in val.values) {
 			var p = guardedVal.bddForm.And (pred);
-			Assign (guardedVal.value, p);
+			Update (guardedVal.value, p);
 		}
 	}
 
-	public void Assign(T val, bdd pred)
+	public void Update<T2>(T2 val, bdd pred) where T2 : T
 	{
 		if (!pred.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
 			var newVals = new SCG.List<GuardedValue<T>> ();
 			foreach (var guardedThisVal in this.values) {
 				guardedThisVal.bddForm = guardedThisVal.bddForm.And (pred.Not());
 				if (!guardedThisVal.bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
-					newVals.Add (guardedThisVal);
+					newVals.Add (new GuardedValue<T>(guardedThisVal));
 				}
 			}
 			this.values = newVals;
@@ -120,27 +136,53 @@ public class ValueSummary<T> {
 
 
 	public ValueSummary<R> GetField<R>(Func<T, ValueSummary<R>> f) {
-		return f.Invoke (value);
+		var ret = new ValueSummary<R> ();
+		var pc = PathConstraint.GetPC ();
+		foreach (var guardedVal in values) {
+			var bddForm = guardedVal.bddForm.And (pc);
+			Console.WriteLine (guardedVal.bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddtrue));
+			Console.WriteLine (pc.EqualEqual (BuDDySharp.BuDDySharp.bddtrue));
+			Console.WriteLine (bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddtrue));
+			if (!bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
+				ret.Merge (f.Invoke (guardedVal.value), bddForm);
+			}
+		}
+		return ret;
 	}
 
-	public void SetField<R>(Action<T, ValueSummary<R>> f, ValueSummary<R> v) {
-		f.Invoke (value, v);
+	public void SetField<R>(Func<T, ValueSummary<R>> f, ValueSummary<R> v) {
+		var ret = new ValueSummary<R> ();
+		var pc = PathConstraint.GetPC ();
+		foreach (var guardedVal in values) {
+			var bddForm = guardedVal.bddForm.And (pc);
+			if (!bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
+				f.Invoke (guardedVal.value).Assign (v);
+			}
+		}
 	}
 
 	public ValueSummary<R> GetConstField<R>(Func<T, R> f) {
-		return new ValueSummary<R>(f.Invoke (value));
+		var ret = new ValueSummary<R> ();
+		var pc = PathConstraint.GetPC ();
+		foreach (var guardedVal in values) {
+			var bddForm = guardedVal.bddForm.And (pc);
+			if (!bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
+				ret.AddValue (bddForm, f.Invoke (guardedVal.value));
+			}
+		}
+		return ret;
 	}
 
 	public void Assign<T2>(ValueSummary<T2> other) where T2 : T {
-		value = other.value;
+		Update (other, PathConstraint.GetPC ());
 	}
 
 	public void Invoke(params object[] args) {
-		(this.value as Delegate).DynamicInvoke (args);
+		InvokeMethodHelper (t => (t as Delegate).DynamicInvoke (args));
 	}
 
 	public ValueSummary<R> Invoke<R>(params object[] args) {
-		return (ValueSummary<R>)((this.value as Delegate).DynamicInvoke (args));
+		return InvokeMethodHelper<R> (t => (R)((t as Delegate).DynamicInvoke (args)));
 	}
 		
 	#region invokemethod
@@ -187,10 +229,10 @@ public class ValueSummary<T> {
 														ValueSummary<A3> arg3,
 														ValueSummary<A4> arg4) 
 	{
-		return f.Invoke(value, arg1, arg2, arg3, arg4);
+		return InvokeMethodHelper ((v) => f.Invoke (v, arg1, arg2, arg3, arg4));
 	}
 
-	public void InvokeMethodHelper(Action f){
+	public void InvokeMethodHelper(Action<T> f){
 		foreach(var guardedTarget in this.values) {
 			if (!PathConstraint.TryPushFrame (guardedTarget.bddForm)) {
 				continue;
@@ -249,10 +291,10 @@ public class ValueSummary<T> {
 
 	public ValueSummary<R> InvokeUnary<R>(Func<T, R> f) {
 		var ret = new ValueSummary<R>();
-		foreach (var guardedVals in this.values) {
-			var bddForm = guardedVals.bddForm.And(PathConstraint.GetPC());
+		foreach (var guardedVal in this.values) {
+			var bddForm = guardedVal.bddForm.And(PathConstraint.GetPC());
 			if(!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
-				ret.AddValue(bddForm, f.Invoke (this.value));
+				ret.AddValue(bddForm, f.Invoke (guardedVal.value));
 			}
 		}
 		return ret;
@@ -264,7 +306,7 @@ public class ValueSummary<T> {
 
 	public override string ToString ()
 	{
-		return "[VS]{" + value.ToString() + "}";
+		return "[VS]{" + values.ToString() + "}";
 	}
 }
 
@@ -288,7 +330,7 @@ public static class ValueSummaryExt {
 				if (guardedIndex.value.IsAbstract ()) {
 					var allVals = PathConstraint.GetAllPossibleValues (guardedIndex.value.AbstractValue);
 					foreach (var val in allVals) {
-						ret.AddValue (bddForm, array[val]);
+						ret.AddValue (bddForm.And(val.Item1), array[val.Item2]);
 					}			
 				} else {
 					ret.AddValue (bddForm, array[guardedIndex.value.ConcreteValue]);
@@ -320,7 +362,7 @@ public static class ValueSummaryExt {
 					if (g2.value.value.IsAbstract ()) {
 						var allVals = PathConstraint.GetAllPossibleValues (g2.value.value.AbstractValue);
 						foreach (var val in allVals) {
-							ret.AddValue (bddForm, array[g1.value, val]);
+							ret.AddValue (bddForm.And(val.Item1), array[g1.value, val.Item2]);
 						}	
 					} else {
 						ret.AddValue (bddForm, array [g1.value, g2.value.value.ConcreteValue]);
@@ -351,7 +393,7 @@ public static class ValueSummaryExt {
 				var bddForm = guardedArray.bddForm.And(guardedIndex.bddForm.And (PathConstraint.GetPC ()));
 				if (!bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
 					if (guardedIndex.value.IsAbstract ()) {
-						foreach (Tuple<bdd, int> t in PathConstraint.GetAllPossibleValues(guardedIndex.value.AbstractValue)) {
+						foreach (var t in PathConstraint.GetAllPossibleValues(guardedIndex.value.AbstractValue)) {
 							ret.Merge(guardedArray.value [t.Item2], bddForm.And(t.Item1));
 						}
 					} else {
@@ -370,7 +412,7 @@ public static class ValueSummaryExt {
 				var bddForm = guardedArray.bddForm.And(guardedIndex.bddForm.And (PathConstraint.GetPC ()));
 				if (!bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
 					if (guardedIndex.value.value.IsAbstract ()) {
-						foreach (Tuple<bdd, int> t in PathConstraint.GetAllPossibleValues(guardedIndex.value.value.AbstractValue)) {
+						foreach (var t in PathConstraint.GetAllPossibleValues(guardedIndex.value.value.AbstractValue)) {
 							ret.Merge(guardedArray.value [t.Item2], bddForm.And(t.Item1));
 						}
 					} else {
@@ -387,7 +429,7 @@ public static class ValueSummaryExt {
 			foreach(var guardedArray in vs_array.values) {
 				var bddForm = guardedArray.bddForm.And(guardedIndex.bddForm.And (PathConstraint.GetPC ()));
 				if (!bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
-					guardedArray.value [guardedIndex.value].Assign (val, bddForm);
+					guardedArray.value [guardedIndex.value].Update (val, bddForm);
 				}
 			}
 		}
@@ -400,10 +442,10 @@ public static class ValueSummaryExt {
 				if (!bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
 					if (guardedIndex.value.IsAbstract ()) {
 						foreach (Tuple<bdd, int> t in PathConstraint.GetAllPossibleValues(guardedIndex.value.AbstractValue)) {
-							guardedArray.value [t.Item2].Assign (val, bddForm.And(t.Item1));
+							guardedArray.value [t.Item2].Update (val, bddForm.And(t.Item1));
 						}
 					} else {
-						guardedArray.value [guardedIndex.value.ConcreteValue].Assign (val, bddForm);
+						guardedArray.value [guardedIndex.value.ConcreteValue].Update (val, bddForm);
 					}
 				}
 			}
@@ -417,10 +459,10 @@ public static class ValueSummaryExt {
 				if (!bddForm.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
 					if (guardedIndex.value.value.IsAbstract ()) {
 						foreach (Tuple<bdd, int> t in PathConstraint.GetAllPossibleValues(guardedIndex.value.value.AbstractValue)) {
-							guardedArray.value [t.Item2].Assign (val, bddForm.And(t.Item1));
+							guardedArray.value [t.Item2].Update (val, bddForm.And(t.Item1));
 						}
 					} else {
-						guardedArray.value [guardedIndex.value.value.ConcreteValue].Assign (val, bddForm);
+						guardedArray.value [guardedIndex.value.value.ConcreteValue].Update (val, bddForm);
 					}
 				}
 			}
@@ -428,33 +470,33 @@ public static class ValueSummaryExt {
 	}
 
 	public static ValueSummary<int> Increment(this ValueSummary<int> i) {
-		var ret = new ValueSummary<int> (i);
+		var ret = ValueSummary<int>.InitializeFrom (i);
 		foreach (var val in i.values) {
-			i.Assign (val.value + 1, val.bddForm.And (PathConstraint.GetPC ()));
+			val.value += 1;
 		}
 		return ret;
 	} 
 
 	public static ValueSummary<SymbolicInteger> Increment(this ValueSummary<SymbolicInteger> i) {
-		var ret = new ValueSummary<SymbolicInteger> (i);
+		var ret = ValueSummary<SymbolicInteger>.InitializeFrom (i);
 		foreach (var val in i.values) {
-			i.Assign (val.value + 1, val.bddForm.And (PathConstraint.GetPC ()));
+			val.value += 1;
 		}
 		return ret;
 	}
 
 	public static ValueSummary<int> Decrement(this ValueSummary<int> i) {
-		var ret = new ValueSummary<int> (i);
+		var ret = ValueSummary<int>.InitializeFrom (i);
 		foreach (var val in i.values) {
-			i.Assign (val.value - 1, val.bddForm.And (PathConstraint.GetPC ()));
+			val.value -= 1;
 		}
 		return ret;
 	} 
 
 	public static ValueSummary<SymbolicInteger> Decrement(this ValueSummary<SymbolicInteger> i) {
-		var ret = new ValueSummary<SymbolicInteger> (i);
-		foreach (var val in i.values) {
-			i.Assign (val.value - 1, val.bddForm.And (PathConstraint.GetPC ()));
+		var ret = ValueSummary<SymbolicInteger>.InitializeFrom (i);
+		foreach (var val in ret.values) {
+			val.value -= 1;
 		}
 		return ret;
 	}
@@ -513,7 +555,7 @@ public static class ValueSummaryExt {
 				if (guardedBooleanVal.value.IsAbstract ()) {
 					var c = guardedBooleanVal.value.AbstractValue.ToBDD ();
 					if(c.EqualEqual(BuDDySharp.BuDDySharp.bddtrue)) {
-						predTrue = predTrue.Or (guardedBooleanVal);
+						predTrue = predTrue.Or (guardedBooleanVal.bddForm);
 					} else if(c.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
 						predFalse = predFalse.Or (guardedValuePcPred);
 					} else {
@@ -560,7 +602,7 @@ public static class ValueSummaryExt {
 		//TODO make this more efficient
 		var tmp = new ValueSummary<SymbolicBool> ();
 		foreach (var v in b.values) {
-			tmp.values.Add (v.bddForm, (SymbolicBool)v.value);
+			tmp.values.Add (new GuardedValue<SymbolicBool>(v.bddForm, (SymbolicBool)v.value));
 		}
 		return Cond (tmp);
 	}

@@ -40,7 +40,7 @@ class Scheduler
 				else
 				{
 					ValueSummary<int> state_idx = item.GetField<PMachine>(_ => _.target).InvokeMethod<PInteger, int>((_, a0) => _.CanServeEvent(a0), item.GetField<PInteger>(_ => _.e));
-					if (state_idx.InvokeBinary<int, bool>((l, r) => l >= r, 0))
+					if (state_idx.InvokeBinary<int, bool>((l, r) => l >= r, 0).Cond())
 					{
 						choices.Add(new SchedulerChoice(machine, j, state_idx));
 						break;
@@ -50,19 +50,19 @@ class Scheduler
 
 			ValueSummary<// Machine is state that can serve null event?
 			int> null_state_idx = machine.InvokeMethod<PInteger, int>((_, a0) => _.CanServeEvent(a0), (PInteger)Constants.EVENT_NULL);
-			if (null_state_idx.InvokeBinary<int, bool>((l, r) => l >= r, 0))
+			if (null_state_idx.InvokeBinary<int, bool>((l, r) => l >= r, 0).Cond())
 			{
 				choices.Add(new SchedulerChoice(machine, -1, null_state_idx));
 			}
 		}
 
-		if (choices.Count.InvokeBinary<int, bool>((l, r) => l == r, 0))
+		if (choices.Count.InvokeBinary<int, bool>((l, r) => l == r, 0).Cond())
 		{
 			return false;
 		}
 
 		ValueSummary<// Choose one and remove from send queue
-		SymbolicInteger> idx = PathConstraint.NewSymbolicIntVar("SI", 0, choices.Count.value);
+		SymbolicInteger> idx = PathConstraint.NewSymbolicIntVar("SI", 0, choices.Count);
 		ValueSummary<SchedulerChoice> chosen = choices[idx];
 		ValueSummary<int> sourceMachineSendQueueIndex = chosen.GetField<int>(_ => _.sourceMachineSendQueueIndex);
 		if (sourceMachineSendQueueIndex.InvokeBinary<int, bool>((l, r) => l < r, 0).Cond())

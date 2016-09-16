@@ -7,13 +7,15 @@ class Program {
         int iteration = 0;
         Scheduler scheduler = new Scheduler();
 
-        PMachine mainMachine = MachineController.CreateMainMachine();
+        ValueSummary<PMachine> mainMachine = MachineController.CreateMainMachine();
         scheduler.StartMachine(mainMachine, null);
 
         for(int i=0; i < maxExplorationSteps; i++) { 
-            if(!scheduler.ChooseAndRunMachine()) {
-                break;
-            }
+			if (scheduler.ChooseAndRunMachine ().Cond ()) {
+				continue;
+			} else {
+				break;
+			}
         }
         return 0;
     }

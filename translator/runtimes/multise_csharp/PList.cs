@@ -7,7 +7,7 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
     {
         get
         {
-            return new ValueSummary<PInteger>(new PInteger(this._count));
+            return this._count.Cast<PInteger>(_ => (PInteger)_);
         }
     }
 
@@ -31,8 +31,8 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
 
     public ValueSummary<PList<T>> DeepCopy()
     {
-        ValueSummary<PList<T>> ret = new ValueSummary<PList<T>>(new PList<T>());
-        for (ValueSummary<SymbolicInteger> i = (SymbolicInteger)0; i.InvokeBinary<int, SymbolicBool>((l, r) => l < r, this._count).Cond(); i.Increment())
+        ValueSummary<PList<T>> ret = ValueSummary<PList<T>>.InitializeFrom(new ValueSummary<PList<T>>(new PList<T>()));
+        for (ValueSummary<SymbolicInteger> i = ValueSummary<SymbolicInteger>.InitializeFrom((SymbolicInteger)0); i.InvokeBinary<int, SymbolicBool>((l, r) => l < r, this._count).Cond(); i.Increment())
         {
             ret.InvokeMethod<T>((_, a0) => _.Add(a0), this[i].InvokeMethod((_) => _.DeepCopy()));
         }
@@ -42,7 +42,7 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
 
     public ValueSummary<SymbolicInteger> PTypeGetHashCode()
     {
-        ValueSummary<SymbolicInteger> ret = (SymbolicInteger)1;
+        ValueSummary<SymbolicInteger> ret = ValueSummary<SymbolicInteger>.InitializeFrom((SymbolicInteger)1);
         for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Cond(); i.Increment())
         {
             ret.Assign<SymbolicInteger>(ret.InvokeBinary<int, SymbolicInteger>((l, r) => l * r, 31).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l + r, this[i].InvokeMethod((_) => _.PTypeGetHashCode())));

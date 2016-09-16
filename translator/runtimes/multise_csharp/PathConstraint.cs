@@ -13,12 +13,6 @@ public class PathConstraint
 	public static Context ctx;
 	public static Solver solver;
 
-	static PathConstraint()
-	{
-		ctx = new Context();
-		solver = ctx.MkSolver();
-	}
-
 	public struct BranchPoint
 	{
 		public enum State 
@@ -51,8 +45,20 @@ public class PathConstraint
 		}
 	}
 
-	protected static Stack<Frame> frames;
-	protected static SCG.List<bdd> pcs;
+	protected static Stack<Frame> frames = new Stack<Frame>();
+	protected static SCG.List<bdd> pcs = new SCG.List<bdd> ();
+
+	static PathConstraint()
+	{
+		ctx = new Context();
+		solver = ctx.MkSolver();
+
+		BuDDySharp.BuDDySharp.cpp_init (10000000, 10000000);
+		BuDDySharp.BuDDySharp.setvarnum (10000);
+
+		pcs.Add (BuDDySharp.BuDDySharp.bddtrue);
+		frames.Push (new Frame (0));
+	}
 
 	public static bdd GetPC()
 	{
@@ -124,17 +130,17 @@ public class PathConstraint
 				break;
 			}
 		}
-		frame.BranchPoints.RemoveRange(i + 1, frame.BranchPoints.Count - i);
+		frame.BranchPoints.RemoveRange(i + 1, frame.BranchPoints.Count - i - 1);
 		frame.idx = 0;
 		return frame.BranchPoints.Count > 0;
 	}
 
-	public bool IsRecovering()
+	public static bool IsRecovering()
 	{
 		return GetCurrentFrame().is_recovering;
 	}
 
-	public bool TakeBranch()
+	public static bool TakeBranch()
 	{
 		var frame = GetCurrentFrame ();
 		var branch_point = frame.BranchPoints [frame.idx];
@@ -211,9 +217,14 @@ public class PathConstraint
 	}
 
 	private static int solver_var_cnt = 0;
-	public static ValueSummary<SymbolicInteger> NewSymbolicIntVar(string prefix, int ge, int lt) {
+	public static ValueSummary<SymbolicInteger> NewSymbolicIntVar(string prefix, int ge, ValueSummary<int> lt) {
+		var pc = GetPC ();
 		var fresh_const = new SymbolicInteger((BitVecExpr)ctx.MkBVConst(String.Format("{0}_{1}", prefix, solver_var_cnt++), SymbolicInteger.INT_SIZE));
-		AddAxiom ((ge <= fresh_const).AbstractValue.ToBDD ().And((fresh_const < lt).AbstractValue.ToBDD()));
+		bdd axiom = BuDDySharp.BuDDySharp.bddfalse;
+		foreach (var guardedVal in lt.values) {
+			axiom = axiom.Or (guardedVal.bddForm.And(pc).And ((fresh_const < guardedVal.value).AbstractValue.ToBDD ()));
+		}
+		AddAxiom ((ge <= fresh_const).AbstractValue.ToBDD ().And(axiom));
 		return new ValueSummary<SymbolicInteger> (fresh_const);
 	}
 

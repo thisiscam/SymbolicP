@@ -5,8 +5,8 @@ abstract class MonitorPMachine
 {
     protected delegate void TransitionFunction(ValueSummary<IPType> payload);
     protected delegate void ExitFunction();
-    protected ValueSummary<int> retcode;
-    protected ValueSummary<List<int>> states = new ValueSummary<List<int>>(new List<int>());
+    protected ValueSummary<int> retcode = new ValueSummary<int>(default (int));
+    protected ValueSummary<List<int>> states = ValueSummary<List<int>>.InitializeFrom(new ValueSummary<List<int>>(new List<int>()));
     protected bool[, ] DeferedSet;
     protected bool[, ] IsGotoTransition;
     protected TransitionFunction[, ] Transitions;
@@ -15,8 +15,8 @@ abstract class MonitorPMachine
     {
         for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count)).Cond(); i.Increment())
         {
-            ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], i);
-            if (this.Transitions.GetIndex(state, e).InvokeBinary<MonitorPMachine.TransitionFunction, bool>((l, r) => l != r, ValueSummary<MonitorPMachine.TransitionFunction>.Null).Cond())
+            ValueSummary<int> state = ValueSummary<int>.InitializeFrom(this.states.InvokeMethod<int, int>((_, a0) => _[a0], i));
+            if (this.Transitions.GetIndex(state, e).InvokeBinary<MonitorPMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<MonitorPMachine.TransitionFunction>(default (MonitorPMachine.TransitionFunction))).Cond())
             {
                 if (this.IsGotoTransition.GetIndex(state, e).Cond())
                 {
@@ -24,7 +24,7 @@ abstract class MonitorPMachine
                 }
 
                 this.retcode = Constants.EXECUTE_FINISHED;
-                ValueSummary<TransitionFunction> transition_fn = this.Transitions.GetIndex(state, e);
+                ValueSummary<TransitionFunction> transition_fn = ValueSummary<TransitionFunction>.InitializeFrom(this.Transitions.GetIndex(state, e));
                 transition_fn.Invoke(payload);
                 return;
             }

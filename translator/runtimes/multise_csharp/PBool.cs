@@ -51,7 +51,7 @@ public struct PBool : IPType<PBool> {
 
 	public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PBool> other)
 	{
-		return this.value == other.value.value;
+		return other.InvokeBinary<PBool, SymbolicBool> ((_, a0) => _.value == a0.value, new ValueSummary<PBool>(this));
 	}
 
 	public ValueSummary<SymbolicInteger> PTypeGetHashCode()
