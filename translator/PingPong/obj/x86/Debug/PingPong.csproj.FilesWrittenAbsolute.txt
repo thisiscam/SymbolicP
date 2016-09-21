@@ -1,0 +1,12 @@
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/PingPong/obj/x86/Debug/.NETFramework,Version=v4.5.AssemblyAttribute.cs
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/PingPong/bin/Debug/PingPong.exe.mdb
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/PingPong/bin/Debug/PingPong.exe
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/PingPong/obj/x86/Debug/PingPong.exe
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/PingPong/obj/x86/Debug/PingPong.exe.mdb
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/PingPong/bin/Debug/Microsoft.Z3.dll
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/PingPong/bin/Debug/BuDDySharp.dll
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/PingPong/bin/Debug/BuDDySharp.dll.mdb
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/PingPong/bin/Debug/libbuddysharp.so
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/PingPong/bin/Debug/BDDToZ3Wrap.dll
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/PingPong/bin/Debug/BDDToZ3Wrap.dll.mdb
+/Users/jianqiaoyang/Desktop/SymbolicP/translator/PingPong/bin/Debug/libBDD_Z3_Wrap.so

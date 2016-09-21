@@ -52,9 +52,11 @@ public class PathConstraint
 	{
 		ctx = new Context();
 		solver = ctx.MkSolver();
-
+		
 		BuDDySharp.BuDDySharp.cpp_init (10000000, 10000000);
 		BuDDySharp.BuDDySharp.setvarnum (10000);
+
+		BDDToZ3Wrap.Converter.Init (ctx);
 
 		pcs.Add (BuDDySharp.BuDDySharp.bddtrue);
 		frames.Push (new Frame (0));

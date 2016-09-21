@@ -961,7 +961,7 @@ namespace MultiSETransformer
 						}
 					} else if (node.IsKind (SyntaxKind.NullLiteralExpression)) {
 						var t = SyntaxFactory.ParseTypeName(model.GetTypeInfo (node).ConvertedType.ToDisplayString());
-						return SyntaxFactory.ObjectCreationExpression(SyntaxFactory.GenericName(SyntaxFactory.Identifier("ValueSummary"), SyntaxFactory.TypeArgumentList().AddArguments(t))).WithArgumentList(SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(SyntaxFactory.DefaultExpression(t))));
+						return SyntaxFactory.ObjectCreationExpression(SyntaxFactory.GenericName(SyntaxFactory.Identifier("ValueSummary"), SyntaxFactory.TypeArgumentList().AddArguments(t))).WithArgumentList(SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression))));
 					}
 					goto default;
 				}

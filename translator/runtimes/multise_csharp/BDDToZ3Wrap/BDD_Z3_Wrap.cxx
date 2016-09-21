@@ -41,38 +41,44 @@ void init_bdd_z3_wrap(void* c)
 {
 	ctx = (Z3_context)c;
 }
-
+int counter = 0;
 static Z3_ast _bdd_to_Z3_formula(bdd root)
 {
 	// TODO, optimize to make smt form more compact? e.g. using ITE, 
 	// or switch over shape of root for possible simplier forms
 	if(root == bddtrue) {
-		return Z3_mk_true(ctx);
+		Z3_ast ret = Z3_mk_true(ctx);
+		Z3_inc_ref(ctx, ret);
+		return ret;
 	} else if (root == bddfalse) {
-		return Z3_mk_false(ctx);
+		Z3_ast ret = Z3_mk_false(ctx);
+		Z3_inc_ref(ctx, ret);
+		return ret;
 	} else {
 		Z3_ast t = bdd_vars_to_z3_formula[bdd_var(root)];
 
 		Z3_ast left = _bdd_to_Z3_formula(bdd_low(root));
-		Z3_inc_ref(ctx, left);
 		Z3_ast right = _bdd_to_Z3_formula(bdd_high(root));
-		Z3_inc_ref(ctx, right);
 
-		Z3_ast const or_args_left[] = {t, left};
-		Z3_ast const or_args_right[] = {t, right};
+		Z3_ast not_t = Z3_mk_not(ctx, t);
+		Z3_inc_ref(ctx, not_t);
+		Z3_ast const and_args_left[] = {not_t, left};
+		Z3_ast const and_args_right[] = {t, right};
 
-		Z3_ast t_or_left = Z3_mk_or(ctx, 2, or_args_left);
-		Z3_inc_ref(ctx, t_or_left);
+		Z3_ast t_and_not_left = Z3_mk_and(ctx, 2, and_args_left);
+		Z3_inc_ref(ctx, t_and_not_left);
 		Z3_dec_ref(ctx, left);
-		Z3_ast t_or_right = Z3_mk_or(ctx, 2, or_args_right);
-		Z3_inc_ref(ctx, t_or_right);
+		Z3_dec_ref(ctx, not_t);
+		Z3_ast t_and_right = Z3_mk_and(ctx, 2, and_args_right);
+		Z3_inc_ref(ctx, t_and_right);
 		Z3_dec_ref(ctx, right);
 
-		Z3_ast const and_args[] = {t_or_left, t_or_right};
+		Z3_ast const or_args[] = {t_and_not_left, t_and_right};
 
-		Z3_ast ret = Z3_mk_and(ctx, 2, and_args);
-		Z3_dec_ref(ctx, t_or_left);
-		Z3_dec_ref(ctx, t_or_right);
+		Z3_ast ret = Z3_mk_or(ctx, 2, or_args);
+		Z3_inc_ref(ctx, ret);
+		Z3_dec_ref(ctx, t_and_not_left);
+		Z3_dec_ref(ctx, t_and_right);
 		return ret;
 	}
 }
@@ -80,7 +86,8 @@ static Z3_ast _bdd_to_Z3_formula(bdd root)
 Z3_ast bdd_to_Z3_formula(bdd* r)
 {
 	Z3_ast ret = _bdd_to_Z3_formula(*r);
-	Z3_inc_ref(ctx, ret);
+	Z3_ast ret_simplified = Z3_simplify(ctx, ret);
+	Z3_inc_ref(ctx, ret_simplified);
 	return ret;
 }
 

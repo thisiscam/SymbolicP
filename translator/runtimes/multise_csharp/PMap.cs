@@ -91,7 +91,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
         ValueSummary<SymbolicInteger> hash = ValueSummary<SymbolicInteger>.InitializeFrom(k.InvokeMethod((_) => _.PTypeGetHashCode()));
         ValueSummary<SymbolicInteger> idx = ValueSummary<SymbolicInteger>.InitializeFrom(hash.InvokeBinary<int, SymbolicInteger>((l, r) => l % r, this._capacity));
         ValueSummary<MapEntry> firstEntry = ValueSummary<MapEntry>.InitializeFrom(this.data.GetIndex<PMap<K, V>.MapEntry>(idx));
-        for (ValueSummary<MapEntry> iter = ValueSummary<MapEntry>.InitializeFrom(firstEntry); iter.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(default (object))).Cond(); firstEntry.Assign<PMap<K, V>.MapEntry>(firstEntry.GetField<PMap<K, V>.MapEntry>(_ => _.Next)))
+        for (ValueSummary<MapEntry> iter = ValueSummary<MapEntry>.InitializeFrom(firstEntry); iter.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(null)).Cond(); firstEntry.Assign<PMap<K, V>.MapEntry>(firstEntry.GetField<PMap<K, V>.MapEntry>(_ => _.Next)))
         {
             ValueSummary<SymbolicBool> vs_lgc_tmp_0;
             if (((vs_lgc_tmp_0 = iter.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash)).Cond() ? vs_lgc_tmp_0.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, iter.GetField<K>(_ => _.Key).InvokeMethod<K, SymbolicBool>((_, a0) => _.PTypeEquals(a0), k)) : vs_lgc_tmp_0).Cond())
@@ -110,7 +110,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
         ValueSummary<SymbolicInteger> hash = ValueSummary<SymbolicInteger>.InitializeFrom(k.InvokeMethod((_) => _.PTypeGetHashCode()));
         ValueSummary<SymbolicInteger> idx = ValueSummary<SymbolicInteger>.InitializeFrom(hash.InvokeBinary<int, SymbolicInteger>((l, r) => l % r, this._capacity));
         ValueSummary<MapEntry> firstEntry = ValueSummary<MapEntry>.InitializeFrom(this.data.GetIndex<PMap<K, V>.MapEntry>(idx));
-        for (ValueSummary<MapEntry> iter = ValueSummary<MapEntry>.InitializeFrom(firstEntry); iter.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(default (object))).Cond(); firstEntry.Assign<PMap<K, V>.MapEntry>(firstEntry.GetField<PMap<K, V>.MapEntry>(_ => _.Next)))
+        for (ValueSummary<MapEntry> iter = ValueSummary<MapEntry>.InitializeFrom(firstEntry); iter.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(null)).Cond(); firstEntry.Assign<PMap<K, V>.MapEntry>(firstEntry.GetField<PMap<K, V>.MapEntry>(_ => _.Next)))
         {
             ValueSummary<SymbolicBool> vs_lgc_tmp_1;
             if (((vs_lgc_tmp_1 = iter.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash)).Cond() ? vs_lgc_tmp_1.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, iter.GetField<K>(_ => _.Key).InvokeMethod<K, SymbolicBool>((_, a0) => _.PTypeEquals(a0), k)) : vs_lgc_tmp_1).Cond())
@@ -127,7 +127,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
         ValueSummary<SymbolicInteger> hash = ValueSummary<SymbolicInteger>.InitializeFrom(k.InvokeMethod((_) => _.PTypeGetHashCode()));
         ValueSummary<SymbolicInteger> idx = ValueSummary<SymbolicInteger>.InitializeFrom(hash.InvokeBinary<int, SymbolicInteger>((l, r) => l % r, this._capacity));
         ValueSummary<MapEntry> firstEntry = ValueSummary<MapEntry>.InitializeFrom(this.data.GetIndex<PMap<K, V>.MapEntry>(idx));
-        for (ValueSummary<MapEntry> iter = ValueSummary<MapEntry>.InitializeFrom(firstEntry); iter.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(default (object))).Cond(); firstEntry.Assign<PMap<K, V>.MapEntry>(firstEntry.GetField<PMap<K, V>.MapEntry>(_ => _.Next)))
+        for (ValueSummary<MapEntry> iter = ValueSummary<MapEntry>.InitializeFrom(firstEntry); iter.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(null)).Cond(); firstEntry.Assign<PMap<K, V>.MapEntry>(firstEntry.GetField<PMap<K, V>.MapEntry>(_ => _.Next)))
         {
             ValueSummary<SymbolicBool> vs_lgc_tmp_2;
             if (((vs_lgc_tmp_2 = iter.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash)).Cond() ? vs_lgc_tmp_2.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, iter.GetField<K>(_ => _.Key).InvokeMethod<K, SymbolicBool>((_, a0) => _.PTypeEquals(a0), k)) : vs_lgc_tmp_2).Cond())
@@ -150,7 +150,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
             ValueSummary<ValueSummary<MapEntry>[]> new_data = ValueSummary<ValueSummary<MapEntry>[]>.InitializeFrom(ValueSummary<MapEntry>.NewVSArray(new_capacity));
             for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._capacity).Cond(); i.Increment())
             {
-                for (ValueSummary<MapEntry> iter = ValueSummary<MapEntry>.InitializeFrom(this.data.GetIndex<PMap<K, V>.MapEntry>(i)); iter.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(default (object))).Cond(); iter.Assign<PMap<K, V>.MapEntry>(iter.GetField<PMap<K, V>.MapEntry>(_ => _.Next)))
+                for (ValueSummary<MapEntry> iter = ValueSummary<MapEntry>.InitializeFrom(this.data.GetIndex<PMap<K, V>.MapEntry>(i)); iter.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(null)).Cond(); iter.Assign<PMap<K, V>.MapEntry>(iter.GetField<PMap<K, V>.MapEntry>(_ => _.Next)))
                 {
                     ValueSummary<SymbolicInteger> idx = ValueSummary<SymbolicInteger>.InitializeFrom(iter.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<int, SymbolicInteger>((l, r) => l % r, new_capacity));
                     new_data.SetIndex<PMap<K, V>.MapEntry>(idx, new ValueSummary<PMap<K, V>.MapEntry>(new MapEntry(iter.GetField<K>(_ => _.Key), iter.GetField<SymbolicInteger>(_ => _.Hash), iter.GetField<V>(_ => _.Value), new_data.GetIndex<PMap<K, V>.MapEntry>(idx))));
@@ -175,7 +175,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
         }
         else
         {
-            for (ValueSummary<MapEntry> iter = ValueSummary<MapEntry>.InitializeFrom(firstEntry); iter.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(default (object))).Cond(); firstEntry.Assign<PMap<K, V>.MapEntry>(firstEntry.GetField<PMap<K, V>.MapEntry>(_ => _.Next)))
+            for (ValueSummary<MapEntry> iter = ValueSummary<MapEntry>.InitializeFrom(firstEntry); iter.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(null)).Cond(); firstEntry.Assign<PMap<K, V>.MapEntry>(firstEntry.GetField<PMap<K, V>.MapEntry>(_ => _.Next)))
             {
                 ValueSummary<SymbolicBool> vs_lgc_tmp_4;
                 if (((vs_lgc_tmp_4 = iter.GetField<PMap<K, V>.MapEntry>(_ => _.Next).GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash)).Cond() ? vs_lgc_tmp_4.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, iter.GetField<PMap<K, V>.MapEntry>(_ => _.Next).GetField<K>(_ => _.Key).InvokeMethod<K, SymbolicBool>((_, a0) => _.PTypeEquals(a0), k)) : vs_lgc_tmp_4).Cond())
@@ -197,7 +197,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
         ValueSummary<SymbolicInteger> hash = ValueSummary<SymbolicInteger>.InitializeFrom(k.InvokeMethod((_) => _.PTypeGetHashCode()));
         ValueSummary<SymbolicInteger> idx = ValueSummary<SymbolicInteger>.InitializeFrom(hash.InvokeBinary<int, SymbolicInteger>((l, r) => l % r, this._capacity));
         ValueSummary<MapEntry> firstEntry = ValueSummary<MapEntry>.InitializeFrom(this.data.GetIndex<PMap<K, V>.MapEntry>(idx));
-        for (ValueSummary<MapEntry> iter = ValueSummary<MapEntry>.InitializeFrom(firstEntry); iter.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(default (object))).Cond(); firstEntry.Assign<PMap<K, V>.MapEntry>(firstEntry.GetField<PMap<K, V>.MapEntry>(_ => _.Next)))
+        for (ValueSummary<MapEntry> iter = ValueSummary<MapEntry>.InitializeFrom(firstEntry); iter.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(null)).Cond(); firstEntry.Assign<PMap<K, V>.MapEntry>(firstEntry.GetField<PMap<K, V>.MapEntry>(_ => _.Next)))
         {
             ValueSummary<SymbolicBool> vs_lgc_tmp_5;
             if (((vs_lgc_tmp_5 = iter.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash)).Cond() ? vs_lgc_tmp_5.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, iter.GetField<K>(_ => _.Key).InvokeMethod<K, SymbolicBool>((_, a0) => _.PTypeEquals(a0), k)) : vs_lgc_tmp_5).Cond())
@@ -235,9 +235,9 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
 
     private ValueSummary<MapEntry> CopyEntryChain(ValueSummary<MapEntry> entry)
     {
-        if (entry.InvokeBinary<object, bool>((l, r) => l == r, new ValueSummary<object>(default (object))).Cond())
+        if (entry.InvokeBinary<object, bool>((l, r) => l == r, new ValueSummary<object>(null)).Cond())
         {
-            return new ValueSummary<PMap<K, V>.MapEntry>(default (PMap<K, V>.MapEntry));
+            return new ValueSummary<PMap<K, V>.MapEntry>(null);
         }
         else
         {
@@ -251,7 +251,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
         for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._capacity).Cond(); i.Increment())
         {
             ValueSummary<MapEntry> entry = ValueSummary<MapEntry>.InitializeFrom(this.data.GetIndex<PMap<K, V>.MapEntry>(i));
-            while (entry.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(default (object))).Cond())
+            while (entry.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(null)).Cond())
             {
                 ret.Assign<SymbolicInteger>(entry.GetField<K>(_ => _.Key).InvokeMethod((_) => _.PTypeGetHashCode()).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l ^ r, entry.GetField<V>(_ => _.Value).InvokeMethod((_) => _.PTypeGetHashCode())));
             }
@@ -270,10 +270,10 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
         for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._capacity).Cond(); i.Increment())
         {
             ValueSummary<MapEntry> entry = ValueSummary<MapEntry>.InitializeFrom(this.data.GetIndex<PMap<K, V>.MapEntry>(i));
-            while (entry.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(default (object))).Cond())
+            while (entry.InvokeBinary<object, bool>((l, r) => l != r, new ValueSummary<object>(null)).Cond())
             {
                 ValueSummary<SymbolicBool> vs_lgc_tmp_6;
-                if (((vs_lgc_tmp_6 = other.InvokeMethod<K, V>((_, a0) => _.Get(a0), entry.GetField<K>(_ => _.Key)).Cast<object>(_ => (object)_).InvokeBinary<object, SymbolicBool>((l, r) => l != r, new ValueSummary<object>(default (object)))).Cond() ? vs_lgc_tmp_6 : vs_lgc_tmp_6.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l | r, entry.GetField<V>(_ => _.Value).InvokeMethod<V, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.InvokeMethod<K, V>((_, a0) => _[a0], entry.GetField<K>(_ => _.Key))).InvokeUnary<SymbolicBool>(_ => !_))).Cond())
+                if (((vs_lgc_tmp_6 = other.InvokeMethod<K, V>((_, a0) => _.Get(a0), entry.GetField<K>(_ => _.Key)).Cast<object>(_ => (object)_).InvokeBinary<object, SymbolicBool>((l, r) => l != r, new ValueSummary<object>(null))).Cond() ? vs_lgc_tmp_6 : vs_lgc_tmp_6.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l | r, entry.GetField<V>(_ => _.Value).InvokeMethod<V, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.InvokeMethod<K, V>((_, a0) => _[a0], entry.GetField<K>(_ => _.Key))).InvokeUnary<SymbolicBool>(_ => !_))).Cond())
                 {
                     return (SymbolicBool)false;
                 }

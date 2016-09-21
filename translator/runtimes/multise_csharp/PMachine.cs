@@ -25,7 +25,7 @@ abstract class PMachine : IPType<PMachine>
         {
             ValueSummary<bool> vs_lgc_tmp_0;
             ValueSummary<int> state = ValueSummary<int>.InitializeFrom(this.states.InvokeMethod<int, int>((_, a0) => _[a0], i));
-            if (((vs_lgc_tmp_0 = this.DeferedSet.GetIndex(state, e).InvokeUnary<bool>(_ => !_)).Cond() ? vs_lgc_tmp_0.InvokeBinary<bool, bool>((l, r) => l & r, this.Transitions.GetIndex(state, e).InvokeBinary<PMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.TransitionFunction>(default (PMachine.TransitionFunction)))) : vs_lgc_tmp_0).Cond())
+            if (((vs_lgc_tmp_0 = this.DeferedSet.GetIndex(state, e).InvokeUnary<bool>(_ => !_)).Cond() ? vs_lgc_tmp_0.InvokeBinary<bool, bool>((l, r) => l & r, this.Transitions.GetIndex(state, e).InvokeBinary<PMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.TransitionFunction>(null))) : vs_lgc_tmp_0).Cond())
             {
                 return i;
             }
@@ -39,7 +39,7 @@ abstract class PMachine : IPType<PMachine>
         for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count)).Cond(); i.Increment())
         {
             ValueSummary<int> state = ValueSummary<int>.InitializeFrom(this.states.InvokeMethod<int, int>((_, a0) => _[a0], i));
-            if (this.Transitions.GetIndex(state, e).InvokeBinary<PMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.TransitionFunction>(default (PMachine.TransitionFunction))).Cond())
+            if (this.Transitions.GetIndex(state, e).InvokeBinary<PMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.TransitionFunction>(null)).Cond())
             {
                 this.RunStateMachine(i, e, payload);
                 return;
@@ -65,7 +65,7 @@ abstract class PMachine : IPType<PMachine>
         this.retcode = Constants.EXECUTE_FINISHED;
         ValueSummary<int> current_state = ValueSummary<int>.InitializeFrom(this.states.InvokeMethod<int, int>((_, a0) => _[a0], 0));
         this.states.InvokeMethod<int>((_, a0) => _.RemoveAt(a0), 0);
-        if (this.ExitFunctions.GetIndex(current_state).InvokeBinary<PMachine.ExitFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.ExitFunction>(default (PMachine.ExitFunction))).Cond())
+        if (this.ExitFunctions.GetIndex(current_state).InvokeBinary<PMachine.ExitFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.ExitFunction>(null)).Cond())
         {
             this.ExitFunctions.GetIndex(current_state).Invoke();
         }

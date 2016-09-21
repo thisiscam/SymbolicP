@@ -53,5 +53,9 @@
     <Project>{7F126EA0-8883-4D30-AE59-01BABDBDB158}</Project>
     <Name>BuDDySharp</Name>
   </ProjectReference>
+  <ProjectReference Include="..\runtimes\multise_csharp\BDDToZ3Wrap\BDDToZ3Wrap.csproj">
+      <Project>{AD62BFA7-AFA7-42E6-9F84-BDAB5104953C}</Project>
+      <Name>BDDToZ3Wrap</Name>
+  </ProjectReference>
 </ItemGroup>
 </Project>

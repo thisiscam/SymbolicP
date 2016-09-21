@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PingPong", "PingPong.csproj", "{ A2F1997A-5955-11E6-ADC0-80E6501B5D50 }"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuDDySharp", "..\libraries\BuDDySharp\BuDDySharp\BuDDySharp\BuDDySharp.csproj", "{7F126EA0-8883-4D30-AE59-01BABDBDB158}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BDDToZ3Wrap", "..\runtimes\multise_csharp\BDDToZ3Wrap\BDDToZ3Wrap.csproj", "{AD62BFA7-AFA7-42E6-9F84-BDAB5104953C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ A2F1997A-5955-11E6-ADC0-80E6501B5D50 }.Debug|x86.ActiveCfg = Debug|x86
+		{ A2F1997A-5955-11E6-ADC0-80E6501B5D50 }.Debug|x86.Build.0 = Debug|x86
+		{ A2F1997A-5955-11E6-ADC0-80E6501B5D50 }.Release|x86.ActiveCfg = Release|x86
+		{ A2F1997A-5955-11E6-ADC0-80E6501B5D50 }.Release|x86.Build.0 = Release|x86
+		{7F126EA0-8883-4D30-AE59-01BABDBDB158}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7F126EA0-8883-4D30-AE59-01BABDBDB158}.Debug|x86.Build.0 = Debug|Any CPU
+		{7F126EA0-8883-4D30-AE59-01BABDBDB158}.Release|x86.ActiveCfg = Release|Any CPU
+		{7F126EA0-8883-4D30-AE59-01BABDBDB158}.Release|x86.Build.0 = Release|Any CPU
+		{AD62BFA7-AFA7-42E6-9F84-BDAB5104953C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AD62BFA7-AFA7-42E6-9F84-BDAB5104953C}.Debug|x86.Build.0 = Debug|Any CPU
+		{AD62BFA7-AFA7-42E6-9F84-BDAB5104953C}.Release|x86.ActiveCfg = Release|Any CPU
+		{AD62BFA7-AFA7-42E6-9F84-BDAB5104953C}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
