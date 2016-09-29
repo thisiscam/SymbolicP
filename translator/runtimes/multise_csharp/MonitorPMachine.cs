@@ -23,7 +23,7 @@ abstract class MonitorPMachine
                     this.states.InvokeMethod<int, int>((_, a0, a1) => _.RemoveRange(a0, a1), 0, i);
                 }
 
-                this.retcode = Constants.EXECUTE_FINISHED;
+                this.retcode.Assign<int>(Constants.EXECUTE_FINISHED);
                 ValueSummary<TransitionFunction> transition_fn = ValueSummary<TransitionFunction>.InitializeFrom(this.Transitions.GetIndex(state, e));
                 transition_fn.Invoke(payload);
                 return;

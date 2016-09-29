@@ -1,3 +1,6 @@
+using System;
+using System.Diagnostics;
+
 public class List<T>
 {
     const int INITIAL_CAPACITY = 4;
@@ -12,12 +15,17 @@ public class List<T>
             ValueSummary<ValueSummary<T>[]> new_data = ValueSummary<ValueSummary<T>[]>.InitializeFrom(ValueSummary<T>.NewVSArray(new_capacity));
             for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Cond(); i.Increment())
             {
-                new_data.SetIndex<T>(i, this.data.GetIndex<T>(i));
-            }
+				try {
+                	new_data.SetIndex<T>(i, this.data.GetIndex<T>(i));
+				} catch(IndexOutOfRangeException e) {
+					Console.WriteLine ("StackTrace: '{0}'", Environment.StackTrace);
+					Debugger.Break ();
+				}
+			}
 
             new_data.SetIndex<T>(this._count, item);
-            this.data = new_data;
-            this._capacity = new_capacity;
+            this.data.Assign(new_data);
+            this._capacity.Assign<int>(new_capacity);
             this._count.Increment();
         }
         else
@@ -45,7 +53,7 @@ public class List<T>
                 new_data.SetIndex<T>(i.InvokeBinary<int, int>((l, r) => l + r, 1), this.data.GetIndex<T>(i));
             }
 
-            this._capacity = new_capacity;
+            this._capacity.Assign<int>(new_capacity);
             this._count.Increment();
         }
         else
@@ -77,7 +85,7 @@ public class List<T>
             this.data.SetIndex<T>(i.InvokeBinary<int, int>((l, r) => l - r, count), this.data.GetIndex<T>(i));
         }
 
-        this._count = this._count.InvokeBinary<int, int>((l, r) => l - r, count);
+        this._count.Assign<int>(this._count.InvokeBinary<int, int>((l, r) => l - r, count));
     }
 
     public ValueSummary<T> this[ValueSummary<int> index]

@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -87,7 +88,7 @@ class Scheduler
 			{
 				ValueSummary<PMachine> targetMachine = dequeuedItem.GetField<PMachine>(_ => _.target);
 				Console.WriteLine(chosenSourceMachine.ToString() + chosenSourceMachine.GetHashCode() + " sends event " + dequeuedItem.GetField<PInteger>(_ => _.e).ToString() + " to " + targetMachine.ToString() + targetMachine.GetHashCode());
-				targetMachine.InvokeMethod<int, PInteger, IPType>((_, a0, a1, a2) => _.RunStateMachine(a0, a1, a2), chosen.GetField<int>(_ => _.targetMachineStateIndex), dequeuedItem.GetField<PInteger>(_ => _.e), dequeuedItem.GetField<IPType>(_ => _.payload));
+ 				targetMachine.InvokeMethod<int, PInteger, IPType>((_, a0, a1, a2) => _.RunStateMachine(a0, a1, a2), chosen.GetField<int>(_ => _.targetMachineStateIndex), dequeuedItem.GetField<PInteger>(_ => _.e), dequeuedItem.GetField<IPType>(_ => _.payload));
 			}
 		}
 

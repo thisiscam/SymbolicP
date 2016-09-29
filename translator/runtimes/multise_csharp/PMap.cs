@@ -35,7 +35,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
 
             set
             {
-                this.value = value;
+                this.value.Assign<V>(value);
             }
         }
 
@@ -48,7 +48,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
 
             set
             {
-                this.next = value;
+                this.next.Assign<PMap<K, V>.MapEntry>(value);
             }
         }
 
@@ -157,8 +157,8 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
                 }
             }
 
-            this._capacity = new_capacity;
-            this.data = new_data;
+            this._capacity.Assign<int>(new_capacity);
+            this.data.Assign(new_data);
         }
     }
 

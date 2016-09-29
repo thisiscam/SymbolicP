@@ -18,7 +18,7 @@ def process_options(options):
     options.translator = __import__("translators." + options.translator, globals(), locals(), ['Translator'], -1).Translator
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser("Translates P code into cs code")
     parser.add_argument('-o', '--out-dir', type=str, dest="out_dir",
                         help="ouput directory, defaults to input file's name")
     parser.add_argument('-t', '--translator', type=str, dest="translator",

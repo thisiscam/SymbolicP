@@ -858,6 +858,19 @@ namespace MultiSETransformer
 			return node;
 		}
 
+		private SyntaxNode MakeTransformedSimpleAssignmentNode(AssignmentExpressionSyntax node)
+		{
+			var leftType = model.GetTypeInfo (node.Left).Type;
+			var rightType = model.GetTypeInfo (node.Right).Type;
+			SimpleNameSyntax invoke_name = leftType.TypeKind == TypeKind.Array ? (SimpleNameSyntax)SyntaxFactory.IdentifierName ("Assign") : (SimpleNameSyntax)SyntaxFactory.GenericName (SyntaxFactory.Identifier ("Assign"), SyntaxFactory.TypeArgumentList ().AddArguments (SyntaxFactory.ParseTypeName (rightType.ToDisplayString ())));
+			return SyntaxFactory.InvocationExpression (
+				SyntaxFactory.MemberAccessExpression (
+					SyntaxKind.SimpleMemberAccessExpression, 
+					node.Left.Accept (this) as ExpressionSyntax, 
+					invoke_name),
+				SyntaxFactory.ArgumentList ().AddArguments (SyntaxFactory.Argument (node.Right.Accept (this) as ExpressionSyntax)));
+		}
+
 		public override SyntaxNode VisitAssignmentExpression (AssignmentExpressionSyntax node)
 		{
 			if (noRewrite)
@@ -879,7 +892,7 @@ namespace MultiSETransformer
 					if (node.Left.IsKind (SyntaxKind.SimpleMemberAccessExpression)) {
 						var memberAccess = node.Left as MemberAccessExpressionSyntax;
 						if (memberAccess.Expression.IsKind (SyntaxKind.ThisExpression)) {
-							return node.WithRight (node.Right.Accept (this) as ExpressionSyntax);
+							return MakeTransformedSimpleAssignmentNode (node);
 						}
 						var type = WrapType (SyntaxFactory.ParseTypeName (model.GetTypeInfo (memberAccess).Type.ToDisplayString ().Replace ("*", "")));
 						memberAccess = base.VisitMemberAccessExpression (memberAccess) as MemberAccessExpressionSyntax;
@@ -929,15 +942,7 @@ namespace MultiSETransformer
 					} else if(node.IsKind(SyntaxKind.SimpleAssignmentExpression) && (node.Left as IdentifierNameSyntax).Identifier.Text.StartsWith("vs_lgc_tmp_")) {
 						return node.WithRight (node.Right.Accept (this) as ExpressionSyntax);
 					} else {
-						var leftType = model.GetTypeInfo (node.Left).Type;
-						var rightType = model.GetTypeInfo (node.Right).Type;
-						SimpleNameSyntax invoke_name = leftType.TypeKind == TypeKind.Array ? (SimpleNameSyntax)SyntaxFactory.IdentifierName ("Assign") : (SimpleNameSyntax)SyntaxFactory.GenericName (SyntaxFactory.Identifier ("Assign"), SyntaxFactory.TypeArgumentList ().AddArguments (SyntaxFactory.ParseTypeName (rightType.ToDisplayString ())));
-						return SyntaxFactory.InvocationExpression (
-							SyntaxFactory.MemberAccessExpression (
-								SyntaxKind.SimpleMemberAccessExpression, 
-								node.Left.Accept (this) as ExpressionSyntax, 
-								invoke_name),
-							SyntaxFactory.ArgumentList ().AddArguments (SyntaxFactory.Argument (node.Right.Accept (this) as ExpressionSyntax)));
+						return MakeTransformedSimpleAssignmentNode (node);
 					}
 				}
 			default:

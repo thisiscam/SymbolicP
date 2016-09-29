@@ -62,7 +62,7 @@ abstract class PMachine : IPType<PMachine>
 
     protected void PopState()
     {
-        this.retcode = Constants.EXECUTE_FINISHED;
+        this.retcode.Assign<int>(Constants.EXECUTE_FINISHED);
         ValueSummary<int> current_state = ValueSummary<int>.InitializeFrom(this.states.InvokeMethod<int, int>((_, a0) => _[a0], 0));
         this.states.InvokeMethod<int>((_, a0) => _.RemoveAt(a0), 0);
         if (this.ExitFunctions.GetIndex(current_state).InvokeBinary<PMachine.ExitFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.ExitFunction>(null)).Cond())
@@ -100,7 +100,7 @@ abstract class PMachine : IPType<PMachine>
             this.states.InvokeMethod<int, int>((_, a0, a1) => _.RemoveRange(a0, a1), 0, state_idx);
         }
 
-        this.retcode = Constants.EXECUTE_FINISHED;
+        this.retcode.Assign<int>(Constants.EXECUTE_FINISHED);
         ValueSummary<TransitionFunction> transition_fn = ValueSummary<TransitionFunction>.InitializeFrom(this.Transitions.GetIndex(state, e));
         transition_fn.Invoke(payload);
     }
