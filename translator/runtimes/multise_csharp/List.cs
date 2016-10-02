@@ -15,12 +15,7 @@ public class List<T>
             ValueSummary<ValueSummary<T>[]> new_data = ValueSummary<ValueSummary<T>[]>.InitializeFrom(ValueSummary<T>.NewVSArray(new_capacity));
             for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Cond(); i.Increment())
             {
-				try {
-                	new_data.SetIndex<T>(i, this.data.GetIndex<T>(i));
-				} catch(IndexOutOfRangeException e) {
-					Console.WriteLine ("StackTrace: '{0}'", Environment.StackTrace);
-					Debugger.Break ();
-				}
+                new_data.SetIndex<T>(i, this.data.GetIndex<T>(i));
 			}
 
             new_data.SetIndex<T>(this._count, item);

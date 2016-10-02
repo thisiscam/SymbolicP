@@ -4,7 +4,6 @@ class Program {
     static int Main(string[] args) {
         int maxExplorationSteps = 200;
 
-        int iteration = 0;
         Scheduler scheduler = new Scheduler();
 
         ValueSummary<PMachine> mainMachine = MachineController.CreateMainMachine();

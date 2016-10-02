@@ -64,6 +64,7 @@ class Scheduler
 
 		ValueSummary<// Choose one and remove from send queue
 		SymbolicInteger> idx = PathConstraint.NewSymbolicIntVar("SI", 0, choices.Count);
+
 		ValueSummary<SchedulerChoice> chosen = choices[idx];
 		ValueSummary<int> sourceMachineSendQueueIndex = chosen.GetField<int>(_ => _.sourceMachineSendQueueIndex);
 		if (sourceMachineSendQueueIndex.InvokeBinary<int, bool>((l, r) => l < r, 0).Cond())

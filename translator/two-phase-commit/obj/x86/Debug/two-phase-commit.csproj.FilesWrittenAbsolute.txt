@@ -1,6 +1,0 @@
-/Users/jianqiaoyang/Desktop/SymbolicP/translator/two-phase-commit/obj/x86/Debug/.NETFramework,Version=v4.5.AssemblyAttribute.cs
-/Users/jianqiaoyang/Desktop/SymbolicP/translator/two-phase-commit/bin/Debug/two-phase-commit.exe.mdb
-/Users/jianqiaoyang/Desktop/SymbolicP/translator/two-phase-commit/bin/Debug/two-phase-commit.exe
-/Users/jianqiaoyang/Desktop/SymbolicP/translator/two-phase-commit/obj/x86/Debug/two-phase-commit.exe
-/Users/jianqiaoyang/Desktop/SymbolicP/translator/two-phase-commit/obj/x86/Debug/two-phase-commit.exe.mdb
-/Users/jianqiaoyang/Desktop/SymbolicP/translator/two-phase-commit/bin/Debug/Microsoft.Z3.dll
