@@ -48,6 +48,11 @@ public class PathConstraint
 	protected static Stack<Frame> frames = new Stack<Frame>();
 	protected static SCG.List<bdd> pcs = new SCG.List<bdd> ();
 
+	static SCG.List<SymbolicBool> sym_bool_vars = new SCG.List<SymbolicBool>();
+	static ValueSummary<int> solver_bool_var_cnt = 0;
+	static SCG.List<SymbolicInteger> sym_int_vars = new SCG.List<SymbolicInteger>();
+	static ValueSummary<int> solver_int_var_cnt = 0;
+
 	static PathConstraint()
 	{
 		ctx = new Context();
@@ -134,7 +139,8 @@ public class PathConstraint
 		}
 		frame.BranchPoints.RemoveRange(i + 1, frame.BranchPoints.Count - i - 1);
 		frame.idx = 0;
-		return frame.BranchPoints.Count > 0;
+		var ret = frame.BranchPoints.Count > 0;
+		return ret;
 	}
 
 	public static bool IsRecovering()
@@ -218,20 +224,48 @@ public class PathConstraint
 		}
 	}
 
-	private static int solver_var_cnt = 0;
-	public static ValueSummary<SymbolicInteger> NewSymbolicIntVar(string prefix, int ge, ValueSummary<int> lt) {
-		var pc = GetPC ();
-		var fresh_const = new SymbolicInteger((BitVecExpr)ctx.MkBVConst(String.Format("{0}_{1}", prefix, solver_var_cnt++), SymbolicInteger.INT_SIZE));
-		bdd axiom = BuDDySharp.BuDDySharp.bddfalse;
-		foreach (var guardedVal in lt.values) {
-			axiom = axiom.Or (guardedVal.bddForm.And(pc).And ((fresh_const < guardedVal.value).AbstractValue.ToBDD ()));
+	public static ValueSummary<SymbolicInteger> NewSymbolicIntVar(string prefix, int ge, ValueSummary<int> lt)
+	{
+		var ret = new ValueSummary<SymbolicInteger>();
+		var pc = GetPC();
+		foreach (var guardedCnt in solver_bool_var_cnt.values) {
+			var bddForm = pc.And(guardedCnt.bddForm);
+			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+				var idx = guardedCnt.value;
+				if (idx < sym_int_vars.Count) {
+					ret.AddValue(bddForm, sym_int_vars[idx]);
+				}
+				else {
+					var fresh_const = new SymbolicInteger((BitVecExpr)ctx.MkBVConst(String.Format("{0}_{1}", prefix, idx), SymbolicInteger.INT_SIZE));
+					bdd axiom = BuDDySharp.BuDDySharp.bddfalse;
+					foreach (var guardedVal in lt.values) {
+						axiom = axiom.Or(guardedVal.bddForm.And(pc).And((fresh_const < guardedVal.value).AbstractValue.ToBDD()));
+					}
+					AddAxiom((ge <= fresh_const).AbstractValue.ToBDD().And(axiom));
+					ret.AddValue(bddForm, fresh_const);
+				}
+			}
 		}
-		AddAxiom ((ge <= fresh_const).AbstractValue.ToBDD ().And(axiom));
-		return new ValueSummary<SymbolicInteger> (fresh_const);
+		solver_int_var_cnt.Increment();
+		return ret;
 	}
 
 	public static ValueSummary<SymbolicBool> NewSymbolicBoolVar(string prefix) {
-		var fresh_const = new SymbolicBool((BoolExpr)ctx.MkBoolConst(String.Format("{0}_{1}", prefix, solver_var_cnt++)));
-		return new ValueSummary<SymbolicBool> (fresh_const);
+		var ret = new ValueSummary<SymbolicBool>();
+		var pc = GetPC();
+		foreach (var guardedCnt in solver_bool_var_cnt.values) {
+			var bddForm = pc.And(guardedCnt.bddForm);
+			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+				var idx = guardedCnt.value;
+				if (idx < sym_bool_vars.Count) {
+					ret.AddValue(bddForm, sym_bool_vars[idx]);
+				} else { 
+					var fresh_const = new SymbolicBool((BoolExpr)ctx.MkBoolConst(String.Format("{0}_{1}", prefix, idx)));
+					ret.AddValue(bddForm, fresh_const);
+				}
+			}
+		}
+		solver_bool_var_cnt.Increment();
+		return ret;
 	}
 }

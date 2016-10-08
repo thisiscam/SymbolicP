@@ -295,14 +295,13 @@ class PProgramToCSharpTranslator(TranslatorBase):
                         if len(self.pprogram.observes_map) > 0:
                             self.out("/* Observers */\n")
                             self.out("public static void AnnounceEvent({0} e, {1} payload) {{\n".format(self.translate_type(PTypeEvent), self.translate_type(PTypeAny)))
-                            self.out("switch(e) {")
                             for observed_event, observing_machines in self.pprogram.observes_map.items():
-                                self.out("case {0}: {{\n".format(self.translate_event(observed_event)))
+                                self.out("if(e == {0}) {{\n".format(self.translate_event(observed_event)))
                                 for m in observing_machines:
                                     self.out("{0}.ServeEvent({1}, payload);\n".format("monitor_" + m.name.lower(), self.translate_event(observed_event)))
-                                self.out("break;\n")
+                                self.out("return;\n")
                                 self.out("}\n")
-                            self.out("}\n}\n")
+                            self.out("}\n")
                         self.out("}\n")
 
     pipeline = [make_output_dir, create_proj_macros, generate_foreach_machine, create_csproj]
