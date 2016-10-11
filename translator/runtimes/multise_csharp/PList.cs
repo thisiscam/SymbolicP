@@ -32,9 +32,12 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
     public ValueSummary<PList<T>> DeepCopy()
     {
         ValueSummary<PList<T>> ret = ValueSummary<PList<T>>.InitializeFrom(new ValueSummary<PList<T>>(new PList<T>()));
-        for (ValueSummary<SymbolicInteger> i = ValueSummary<SymbolicInteger>.InitializeFrom((SymbolicInteger)0); i.InvokeBinary<int, SymbolicBool>((l, r) => l < r, this._count).Cond(); i.Increment())
         {
-            ret.InvokeMethod<T>((_, a0) => _.Add(a0), this[i].InvokeMethod((_) => _.DeepCopy()));
+            PathConstraint.BeginLoop();
+            for (ValueSummary<SymbolicInteger> i = ValueSummary<SymbolicInteger>.InitializeFrom((SymbolicInteger)0); i.InvokeBinary<int, SymbolicBool>((l, r) => l < r, this._count).Loop(); i.Increment())
+            {
+                ret.InvokeMethod<T>((_, a0) => _.Add(a0), this[i].InvokeMethod((_) => _.DeepCopy()));
+            }
         }
 
         return ret;
@@ -43,9 +46,12 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
     public ValueSummary<SymbolicInteger> PTypeGetHashCode()
     {
         ValueSummary<SymbolicInteger> ret = ValueSummary<SymbolicInteger>.InitializeFrom((SymbolicInteger)1);
-        for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Cond(); i.Increment())
         {
-            ret.Assign<SymbolicInteger>(ret.InvokeBinary<int, SymbolicInteger>((l, r) => l * r, 31).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l + r, this[i].InvokeMethod((_) => _.PTypeGetHashCode())));
+            PathConstraint.BeginLoop();
+            for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Loop(); i.Increment())
+            {
+                ret.Assign<SymbolicInteger>(ret.InvokeBinary<int, SymbolicInteger>((l, r) => l * r, 31).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l + r, this[i].InvokeMethod((_) => _.PTypeGetHashCode())));
+            }
         }
 
         return ret;
@@ -53,19 +59,43 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
 
     public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PList<T>> other)
     {
-        if (this._count.InvokeBinary<int, bool>((l, r) => l != r, other.GetField<int>(_ => _._count)).Cond())
+        PathConstraint.PushFrame();
+        var vs_ret_6 = new ValueSummary<SymbolicBool>();
         {
-            return (SymbolicBool)false;
+            var vs_cond_24 = (this._count.InvokeBinary<int, bool>((l, r) => l != r, other.GetField<int>(_ => _._count))).Cond();
+            if (vs_cond_24.CondTrue())
+            {
+                vs_ret_6.RecordReturn((SymbolicBool)false);
+            }
+
+            vs_cond_24.MergeBranch();
         }
 
-        for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Cond(); i.Increment())
+        if (PathConstraint.MergedPcFeasible())
         {
-            if (this[i].InvokeMethod<T, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.InvokeMethod<int, T>((_, a0) => _[a0], i)).InvokeUnary<SymbolicBool>(_ => !_).Cond())
             {
-                return (SymbolicBool)false;
+                PathConstraint.BeginLoop();
+                for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Loop(); i.Increment())
+                {
+                    {
+                        var vs_cond_25 = (this[i].InvokeMethod<T, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.InvokeMethod<int, T>((_, a0) => _[a0], i)).InvokeUnary<SymbolicBool>(_ => !_)).Cond();
+                        if (vs_cond_25.CondTrue())
+                        {
+                            vs_ret_6.RecordReturn((SymbolicBool)false);
+                        }
+
+                        vs_cond_25.MergeBranch();
+                    }
+                }
+            }
+
+            if (PathConstraint.MergedPcFeasible())
+            {
+                vs_ret_6.RecordReturn((SymbolicBool)true);
             }
         }
 
-        return (SymbolicBool)true;
+        PathConstraint.PopFrame();
+        return vs_ret_6;
     }
 }

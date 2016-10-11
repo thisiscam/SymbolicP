@@ -91,7 +91,7 @@
   <ItemGroup>
 #for @project in @include_projects:
   <ProjectReference Include="@project.path">
-    <Project>@project.path</Project>
+    <Project>@project.guid</Project>
     <Name>@project.name</Name>
   </ProjectReference>
 #end

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiSETransformer", "MultiSETransformer.csproj", "{F301EBF0-59ED-4533-8153-C8110F5DE017}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "two-phase-commit", "..\..\..\two-phase-commit\two-phase-commit.csproj", "{ 671534A6-56A6-11E6-8CED-80E6501B5D50 }"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "two-phase-commit", "..\..\..\two-phase-commit\two-phase-commit.csproj", "{FB72230C-8D1D-11E6-B204-80E6501B5D50}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,13 +11,60 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{ 671534A6-56A6-11E6-8CED-80E6501B5D50 }.Debug|x86.ActiveCfg = Debug|x86
-		{ 671534A6-56A6-11E6-8CED-80E6501B5D50 }.Debug|x86.Build.0 = Debug|x86
-		{ 671534A6-56A6-11E6-8CED-80E6501B5D50 }.Release|x86.ActiveCfg = Release|x86
-		{ 671534A6-56A6-11E6-8CED-80E6501B5D50 }.Release|x86.Build.0 = Release|x86
 		{F301EBF0-59ED-4533-8153-C8110F5DE017}.Debug|x86.ActiveCfg = Debug|x86
 		{F301EBF0-59ED-4533-8153-C8110F5DE017}.Debug|x86.Build.0 = Debug|x86
 		{F301EBF0-59ED-4533-8153-C8110F5DE017}.Release|x86.ActiveCfg = Release|x86
 		{F301EBF0-59ED-4533-8153-C8110F5DE017}.Release|x86.Build.0 = Release|x86
+		{FB72230C-8D1D-11E6-B204-80E6501B5D50}.Debug|x86.ActiveCfg = Debug|x86
+		{FB72230C-8D1D-11E6-B204-80E6501B5D50}.Debug|x86.Build.0 = Debug|x86
+		{FB72230C-8D1D-11E6-B204-80E6501B5D50}.Release|x86.ActiveCfg = Release|x86
+		{FB72230C-8D1D-11E6-B204-80E6501B5D50}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		Policies = $0
+		$0.TextStylePolicy = $1
+		$1.inheritsSet = VisualStudio
+		$1.scope = text/x-csharp
+		$1.inheritsScope = text/plain
+		$0.CSharpFormattingPolicy = $2
+		$2.inheritsSet = Mono
+		$2.inheritsScope = text/x-csharp
+		$2.scope = text/x-csharp
+		$2.IndentSwitchSection = True
+		$2.NewLinesForBracesInProperties = True
+		$2.NewLinesForBracesInAccessors = True
+		$2.NewLinesForBracesInAnonymousMethods = True
+		$2.NewLinesForBracesInControlBlocks = True
+		$2.NewLinesForBracesInAnonymousTypes = True
+		$2.NewLinesForBracesInObjectCollectionArrayInitializers = True
+		$2.NewLinesForBracesInLambdaExpressionBody = True
+		$2.NewLineForElse = True
+		$2.NewLineForCatch = True
+		$2.NewLineForFinally = True
+		$2.NewLineForMembersInObjectInit = True
+		$2.NewLineForMembersInAnonymousTypes = True
+		$2.NewLineForClausesInQuery = True
+		$2.SpacingAfterMethodDeclarationName = False
+		$2.SpaceAfterMethodCallName = False
+		$2.SpaceBeforeOpenSquareBracket = False
+		$0.DotNetNamingPolicy = $3
+		$3.DirectoryNamespaceAssociation = None
+		$3.ResourceNamePolicy = FileFormatDefault
+		$0.StandardHeader = $4
+		$4.Text = 
+		$4.IncludeInNewFiles = True
+		$0.NameConventionPolicy = $5
+		$5.Rules = $6
+		$6.NamingRule = $7
+		$7.Name = Type Parameters
+		$7.AffectedEntity = TypeParameter
+		$7.VisibilityMask = VisibilityMask
+		$7.NamingStyle = PascalCase
+		$7.IncludeInstanceMembers = True
+		$7.IncludeStaticEntities = True
+		$7.RequiredPrefixes = $8
+		$8.String = T
+		$7.RequiredSuffixes = $9
+		$9.String = Exception
 	EndGlobalSection
 EndGlobal

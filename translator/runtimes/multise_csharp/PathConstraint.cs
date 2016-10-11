@@ -19,39 +19,66 @@ public class PathConstraint
 		{
 			Both,
 			True,
-			False
+			False,
+			None
 		}
 
 		public State state;
 
-		public BranchPoint(State state) 
+		/* The PathConstraint for which this branch is taken */
+		/* if State == Both, pc is the path constraint that which leads to the true branch */
+		/* if State == True, pc is the path constraint that which leads to the true branch */
+		/* if State == False, pc is the path constraint that which leads to the false branch */
+		public bdd pc;
+
+		public BranchPoint(bdd pc, State state) 
 		{
 			this.state = state;
-		} 
+			this.pc = pc;
+		}
+
+		public bool CondTrue() {
+			var takeBranch = state == State.Both || state == State.True;
+			if (takeBranch) {
+				PathConstraint.AddAxiom(this.pc);
+			}
+			return takeBranch;
+		}
+
+		public bool CondFalse() {
+			if (state == State.Both) {
+				PathConstraint.pcs[PathConstraint.pcs.Count - 1] = PathConstraint.pcs[PathConstraint.pcs.Count - 2].And(this.pc.Not());
+				return true;
+			}
+			else if (state == State.False) {
+				PathConstraint.pcs[PathConstraint.pcs.Count - 1] = PathConstraint.pcs[PathConstraint.pcs.Count - 2].And(this.pc);
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+
+		public void MergeBranch() {
+			PathConstraint.MergeBranch();
+		}
 	}
 
 	public class Frame
 	{
-		public SCG.List<BranchPoint> BranchPoints = new SCG.List<BranchPoint> ();
-		public int idx = -1;
-
-		public bool is_recovering;
-
 		public int pcs_idx;
+
+		public SCG.Stack<bdd> return_stack = new SCG.Stack<bdd>();
 
 		public Frame(int pcs_idx)
 		{
 			this.pcs_idx = pcs_idx;
+			return_stack.Push(BuDDySharp.BuDDySharp.bddfalse);
 		}
 	}
 
 	protected static Stack<Frame> frames = new Stack<Frame>();
-	protected static SCG.List<bdd> pcs = new SCG.List<bdd> ();
-
-	static SCG.List<SymbolicBool> sym_bool_vars = new SCG.List<SymbolicBool>();
-	static ValueSummary<int> solver_bool_var_cnt = 0;
-	static SCG.List<SymbolicInteger> sym_int_vars = new SCG.List<SymbolicInteger>();
-	static ValueSummary<int> solver_int_var_cnt = 0;
+	protected static SCG.List<bdd> pcs = new SCG.List<bdd>();
 
 	static PathConstraint()
 	{
@@ -65,6 +92,20 @@ public class PathConstraint
 
 		pcs.Add (BuDDySharp.BuDDySharp.bddtrue);
 		frames.Push (new Frame (0));
+
+		InitSymVar();
+	}
+
+	protected static SCG.List<SymbolicBool> sym_bool_vars;
+	protected static ValueSummary<int> solver_bool_var_cnt;
+	protected static SCG.List<SymbolicInteger> sym_int_vars;
+	protected static ValueSummary<int> solver_int_var_cnt;
+
+	private static void InitSymVar() { 
+		sym_bool_vars = new SCG.List<SymbolicBool>();
+		solver_bool_var_cnt = 0;
+		sym_int_vars = new SCG.List<SymbolicInteger>();
+		solver_int_var_cnt = 0;
 	}
 
 	public static bdd GetPC()
@@ -93,16 +134,10 @@ public class PathConstraint
 		}
 	}
 
-	public static bool TryPushFrame(bdd bddForm)
+	public static void PushFrame()
 	{
-		bdd newPC = pcs[pcs.Count - 1].And (bddForm);
-		if (newPC.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
-			return false;
-		} else {
-			frames.Push (new Frame (pcs.Count));
-			pcs.Add(newPC);
-			return true;
-		}
+		PushScope();
+		frames.Push (new Frame (pcs.Count - 1));
 	}
 
 	public static void AddAxiom(bdd bddForm)
@@ -113,7 +148,7 @@ public class PathConstraint
 	public static void PopFrame()
 	{
 		var top = frames.Pop();
-		pcs.RemoveRange (top.pcs_idx, pcs.Count - top.pcs_idx);
+		PopScope();
 	}
 
 	public static Frame GetCurrentFrame()
@@ -121,62 +156,32 @@ public class PathConstraint
 		return frames.Peek ();
 	}
 
-	public static void NewBranchPoint(bdd branchBDD, BranchPoint.State kind) {
-		PushScope ();
-		AddAxiom (branchBDD);
-		var frame = GetCurrentFrame ();
-		frame.BranchPoints.Add (new BranchPoint(kind));
+	public static void RecordReturnPath()
+	{
+		var pc = GetPC();
+		var return_stack = GetCurrentFrame().return_stack;
+		var top = return_stack.Pop();
+		return_stack.Push(top.Or(pc));
 	}
 
-	public static bool BacktrackInvocation()
+	public static void BeginLoop()
 	{
-		var frame = GetCurrentFrame ();
-		int i;
-		for (i = frame.BranchPoints.Count - 1; i >= 0; i--) {
-			if (frame.BranchPoints [i].state == BranchPoint.State.Both) {
-				break;
-			}
-		}
-		frame.BranchPoints.RemoveRange(i + 1, frame.BranchPoints.Count - i - 1);
-		frame.idx = 0;
-		var ret = frame.BranchPoints.Count > 0;
-		return ret;
+		PushScope();
+		PathConstraint.GetCurrentFrame().return_stack.Push(BuDDySharp.BuDDySharp.bddfalse);
+ 	}
+
+	public static void MergeBranch()
+	{
+		var return_stack = PathConstraint.GetCurrentFrame().return_stack;
+		var return_paths = return_stack.Pop();
+		var top = return_stack.Pop();
+		return_stack.Push(top.Or(return_paths));
+		PathConstraint.PopScope();
+		PathConstraint.pcs[PathConstraint.pcs.Count - 1] = PathConstraint.pcs[PathConstraint.pcs.Count - 1].And(return_paths.Not());
 	}
 
-	public static bool IsRecovering()
-	{
-		return GetCurrentFrame().is_recovering;
-	}
-
-	public static bool TakeBranch()
-	{
-		var frame = GetCurrentFrame ();
-		var branch_point = frame.BranchPoints [frame.idx];
-		frame.idx++;
-		switch (branch_point.state) {
-		case BranchPoint.State.Both:
-			{
-				if (frame.BranchPoints.Count == frame.idx) {
-					branch_point.state = BranchPoint.State.False;
-					frame.is_recovering = false;
-					return false;
-				} else {
-					return true;
-				}
-			}
-		case BranchPoint.State.True:
-			{
-				return true;
-			}
-		case BranchPoint.State.False:
-			{
-				return false;
-			}
-		default:
-			{
-				throw new Exception ("Not reachable");
-			}
-		}
+	public static bool MergedPcFeasible() {
+		return !GetPC().EqualEqual(BuDDySharp.BuDDySharp.bddfalse);
 	}
 
 	public static IEnumerable<Tuple<bdd, int>> GetAllPossibleValues(BitVecExpr abstractVal)
@@ -186,10 +191,9 @@ public class PathConstraint
 		solver.Assert (constraint);
 		Status status = solver.Check ();
 		while (status == Status.SATISFIABLE) {
-			var pred = constraint.ToBDD ();
 			var one_sln = ((BitVecNum)solver.Model.Eval (abstractVal, true));
-			yield return new Tuple<bdd, int>(pred, one_sln.Int);
 			constraint = ctx.MkEq(abstractVal, one_sln);
+			yield return new Tuple<bdd, int>(constraint.ToBDD(), one_sln.Int);
 			solver.Assert (ctx.MkNot(constraint));
 			status = solver.Check ();
 		}
@@ -224,11 +228,15 @@ public class PathConstraint
 		}
 	}
 
+	public static bool EvalPc() {
+		return SolveBooleanExpr(ctx.MkTrue());
+ 	}
+	
 	public static ValueSummary<SymbolicInteger> NewSymbolicIntVar(string prefix, int ge, ValueSummary<int> lt)
 	{
 		var ret = new ValueSummary<SymbolicInteger>();
 		var pc = GetPC();
-		foreach (var guardedCnt in solver_bool_var_cnt.values) {
+		foreach (var guardedCnt in solver_int_var_cnt.values) {
 			var bddForm = pc.And(guardedCnt.bddForm);
 			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
 				var idx = guardedCnt.value;
@@ -237,11 +245,16 @@ public class PathConstraint
 				}
 				else {
 					var fresh_const = new SymbolicInteger((BitVecExpr)ctx.MkBVConst(String.Format("{0}_{1}", prefix, idx), SymbolicInteger.INT_SIZE));
-					bdd axiom = BuDDySharp.BuDDySharp.bddfalse;
+					sym_int_vars.Add(fresh_const);
+					bdd axiom = BuDDySharp.BuDDySharp.bddtrue;
+					var a1 = (ge <= fresh_const).AbstractValue.ToBDD();
 					foreach (var guardedVal in lt.values) {
-						axiom = axiom.Or(guardedVal.bddForm.And(pc).And((fresh_const < guardedVal.value).AbstractValue.ToBDD()));
+						var a2 = (fresh_const < guardedVal.value).AbstractValue.ToBDD();
+						axiom = axiom.And(guardedVal.bddForm.And(bddForm).Not().Or(a1.And(a2))); // !pc or (a1 & a2)
 					}
-					AddAxiom((ge <= fresh_const).AbstractValue.ToBDD().And(axiom));
+					for (int i = 0; i < pcs.Count; i++) {
+						pcs[i] = pcs[i].And(axiom);
+					}
 					ret.AddValue(bddForm, fresh_const);
 				}
 			}
@@ -261,6 +274,7 @@ public class PathConstraint
 					ret.AddValue(bddForm, sym_bool_vars[idx]);
 				} else { 
 					var fresh_const = new SymbolicBool((BoolExpr)ctx.MkBoolConst(String.Format("{0}_{1}", prefix, idx)));
+					sym_bool_vars.Add(fresh_const);
 					ret.AddValue(bddForm, fresh_const);
 				}
 			}
