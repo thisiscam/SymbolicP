@@ -393,10 +393,10 @@ public class ValueSummary<T>
 
 public static class ValueSummaryExt
 {
-	private static void ArrayIndexOutOfBoundCheck<R>(Action<bdd, R> ifInBoundThenRun, R[] array, int index, bdd bddForm)
+	private static void ArrayIndexOutOfBoundCheck<R>(Action<bdd, R[], int> ifInBoundThenRun, R[] array, int index, bdd bddForm)
 	{
 		if (index >= 0 && index < array.Length) {
-			ifInBoundThenRun.Invoke(bddForm, array[index]);
+			ifInBoundThenRun.Invoke(bddForm, array, index);
 		}
 		else {
 			if (PathConstraint.SolveBooleanExpr(bddForm.ToZ3Expr())) {
@@ -407,10 +407,10 @@ public static class ValueSummaryExt
 		}
 	}
 
-	private static void ArrayIndexOutOfBoundCheck<R>(Action<bdd, R> ifInBoundThenRun, R[,] array, int i1, int i2, bdd bddForm)
+	private static void ArrayIndexOutOfBoundCheck<R>(Action<bdd, R[,], int, int> ifInBoundThenRun, R[,] array, int i1, int i2, bdd bddForm)
 	{
 		if (i1 >=0 && i1 < array.GetLength(0) && i2 >= 0 && i2 < array.GetLength(1)) {
-			ifInBoundThenRun.Invoke(bddForm, array[i1, i2]);
+			ifInBoundThenRun.Invoke(bddForm, array, i1, i2);
 		}
 		else {
 			if (PathConstraint.SolveBooleanExpr(bddForm.ToZ3Expr())) {
@@ -426,7 +426,7 @@ public static class ValueSummaryExt
 		foreach (var guardedIndex in index.values) {
 			var bddForm = guardedIndex.bddForm.And(pc);
 			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
-				ArrayIndexOutOfBoundCheck((c, v) => ret.AddValue(c, v), array, guardedIndex.value, bddForm);
+				ArrayIndexOutOfBoundCheck((c, a, i) => ret.AddValue(c, a[i]), array, guardedIndex.value, bddForm);
 			}
 		}
 		return ret;
@@ -442,47 +442,47 @@ public static class ValueSummaryExt
 				if (guardedIndex.value.IsAbstract()) {
 					var allVals = PathConstraint.GetAllPossibleValues(guardedIndex.value.AbstractValue);
 					foreach (var val in allVals) {
-						ArrayIndexOutOfBoundCheck((c, v) => ret.AddValue(c, v), array, val.Item2, bddForm.And(val.Item1));
+						ArrayIndexOutOfBoundCheck((c, a, i) => ret.AddValue(c, a[i]), array, val.Item2, bddForm.And(val.Item1));
 					}
 				}
 				else {
-					ArrayIndexOutOfBoundCheck((c, v) => ret.AddValue(c, v), array, guardedIndex.value.ConcreteValue, bddForm);
+					ArrayIndexOutOfBoundCheck((c, a, i) => ret.AddValue(c, a[i]), array, guardedIndex.value.ConcreteValue, bddForm);
 				}
 			}
 		}
 		return ret;
 	}
 
-	public static ValueSummary<R> GetIndex<R>(this R[,] array, ValueSummary<int> i1, ValueSummary<int> i2)
+	public static ValueSummary<R> GetIndex<R>(this R[,] array, ValueSummary<int> idx1, ValueSummary<int> idx2)
 	{
 		var ret = new ValueSummary<R>();
-		foreach (var g2 in i2.values) {
-			foreach (var g1 in i1.values) {
+		foreach (var g2 in idx2.values) {
+			foreach (var g1 in idx1.values) {
 				var bddForm = g2.bddForm.And(g1.bddForm.And(PathConstraint.GetPC()));
 				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
-					ArrayIndexOutOfBoundCheck((c, v) => ret.AddValue(c, v), array, g1.value, g2.value, bddForm);
+					ArrayIndexOutOfBoundCheck((c, a, i1, i2) => ret.AddValue(c, a[i1, i2]), array, g1.value, g2.value, bddForm);
 				}
 			}
 		}
 		return ret;
 	}
 
-	public static ValueSummary<R> GetIndex<R>(this R[,] array, ValueSummary<int> i1, ValueSummary<PInteger> i2)
+	public static ValueSummary<R> GetIndex<R>(this R[,] array, ValueSummary<int> idx1, ValueSummary<PInteger> idx2)
 	{
 		var ret = new ValueSummary<R>();
 		var pc = PathConstraint.GetPC();
-		foreach (var g1 in i1.values) {
-			foreach (var g2 in i2.values) {
+		foreach (var g1 in idx1.values) {
+			foreach (var g2 in idx2.values) {
 				var bddForm = g1.bddForm.And(g2.bddForm).And(pc);
 				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
 					if (g2.value.value.IsAbstract()) {
 						var allVals = PathConstraint.GetAllPossibleValues(g2.value.value.AbstractValue);
 						foreach (var val in allVals) {
-							ArrayIndexOutOfBoundCheck((c, v) => ret.AddValue(c, v), array, g1.value, val.Item2, bddForm.And(val.Item1));
+							ArrayIndexOutOfBoundCheck((c, a, i1, i2) => ret.AddValue(c, a[i1, i2]), array, g1.value, val.Item2, bddForm.And(val.Item1));
 						}
 					}
 					else {
-						ArrayIndexOutOfBoundCheck((c, v) => ret.AddValue(c, v), array, g1.value, g2.value.value.ConcreteValue, bddForm);
+						ArrayIndexOutOfBoundCheck((c, a, i1, i2) => ret.AddValue(c, a[i1, i2]), array, g1.value, g2.value.value.ConcreteValue, bddForm);
 					}
 				}
 			}
@@ -498,7 +498,7 @@ public static class ValueSummaryExt
 			foreach (var guardedIndex in index.values) {
 				var bddForm = guardedArray.bddForm.And(guardedIndex.bddForm.And(pc));
 				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
-					ArrayIndexOutOfBoundCheck((c, v) => ret.Merge(v, c), guardedArray.value, guardedIndex.value, bddForm);
+					ArrayIndexOutOfBoundCheck((c, a, i) => ret.Merge(a[i], c), guardedArray.value, guardedIndex.value, bddForm);
 				}
 			}
 		}
@@ -515,11 +515,11 @@ public static class ValueSummaryExt
 				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
 					if (guardedIndex.value.IsAbstract()) {
 						foreach (var t in PathConstraint.GetAllPossibleValues(guardedIndex.value.AbstractValue)) {
-							ArrayIndexOutOfBoundCheck((c, v) => ret.Merge(v, c), guardedArray.value, t.Item2, bddForm.And(t.Item1));
+							ArrayIndexOutOfBoundCheck((c, a, i) => ret.Merge(a[i], c), guardedArray.value, t.Item2, bddForm.And(t.Item1));
 						}
 					}
 					else {
-						ArrayIndexOutOfBoundCheck((c, v) => ret.Merge(v, c), guardedArray.value, guardedIndex.value.ConcreteValue, bddForm);
+						ArrayIndexOutOfBoundCheck((c, a, i) => ret.Merge(a[i], c), guardedArray.value, guardedIndex.value.ConcreteValue, bddForm);
 					}
 				}
 			}
@@ -537,11 +537,11 @@ public static class ValueSummaryExt
 				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
 					if (guardedIndex.value.value.IsAbstract()) {
 						foreach (var t in PathConstraint.GetAllPossibleValues(guardedIndex.value.value.AbstractValue)) {
-							ArrayIndexOutOfBoundCheck((c, v) => ret.Merge(v, c), guardedArray.value, t.Item2, bddForm.And(t.Item1));
+							ArrayIndexOutOfBoundCheck((c, a, i) => ret.Merge(a[i], c), guardedArray.value, t.Item2, bddForm.And(t.Item1));
 						}
 					}
 					else {
-						ArrayIndexOutOfBoundCheck((c, v) => ret.Merge(v, c), guardedArray.value, guardedIndex.value.value.ConcreteValue, bddForm);
+						ArrayIndexOutOfBoundCheck((c, a, i) => ret.Merge(a[i], c), guardedArray.value, guardedIndex.value.value.ConcreteValue, bddForm);
 					}
 				}
 			}
@@ -556,7 +556,7 @@ public static class ValueSummaryExt
 			foreach (var guardedArray in vs_array.values) {
 				var bddForm = guardedArray.bddForm.And(guardedIndex.bddForm.And(pc));
 				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
-					guardedArray.value[guardedIndex.value].Update(val, bddForm);
+					ArrayIndexOutOfBoundCheck((c, a, i) => a[i].Update(val, c), guardedArray.value, guardedIndex.value, bddForm);
 				}
 			}
 		}
@@ -571,11 +571,11 @@ public static class ValueSummaryExt
 				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
 					if (guardedIndex.value.IsAbstract()) {
 						foreach (Tuple<bdd, int> t in PathConstraint.GetAllPossibleValues(guardedIndex.value.AbstractValue)) {
-							guardedArray.value[t.Item2].Update(val, bddForm.And(t.Item1));
+							ArrayIndexOutOfBoundCheck((c, a, i) => a[i].Update(val, c), guardedArray.value, t.Item2, bddForm.And(t.Item1));
 						}
 					}
 					else {
-						guardedArray.value[guardedIndex.value.ConcreteValue].Update(val, bddForm);
+							ArrayIndexOutOfBoundCheck((c, a, i) => a[i].Update(val, c), guardedArray.value, guardedIndex.value.ConcreteValue, bddForm);
 					}
 				}
 			}
@@ -590,11 +590,11 @@ public static class ValueSummaryExt
 				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
 					if (guardedIndex.value.value.IsAbstract()) {
 						foreach (Tuple<bdd, int> t in PathConstraint.GetAllPossibleValues(guardedIndex.value.value.AbstractValue)) {
-							guardedArray.value[t.Item2].Update(val, bddForm.And(t.Item1));
+							ArrayIndexOutOfBoundCheck((c, a, i) => a[i].Update(val, c), guardedArray.value, t.Item2, bddForm.And(t.Item1));
 						}
 					}
 					else {
-						guardedArray.value[guardedIndex.value.value.ConcreteValue].Update(val, bddForm);
+						ArrayIndexOutOfBoundCheck((c, a, i) => a[i].Update(val, c), guardedArray.value, guardedIndex.value.value.ConcreteValue, bddForm);
 					}
 				}
 			}
