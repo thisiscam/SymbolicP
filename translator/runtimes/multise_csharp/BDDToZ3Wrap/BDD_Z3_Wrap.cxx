@@ -41,7 +41,7 @@ void init_bdd_z3_wrap(void* c)
 {
 	ctx = (Z3_context)c;
 }
-int counter = 0;
+
 static Z3_ast _bdd_to_Z3_formula(bdd root)
 {
 	// TODO, optimize to make smt form more compact? e.g. using ITE, 
@@ -112,6 +112,14 @@ bdd* Z3_formula_to_bdd(Z3_ast bool_exp)
 				return new bdd(new_var);
 			}
 		}
+	}
+}
+
+void debug_print_used_bdd_vars()
+{
+	for(int i=0; i < bdd_vars_to_z3_formula.size(); i++)
+	{
+		printf("%d: %s\n", i, Z3_ast_to_string(ctx, bdd_vars_to_z3_formula[i]));
 	}
 }
 

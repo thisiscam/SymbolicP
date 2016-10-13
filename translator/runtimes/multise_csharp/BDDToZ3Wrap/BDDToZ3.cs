@@ -38,6 +38,9 @@ namespace BDDToZ3Wrap
 
 		[DllImport(Z3_DLL_NAME)]
 		public extern static IntPtr Z3_formula_to_bdd (IntPtr ast);
+
+		[DllImport(Z3_DLL_NAME)]
+		public extern static void debug_print_used_bdd_vars();
 	}
 }
 

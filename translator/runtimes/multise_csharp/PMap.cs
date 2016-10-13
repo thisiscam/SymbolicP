@@ -100,7 +100,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
                 {
                     var vs_cond_32 = ((new Func<ValueSummary<SymbolicBool>>(() =>
                     {
-                        var vs_cond_1 = ((vs_lgc_tmp_0 = iter.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash))).Cond();
+                        var vs_cond_1 = ((vs_lgc_tmp_0 = ValueSummary<SymbolicBool>.InitializeFrom(iter.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash)))).Cond();
                         var vs_cond_ret_1 = new ValueSummary<SymbolicBool>();
                         if (vs_cond_1.CondTrue())
                             vs_cond_ret_1.Merge(vs_lgc_tmp_0.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, iter.GetField<K>(_ => _.Key).InvokeMethod<K, SymbolicBool>((_, a0) => _.PTypeEquals(a0), k)));
@@ -142,7 +142,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
                 {
                     var vs_cond_33 = ((new Func<ValueSummary<SymbolicBool>>(() =>
                     {
-                        var vs_cond_2 = ((vs_lgc_tmp_1 = iter.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash))).Cond();
+                        var vs_cond_2 = ((vs_lgc_tmp_1 = ValueSummary<SymbolicBool>.InitializeFrom(iter.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash)))).Cond();
                         var vs_cond_ret_2 = new ValueSummary<SymbolicBool>();
                         if (vs_cond_2.CondTrue())
                             vs_cond_ret_2.Merge(vs_lgc_tmp_1.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, iter.GetField<K>(_ => _.Key).InvokeMethod<K, SymbolicBool>((_, a0) => _.PTypeEquals(a0), k)));
@@ -186,7 +186,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
                 {
                     var vs_cond_34 = ((new Func<ValueSummary<SymbolicBool>>(() =>
                     {
-                        var vs_cond_3 = ((vs_lgc_tmp_2 = iter.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash))).Cond();
+                        var vs_cond_3 = ((vs_lgc_tmp_2 = ValueSummary<SymbolicBool>.InitializeFrom(iter.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash)))).Cond();
                         var vs_cond_ret_3 = new ValueSummary<SymbolicBool>();
                         if (vs_cond_3.CondTrue())
                             vs_cond_ret_3.Merge(vs_lgc_tmp_2.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, iter.GetField<K>(_ => _.Key).InvokeMethod<K, SymbolicBool>((_, a0) => _.PTypeEquals(a0), k)));
@@ -259,7 +259,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
         {
             var vs_cond_36 = ((new Func<ValueSummary<SymbolicBool>>(() =>
             {
-                var vs_cond_4 = ((vs_lgc_tmp_3 = firstEntry.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash))).Cond();
+                var vs_cond_4 = ((vs_lgc_tmp_3 = ValueSummary<SymbolicBool>.InitializeFrom(firstEntry.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash)))).Cond();
                 var vs_cond_ret_4 = new ValueSummary<SymbolicBool>();
                 if (vs_cond_4.CondTrue())
                     vs_cond_ret_4.Merge(vs_lgc_tmp_3.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, firstEntry.GetField<K>(_ => _.Key).InvokeMethod<K, SymbolicBool>((_, a0) => _.PTypeEquals(a0), k)));
@@ -286,7 +286,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
                         {
                             var vs_cond_37 = ((new Func<ValueSummary<SymbolicBool>>(() =>
                             {
-                                var vs_cond_5 = ((vs_lgc_tmp_4 = iter.GetField<PMap<K, V>.MapEntry>(_ => _.Next).GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash))).Cond();
+                                var vs_cond_5 = ((vs_lgc_tmp_4 = ValueSummary<SymbolicBool>.InitializeFrom(iter.GetField<PMap<K, V>.MapEntry>(_ => _.Next).GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash)))).Cond();
                                 var vs_cond_ret_5 = new ValueSummary<SymbolicBool>();
                                 if (vs_cond_5.CondTrue())
                                     vs_cond_ret_5.Merge(vs_lgc_tmp_4.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, iter.GetField<PMap<K, V>.MapEntry>(_ => _.Next).GetField<K>(_ => _.Key).InvokeMethod<K, SymbolicBool>((_, a0) => _.PTypeEquals(a0), k)));
@@ -335,7 +335,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
                 {
                     var vs_cond_38 = ((new Func<ValueSummary<SymbolicBool>>(() =>
                     {
-                        var vs_cond_6 = ((vs_lgc_tmp_5 = iter.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash))).Cond();
+                        var vs_cond_6 = ((vs_lgc_tmp_5 = ValueSummary<SymbolicBool>.InitializeFrom(iter.GetField<SymbolicInteger>(_ => _.Hash).InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l == r, hash)))).Cond();
                         var vs_cond_ret_6 = new ValueSummary<SymbolicBool>();
                         if (vs_cond_6.CondTrue())
                             vs_cond_ret_6.Merge(vs_lgc_tmp_5.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, iter.GetField<K>(_ => _.Key).InvokeMethod<K, SymbolicBool>((_, a0) => _.PTypeEquals(a0), k)));
@@ -465,7 +465,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
                             {
                                 var vs_cond_41 = ((new Func<ValueSummary<SymbolicBool>>(() =>
                                 {
-                                    var vs_cond_7 = ((vs_lgc_tmp_6 = other.InvokeMethod<K, V>((_, a0) => _.Get(a0), entry.GetField<K>(_ => _.Key)).Cast<object>(_ => (object)_).InvokeBinary<object, SymbolicBool>((l, r) => l != r, new ValueSummary<object>(null)))).Cond();
+                                    var vs_cond_7 = ((vs_lgc_tmp_6 = ValueSummary<SymbolicBool>.InitializeFrom(other.InvokeMethod<K, V>((_, a0) => _.Get(a0), entry.GetField<K>(_ => _.Key)).Cast<object>(_ => (object)_).InvokeBinary<object, SymbolicBool>((l, r) => l != r, new ValueSummary<object>(null))))).Cond();
                                     var vs_cond_ret_7 = new ValueSummary<SymbolicBool>();
                                     if (vs_cond_7.CondTrue())
                                         vs_cond_ret_7.Merge(vs_lgc_tmp_6);

@@ -1141,7 +1141,8 @@ namespace MultiSETransformer
                     }
                     else if (node.IsKind(SyntaxKind.SimpleAssignmentExpression) && (node.Left as IdentifierNameSyntax).Identifier.Text.StartsWith("vs_lgc_tmp_"))
                     {
-                        return node.WithRight(node.Right.Accept(this) as ExpressionSyntax);
+                        var nodeType = model.GetTypeInfo(node).Type;
+                        return SyntaxFactory.ParseExpression(String.Format("{0} = ValueSummary<{1}>.InitializeFrom({2})", node.Left.ToFullString(), nodeType.ToDisplayString(), node.Right.Accept(this).ToFullString()));
                     }
                     else {
                         return MakeTransformedSimpleAssignmentNode(node);

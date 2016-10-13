@@ -13,12 +13,12 @@ namespace TestBDDToZ3Wrap
 
 			var ctx = new Context ();
 			Converter.Init(ctx);
-			var x = ctx.MkIntConst ("x");
-			var x_gt_1 = ctx.MkGt (x, ctx.MkInt (1));
-			var a = x_gt_1.ToBDD ();
-			var a2 = x_gt_1.ToBDD ();
-			var x_gt_1_prime = a.ToZ3Expr ();
-			Console.WriteLine (x_gt_1_prime);
+			var x_gt_1 = ctx.MkGt (ctx.MkIntConst ("x"), ctx.MkInt (1));
+			var a1 = x_gt_1.ToBDD ();
+			var x_gt_2 = ctx.MkGt (ctx.MkIntConst ("x"), ctx.MkInt (1));
+			var a2 = x_gt_2.ToBDD();
+			BuDDySharp.BuDDySharp.printdot(a1);
+			BuDDySharp.BuDDySharp.printdot(a2);
 		}
 	}
 }

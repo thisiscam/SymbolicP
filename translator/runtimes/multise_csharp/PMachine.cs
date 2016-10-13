@@ -32,7 +32,7 @@ abstract class PMachine : IPType<PMachine>
                 {
                     var vs_cond_26 = ((new Func<ValueSummary<bool>>(() =>
                     {
-                        var vs_cond_0 = ((vs_lgc_tmp_0 = this.DeferedSet.GetIndex(state, e).InvokeUnary<bool>(_ => !_))).Cond();
+                        var vs_cond_0 = ((vs_lgc_tmp_0 = ValueSummary<bool>.InitializeFrom(this.DeferedSet.GetIndex(state, e).InvokeUnary<bool>(_ => !_)))).Cond();
                         var vs_cond_ret_0 = new ValueSummary<bool>();
                         if (vs_cond_0.CondTrue())
                             vs_cond_ret_0.Merge(vs_lgc_tmp_0.InvokeBinary<bool, bool>((l, r) => l & r, this.Transitions.GetIndex(state, e).InvokeBinary<PMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.TransitionFunction>(null))));

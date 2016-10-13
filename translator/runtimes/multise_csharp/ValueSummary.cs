@@ -64,6 +64,9 @@ public class ValueSummary<T>
 				ret.values.Add(new GuardedValue<T>(bddForm, val.value));
 			}
 		}
+#if DEBUG
+		ret.AssertPredExcusion();
+#endif
 		return ret;
 	}
 
@@ -94,9 +97,7 @@ public class ValueSummary<T>
 	#region vshelpers
 	public void Merge(ValueSummary<T> other)
 	{
-		foreach (var v2 in other.values) {
-			AddValue(v2.bddForm, v2.value);
-		}
+		Merge(other, PathConstraint.GetPC());
 	}
 
 	public void Merge(ValueSummary<T> other, bdd pred)
@@ -114,10 +115,16 @@ public class ValueSummary<T>
 		foreach (var guardedValue in this.values) {
 			if (EqualityComparer<T>.Default.Equals(guardedValue.value, val)) {
 				guardedValue.bddForm = guardedValue.bddForm.Or(pred);
+#if DEBUG
+				this.AssertPredExcusion();
+#endif
 				return;
 			}
 		}
 		this.values.Add(new GuardedValue<T>(pred, val));
+#if DEBUG
+		this.AssertPredExcusion();
+#endif
 	}
 
 	public void AddValue(T val)
@@ -221,11 +228,15 @@ public class ValueSummary<T>
 		var pc = PathConstraint.GetPC();
 		foreach (var guardedTarget in this.values) {
 			bdd newPC = pc.And (guardedTarget.bddForm);
-			if (!newPC.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
-				PathConstraint.PushScope();
-				PathConstraint.AddAxiom(guardedTarget.bddForm);
-				ret.Merge(f.Invoke(guardedTarget.value));
-				PathConstraint.PopScope();
+			if (!newPC.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(guardedTarget.bddForm.ToZ3Expr())) {
+				NullTargetCheck((c, v) => 
+				{
+					PathConstraint.PushScope();
+					PathConstraint.AddAxiom(c);
+					ret.Merge(f.Invoke(v));
+					PathConstraint.PopScope(); 
+				},
+				guardedTarget.value, guardedTarget.bddForm);
 			}			
 		}
 		return ret;
@@ -271,11 +282,15 @@ public class ValueSummary<T>
 		var pc = PathConstraint.GetPC();
 		foreach (var guardedTarget in this.values) {
 			bdd newPC = pc.And (guardedTarget.bddForm);
-			if (!newPC.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
-				PathConstraint.PushScope();
-				PathConstraint.AddAxiom(guardedTarget.bddForm);
-				f.Invoke(guardedTarget.value);
-				PathConstraint.PopScope();
+			if (!newPC.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(guardedTarget.bddForm.ToZ3Expr())) {
+				NullTargetCheck((c, v) => 
+				{
+					PathConstraint.PushScope();
+					PathConstraint.AddAxiom(c);
+					f.Invoke(v);
+					PathConstraint.PopScope(); 
+				},
+				guardedTarget.value, guardedTarget.bddForm);
 			}			
 		}
 	}
@@ -323,19 +338,22 @@ public class ValueSummary<T>
 			foreach (var otherGuardedVals in other.values) {
 				var bddForm = guardedVals.bddForm.And(otherGuardedVals.bddForm).And(pc);
 				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
-					//if (!PathConstraint.SolveBooleanExpr(BuDDySharp.BuDDySharp.bddtrue.ToZ3Expr())) { Debugger.Break();}
 					ret.AddValue(bddForm, f.Invoke(guardedVals.value, otherGuardedVals.value));
 				}
 			}
 		}
+#if DEBUG
+		ret.AssertPredExcusion();
+#endif
 		return ret;
 	}
 
 	public ValueSummary<R> InvokeUnary<R>(Func<T, R> f)
 	{
 		var ret = new ValueSummary<R>();
+		var pc = PathConstraint.GetPC();	
 		foreach (var guardedVal in this.values) {
-			var bddForm = guardedVal.bddForm.And(PathConstraint.GetPC());
+			var bddForm = guardedVal.bddForm.And(pc);
 			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
 				ret.AddValue(bddForm, f.Invoke(guardedVal.value));
 			}
@@ -346,16 +364,22 @@ public class ValueSummary<T>
 	public ValueSummary<R> Cast<R>(Func<T, R> f)
 	{
 		var ret = new ValueSummary<R>();
+		var pc = PathConstraint.GetPC();
 		foreach (var guardedVal in this.values) {
-			var bddForm = guardedVal.bddForm.And(PathConstraint.GetPC());
+			var bddForm = guardedVal.bddForm.And(pc);
 			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
-				try {
-					ret.AddValue(bddForm, f.Invoke(guardedVal.value));
-				} catch (InvalidCastException e) {
-					if (PathConstraint.SolveBooleanExpr(bddForm.ToZ3Expr())) {
-						throw e;
+				NullTargetCheck((c, v) =>
+				{
+					try {
+						ret.AddValue(c, f.Invoke(v));
 					}
-				}
+					catch (InvalidCastException e) {
+						if (PathConstraint.SolveBooleanExpr(bddForm.ToZ3Expr())) {
+							throw e;
+						}
+					}
+				}, 
+				guardedVal.value, bddForm);
 			}
 		}
 		return ret;
@@ -376,6 +400,8 @@ public static class ValueSummaryExt
 		}
 		else {
 			if (PathConstraint.SolveBooleanExpr(bddForm.ToZ3Expr())) {
+				BuDDySharp.BuDDySharp.printdot(bddForm);
+				BDDToZ3Wrap.PInvoke.debug_print_used_bdd_vars();
 				throw new Exception("Array index out of bound!");
 			}
 		}
@@ -383,7 +409,7 @@ public static class ValueSummaryExt
 
 	private static void ArrayIndexOutOfBoundCheck<R>(Action<bdd, R> ifInBoundThenRun, R[,] array, int i1, int i2, bdd bddForm)
 	{
-		if (i1 < array.GetLength(0) && i2 < array.GetLength(1)) {
+		if (i1 >=0 && i1 < array.GetLength(0) && i2 >= 0 && i2 < array.GetLength(1)) {
 			ifInBoundThenRun.Invoke(bddForm, array[i1, i2]);
 		}
 		else {
@@ -396,8 +422,9 @@ public static class ValueSummaryExt
 	public static ValueSummary<R> GetIndex<R>(this R[] array, ValueSummary<int> index)
 	{
 		var ret = new ValueSummary<R>();
+		var pc = PathConstraint.GetPC();
 		foreach (var guardedIndex in index.values) {
-			var bddForm = guardedIndex.bddForm.And(PathConstraint.GetPC());
+			var bddForm = guardedIndex.bddForm.And(pc);
 			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
 				ArrayIndexOutOfBoundCheck((c, v) => ret.AddValue(c, v), array, guardedIndex.value, bddForm);
 			}
@@ -408,8 +435,9 @@ public static class ValueSummaryExt
 	public static ValueSummary<R> GetIndex<R>(this R[] array, ValueSummary<SymbolicInteger> index)
 	{
 		var ret = new ValueSummary<R>();
+		var pc = PathConstraint.GetPC();
 		foreach (var guardedIndex in index.values) {
-			var bddForm = guardedIndex.bddForm.And(PathConstraint.GetPC());
+			var bddForm = guardedIndex.bddForm.And(pc);
 			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
 				if (guardedIndex.value.IsAbstract()) {
 					var allVals = PathConstraint.GetAllPossibleValues(guardedIndex.value.AbstractValue);
@@ -445,7 +473,7 @@ public static class ValueSummaryExt
 		var pc = PathConstraint.GetPC();
 		foreach (var g1 in i1.values) {
 			foreach (var g2 in i2.values) {
-				var bddForm = g1.bddForm.And(pc);
+				var bddForm = g1.bddForm.And(g2.bddForm).And(pc);
 				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
 					if (g2.value.value.IsAbstract()) {
 						var allVals = PathConstraint.GetAllPossibleValues(g2.value.value.AbstractValue);
@@ -599,25 +627,38 @@ public static class ValueSummaryExt
 
 	private static PathConstraint.BranchPoint CondConcreteHelper(bdd trueBDD, bdd falseBDD)
 	{
+		//var a0 = trueBDD.ToZ3Expr();
+		//var a1 = falseBDD.ToZ3Expr();
+		//PathConstraint.solver.Push();
+		//PathConstraint.solver.Assert(PathConstraint.ctx.MkNot(PathConstraint.ctx.MkIff(a0, PathConstraint.ctx.MkNot(a1))));
+		//var s = PathConstraint.solver.Check();	
+		//PathConstraint.solver.Pop();
+		//if (s != Status.UNSATISFIABLE) {
+		//	Debugger.Break();
+		//}
 		var trueFeasible = !trueBDD.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(trueBDD.ToZ3Expr());
 		var falseFeasible = !falseBDD.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(falseBDD.ToZ3Expr());
 		if (trueFeasible) {
 			if (falseFeasible) {
-				return new PathConstraint.BranchPoint(trueBDD, PathConstraint.BranchPoint.State.Both);
+				return new PathConstraint.BranchPoint(trueBDD, falseBDD, PathConstraint.BranchPoint.State.Both);
 			}
 			else {
-				return new PathConstraint.BranchPoint(trueBDD, PathConstraint.BranchPoint.State.True);
+				return new PathConstraint.BranchPoint(trueBDD, null, PathConstraint.BranchPoint.State.True);
 			}
 		}
 		else {
 			if (falseFeasible) {
-				return new PathConstraint.BranchPoint(falseBDD, PathConstraint.BranchPoint.State.False);
+				return new PathConstraint.BranchPoint(null, falseBDD, PathConstraint.BranchPoint.State.False);
 			}
 			else {
-				Console.WriteLine("Error, if branch is not reachable in both branches");
-				Debugger.Break();
-				var x = PathConstraint.SolveBooleanExpr(PathConstraint.GetPC().ToZ3Expr());
-				throw new Exception("Not reachable");
+				if (!PathConstraint.EvalPc())
+				{
+					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None);	
+				}
+				else 
+				{
+					throw new Exception("Not reachable");
+				}
 			}
 		}
 	}
@@ -625,24 +666,33 @@ public static class ValueSummaryExt
 	public static PathConstraint.BranchPoint _Cond(this ValueSummary<bool> b)
 	{
 		var pc = PathConstraint.GetPC();
-		Debug.Assert(b.values.Count <= 2);
+		if (b.values.Count > 2) { Debugger.Break();}
 		if (b.values.Count == 1) {
 			if (b.values[0].value) {
-				Debug.Assert(pc.EqualEqual(b.values[0].bddForm));
-				return new PathConstraint.BranchPoint(pc, PathConstraint.BranchPoint.State.True);
+				//if (!pc.EqualEqual(b.values[0].bddForm)) { Debugger.Break();}
+				return new PathConstraint.BranchPoint(b.values[0].bddForm.And(pc), null, PathConstraint.BranchPoint.State.True);
 			}
 			else {
-				Debug.Assert(pc.EqualEqual(b.values[0].bddForm));
-				return new PathConstraint.BranchPoint(pc, PathConstraint.BranchPoint.State.False);
+				//if (!pc.EqualEqual(b.values[0].bddForm)) { Debugger.Break();}
+				return new PathConstraint.BranchPoint(null, b.values[0].bddForm.And(pc), PathConstraint.BranchPoint.State.False);
 			}
 		}
-		else {
+		else if (b.values.Count == 2) {
 			if (b.values[0].value) {
 				return CondConcreteHelper(b.values[0].bddForm.And(pc), b.values[1].bddForm.And(pc));
 			}
 			else {
 				return CondConcreteHelper(b.values[1].bddForm.And(pc), b.values[0].bddForm.And(pc));
 			}
+		} else {
+				if (!PathConstraint.EvalPc())
+				{
+					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None);	
+				}
+				else 
+				{
+					throw new Exception("Not reachable");
+				}
 		}
 	}
 	
@@ -660,22 +710,22 @@ public static class ValueSummaryExt
 		bdd predTrue = BuDDySharp.BuDDySharp.bddfalse, predFalse = BuDDySharp.BuDDySharp.bddfalse;
 		foreach (var guardedBooleanVal in b.values) {
 			var guardedValuePcPred = guardedBooleanVal.bddForm.And(pc);
-			if (!guardedValuePcPred.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+			if (!guardedValuePcPred.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(guardedValuePcPred.ToZ3Expr())) {
 				if (guardedBooleanVal.value.IsAbstract()) {
 					var c = guardedBooleanVal.value.AbstractValue.ToBDD();
 					if (c.EqualEqual(BuDDySharp.BuDDySharp.bddtrue)) {
-						predTrue = predTrue.Or(guardedBooleanVal.bddForm);
+						predTrue = predTrue.Or(guardedValuePcPred);
 					}
 					else if (c.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
 						predFalse = predFalse.Or(guardedValuePcPred);
 					}
 					else {
-						var tmp = guardedBooleanVal.bddForm.And(c);
+						var tmp = guardedValuePcPred.And(c);
 						var trueFeasible = !tmp.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(tmp.ToZ3Expr());
 						if (trueFeasible) {
 							predTrue = predTrue.Or(tmp);
 						}
-						tmp = tmp.Not();
+						tmp = guardedValuePcPred.And(c.Not());
 						var falseFeasible = !tmp.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(tmp.ToZ3Expr());
 						if (falseFeasible) {
 							predFalse = predFalse.Or(tmp);
@@ -694,20 +744,25 @@ public static class ValueSummaryExt
 		}
 		if (predTrue != BuDDySharp.BuDDySharp.bddfalse) {
 			if (predFalse != BuDDySharp.BuDDySharp.bddfalse) {
-				return new PathConstraint.BranchPoint(predTrue, PathConstraint.BranchPoint.State.Both);
+				return new PathConstraint.BranchPoint(predTrue, predFalse, PathConstraint.BranchPoint.State.Both);
 			}
 			else {
-				return new PathConstraint.BranchPoint(predTrue, PathConstraint.BranchPoint.State.True);
+				return new PathConstraint.BranchPoint(predTrue, null, PathConstraint.BranchPoint.State.True);
 			}
 		}
 		else {
 			if (predFalse != BuDDySharp.BuDDySharp.bddfalse) {
-				return new PathConstraint.BranchPoint(predFalse, PathConstraint.BranchPoint.State.False);
+				return new PathConstraint.BranchPoint(null, predFalse, PathConstraint.BranchPoint.State.False);
 			}
 			else {
-				Console.WriteLine("Error, if branch is not reachable in both branches");
-				Debugger.Break();
-				throw new Exception("Not reachable");
+				if (!PathConstraint.EvalPc())
+				{
+					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None);	
+				}
+				else 
+				{
+					throw new Exception("Not reachable");
+				}
 			}
 		}
 	}
@@ -742,15 +797,16 @@ public static class ValueSummaryExt
 	{
 		var not_return_paths = PathConstraint.GetCurrentFrame().return_stack.Peek().Not();
 		PathConstraint.AddAxiom(not_return_paths);
-		if (!PathConstraint.GetPC().EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+		if (PathConstraint.EvalPc()) {
 			var c = f.Invoke();
 			switch (c.state) {
 				case PathConstraint.BranchPoint.State.Both:
 				case PathConstraint.BranchPoint.State.True: 
 					{
-						PathConstraint.AddAxiom(c.pc);
+						PathConstraint.AddAxiom(c.trueBDD);
 						return true;
 					}
+				case PathConstraint.BranchPoint.State.None:
 				case PathConstraint.BranchPoint.State.False: 
 					{
 						PathConstraint.MergeBranch();
@@ -787,6 +843,31 @@ public static class ValueSummaryExt
 	public static void RecordReturn<T>(this ValueSummary<T> x, ValueSummary<T> other)
 	{
 		PathConstraint.RecordReturnPath();
-		x.Merge(other);
+		x.Merge(other, PathConstraint.GetPC());
 	}
+
+
+#region DEBUG_VS
+	public static void AssertPredExcusion<T>(this ValueSummary<T> x)
+	{
+		PathConstraint.solver.Push();
+		var a = PathConstraint.ctx.MkTrue();
+		foreach(var g1 in x.values) 
+		{
+			foreach (var g2 in x.values) 
+			{
+				if (g1 != g2) {
+					a = PathConstraint.ctx.MkAnd(a, PathConstraint.ctx.MkImplies(g1.bddForm.ToZ3Expr(), g2.bddForm.Not().ToZ3Expr()));
+				}
+			}
+		}
+		PathConstraint.solver.Assert(PathConstraint.ctx.MkNot(a));
+		var status = PathConstraint.solver.Check();
+		PathConstraint.solver.Pop();
+		if (status != Status.UNSATISFIABLE) 
+		{
+			throw new Exception("BDD exclusion failure");
+		}
+	} 
+#endregion
 }

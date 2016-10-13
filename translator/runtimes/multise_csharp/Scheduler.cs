@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using BDDToZ3Wrap;
 using Microsoft.Z3;
 
 class Scheduler
@@ -40,7 +41,7 @@ class Scheduler
                     PathConstraint.BeginLoop();
                     for (ValueSummary<int> j = 0; (new  Func<ValueSummary<bool>>(() =>
                     {
-                        var vs_cond_8 = ((vs_lgc_tmp_0 = do_loop)).Cond();
+                        var vs_cond_8 = ((vs_lgc_tmp_0 = ValueSummary<bool>.InitializeFrom(do_loop))).Cond();
                         var vs_cond_ret_8 = new ValueSummary<bool>();
                         if (vs_cond_8.CondTrue())
                             vs_cond_ret_8.Merge(vs_lgc_tmp_0.InvokeBinary<bool, bool>((l, r) => l & r, j.InvokeBinary<int, bool>((l, r) => l < r, sendQueue.GetField<int>(_ => _.Count))));
@@ -57,18 +58,21 @@ class Scheduler
                             var vs_cond_43 = (item.GetField<PInteger>(_ => _.e).InvokeBinary<PInteger, PBool>((l, r) => l == r, (PInteger)Constants.EVENT_NEW_MACHINE)).Cond();
                             if (vs_cond_43.CondTrue())
                             {
-                                choices.InvokeMethod((_) => _.Add(new SchedulerChoice(machine, j, -1)));                                
+                                choices.InvokeMethod<SchedulerChoice>((_, a0) => _.Add(a0), new SchedulerChoice(machine, j, -1));                                
                                 do_loop.Assign<bool>(false);
                             }
 
                             if (vs_cond_43.CondFalse())
                             {
-                                ValueSummary<int> state_idx = ValueSummary<int>.InitializeFrom(item.GetField<PMachine>(_ => _.target).InvokeMethod<PInteger, int>((_, a0) => _.CanServeEvent(a0), item.GetField<PInteger>(_ => _.e)));
+                                ValueSummary<int> state_idx = ValueSummary<int>.InitializeFrom(
+										item.GetField<PMachine>(_ => _.target)
+										.InvokeMethod<PInteger, int>((_, a0) => _.CanServeEvent(a0), 
+										item.GetField<PInteger>(_ => _.e)));
                                 {
                                     var vs_cond_44 = (state_idx.InvokeBinary<int, bool>((l, r) => l >= r, 0)).Cond();
                                     if (vs_cond_44.CondTrue())
                                     {
-                                        choices.InvokeMethod((_) => _.Add(new SchedulerChoice(machine, j, state_idx)));                                
+                                        choices.InvokeMethod<SchedulerChoice>((_, a0) => _.Add(a0), new SchedulerChoice(machine, j, state_idx));                        
                                         do_loop.Assign<bool>(false);
                                     }
 
@@ -88,7 +92,7 @@ class Scheduler
                     var vs_cond_45 = (null_state_idx.InvokeBinary<int, bool>((l, r) => l >= r, 0)).Cond();
                     if (vs_cond_45.CondTrue())
                     {
-                        choices.InvokeMethod((_) => _.Add(new SchedulerChoice(machine, -1, null_state_idx)));                                
+                        choices.InvokeMethod<SchedulerChoice>((_, a0) => _.Add(a0), new SchedulerChoice(machine, -1, null_state_idx));                                
                     }
 
                     vs_cond_45.MergeBranch();
@@ -110,7 +114,7 @@ class Scheduler
                 ValueSummary<// Choose one and remove from send queue
 				SymbolicInteger> idx = PathConstraint.NewSymbolicIntVar("SI", 0, choices.GetField((_) => _.Count));
 		
-				ValueSummary<SchedulerChoice> chosen = choices.InvokeMethod((arg) => arg[idx]);
+				ValueSummary<SchedulerChoice> chosen = choices.InvokeMethod<SymbolicInteger, SchedulerChoice>((arg, a0) => arg[a0], idx);
                 ValueSummary<int> sourceMachineSendQueueIndex = ValueSummary<int>.InitializeFrom(chosen.GetField<int>(_ => _.sourceMachineSendQueueIndex));
                 {
                     var vs_cond_47 = (sourceMachineSendQueueIndex.InvokeBinary<int, bool>((l, r) => l < r, 0)).Cond();
@@ -128,7 +132,7 @@ class Scheduler
 						chosenSourceMachine.GetConstField<List<SendQueueItem>>(_ => _.sendQueue).InvokeMethod<int>((_, a0) => _.RemoveAt(a0), sourceMachineSendQueueIndex);
                         {
                             var vs_cond_48 = (dequeuedItem.GetField<PInteger>(_ => _.e).InvokeBinary<PInteger, PBool>((l, r) => l == r, (PInteger)Constants.EVENT_NEW_MACHINE)).Cond();
-                            if (vs_cond_48.CondTrue())
+							if (vs_cond_48.CondTrue())
                             {
                                 ValueSummary<PMachine> newMachine = ValueSummary<PMachine>.InitializeFrom(dequeuedItem.GetField<PMachine>(_ => _.target));
                                 Console.WriteLine(chosenSourceMachine.ToString() + chosenSourceMachine.GetHashCode() + " creates " + newMachine.ToString() + chosenSourceMachine.GetHashCode());
@@ -139,8 +143,8 @@ class Scheduler
                             {
                                 ValueSummary<PMachine> targetMachine = ValueSummary<PMachine>.InitializeFrom(dequeuedItem.GetField<PMachine>(_ => _.target));
                                 Console.WriteLine(chosenSourceMachine.ToString() + chosenSourceMachine.GetHashCode() + " sends event " + dequeuedItem.GetField<PInteger>(_ => _.e).ToString() + " to " + targetMachine.ToString() + targetMachine.GetHashCode());
-                                targetMachine.InvokeMethod<int, PInteger, IPType>((_, a0, a1, a2) => _.RunStateMachine(a0, a1, a2), chosen.GetField<int>(_ => _.targetMachineStateIndex), dequeuedItem.GetField<PInteger>(_ => _.e), dequeuedItem.GetField<IPType>(_ => _.payload));
-                            }
+								targetMachine.InvokeMethod<int, PInteger, IPType>((_, a0, a1, a2) => _.RunStateMachine(a0, a1, a2), chosen.GetField<int>(_ => _.targetMachineStateIndex), dequeuedItem.GetField<PInteger>(_ => _.e), dequeuedItem.GetField<IPType>(_ => _.payload));
+							}
 
                             vs_cond_48.MergeBranch();
                         }
