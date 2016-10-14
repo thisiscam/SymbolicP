@@ -6,7 +6,7 @@ abstract class MonitorPMachine
     protected delegate void TransitionFunction(ValueSummary<IPType> payload);
     protected delegate void ExitFunction();
     protected ValueSummary<int> retcode = new ValueSummary<int>(default (int));
-    protected ValueSummary<List<int>> states = ValueSummary<List<int>>.InitializeFrom(new ValueSummary<List<int>>(new List<int>()));
+    protected ValueSummary<List<int>> states = new ValueSummary<List<int>>(new List<int>());
     protected bool[, ] DeferedSet;
     protected bool[, ] IsGotoTransition;
     protected TransitionFunction[, ] Transitions;
@@ -18,7 +18,7 @@ abstract class MonitorPMachine
             PathConstraint.BeginLoop();
             for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count)).Loop(); i.Increment())
             {
-                ValueSummary<int> state = ValueSummary<int>.InitializeFrom(this.states.InvokeMethod<int, int>((_, a0) => _[a0], i));
+                ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], i);
                 {
                     var vs_cond_20 = (this.Transitions.GetIndex(state, e).InvokeBinary<MonitorPMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<MonitorPMachine.TransitionFunction>(null))).Cond();
                     if (vs_cond_20.CondTrue())
@@ -34,7 +34,7 @@ abstract class MonitorPMachine
                         }
 
                         this.retcode.Assign<int>(Constants.EXECUTE_FINISHED);
-                        ValueSummary<TransitionFunction> transition_fn = ValueSummary<TransitionFunction>.InitializeFrom(this.Transitions.GetIndex(state, e));
+                        ValueSummary<TransitionFunction> transition_fn = this.Transitions.GetIndex(state, e);
                         transition_fn.Invoke(payload);
                         PathConstraint.RecordReturnPath();
                     }

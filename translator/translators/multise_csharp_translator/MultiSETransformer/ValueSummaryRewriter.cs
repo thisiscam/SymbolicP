@@ -151,13 +151,16 @@ namespace MultiSETransformer
                             {
                                 return v;
                             }
-                            else {
+                            else if (v.Initializer.IsKind(SyntaxKind.IdentifierName))
+                            {
                                 return v.WithInitializer(SyntaxFactory.EqualsValueClause(
                                     SyntaxFactory.InvocationExpression(
                                         SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.GenericName(SyntaxFactory.Identifier("ValueSummary"), SyntaxFactory.TypeArgumentList().AddArguments(node.Type)), SyntaxFactory.IdentifierName("InitializeFrom")),
                                         SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList<ArgumentSyntax>(new ArgumentSyntax[] { SyntaxFactory.Argument(v.Initializer.Value) }))
                                 )));
-                            }
+                            } else {
+                                return v;
+                           }
                         })));
                         if (!node.Type.IsVar)
                         {

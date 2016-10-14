@@ -86,7 +86,8 @@ public class PathConstraint
 		ctx = new Context();
 		solver = ctx.MkSolver();
 
-		BuDDySharp.BuDDySharp.cpp_init(1000000, 1000000);
+		BuDDySharp.BuDDySharp.cpp_init(5000000, 5000000);
+		BuDDySharp.BuDDySharp.setcacheratio(64);
 		BuDDySharp.BuDDySharp.setvarnum(10000);
 
 		BDDToZ3Wrap.Converter.Init(ctx);
@@ -276,7 +277,6 @@ public class PathConstraint
 				else {
 					var sym_var_name = String.Format("{0}_{1}", prefix, idx);
 					var fresh_const = new SymbolicBool((BoolExpr)ctx.MkBoolConst(sym_var_name));
-					Console.WriteLine(String.Format("{0} - {1}", sym_var_name, BuDDySharp.BuDDySharp.var(fresh_const.AbstractValue.ToBDD())));
 					sym_bool_vars.Add(fresh_const);
 					ret.AddValue(bddForm, fresh_const);
 				}

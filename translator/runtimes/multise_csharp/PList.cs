@@ -31,10 +31,10 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
 
     public ValueSummary<PList<T>> DeepCopy()
     {
-        ValueSummary<PList<T>> ret = ValueSummary<PList<T>>.InitializeFrom(new ValueSummary<PList<T>>(new PList<T>()));
+        ValueSummary<PList<T>> ret = new ValueSummary<PList<T>>(new PList<T>());
         {
             PathConstraint.BeginLoop();
-            for (ValueSummary<SymbolicInteger> i = ValueSummary<SymbolicInteger>.InitializeFrom((SymbolicInteger)0); i.InvokeBinary<int, SymbolicBool>((l, r) => l < r, this._count).Loop(); i.Increment())
+            for (ValueSummary<SymbolicInteger> i = (SymbolicInteger)0; i.InvokeBinary<int, SymbolicBool>((l, r) => l < r, this._count).Loop(); i.Increment())
             {
                 ret.InvokeMethod<T>((_, a0) => _.Add(a0), this[i].InvokeMethod((_) => _.DeepCopy()));
             }
@@ -45,7 +45,7 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
 
     public ValueSummary<SymbolicInteger> PTypeGetHashCode()
     {
-        ValueSummary<SymbolicInteger> ret = ValueSummary<SymbolicInteger>.InitializeFrom((SymbolicInteger)1);
+        ValueSummary<SymbolicInteger> ret = (SymbolicInteger)1;
         {
             PathConstraint.BeginLoop();
             for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this._count).Loop(); i.Increment())

@@ -6,7 +6,7 @@ abstract class PMachine : IPType<PMachine>
     protected delegate void TransitionFunction(ValueSummary<IPType> payload);
     protected delegate void ExitFunction();
     protected ValueSummary<int> retcode = new ValueSummary<int>(default (int));
-    protected ValueSummary<List<int>> states = ValueSummary<List<int>>.InitializeFrom(new ValueSummary<List<int>>(new List<int>()));
+    protected ValueSummary<List<int>> states = new ValueSummary<List<int>>(new List<int>());
     protected Scheduler scheduler;
     protected bool[, ] DeferedSet;
     protected bool[, ] IsGotoTransition;
@@ -28,7 +28,7 @@ abstract class PMachine : IPType<PMachine>
             for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count)).Loop(); i.Increment())
             {
                 ValueSummary<bool> vs_lgc_tmp_0;
-                ValueSummary<int> state = ValueSummary<int>.InitializeFrom(this.states.InvokeMethod<int, int>((_, a0) => _[a0], i));
+                ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], i);
                 {
                     var vs_cond_26 = ((new Func<ValueSummary<bool>>(() =>
                     {
@@ -69,7 +69,7 @@ abstract class PMachine : IPType<PMachine>
             PathConstraint.BeginLoop();
             for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count)).Loop(); i.Increment())
             {
-                ValueSummary<int> state = ValueSummary<int>.InitializeFrom(this.states.InvokeMethod<int, int>((_, a0) => _[a0], i));
+                ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], i);
                 {
                     var vs_cond_27 = (this.Transitions.GetIndex(state, e).InvokeBinary<PMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.TransitionFunction>(null))).Cond();
                     if (vs_cond_27.CondTrue())
@@ -105,7 +105,7 @@ abstract class PMachine : IPType<PMachine>
     protected void PopState()
     {
         this.retcode.Assign<int>(Constants.EXECUTE_FINISHED);
-        ValueSummary<int> current_state = ValueSummary<int>.InitializeFrom(this.states.InvokeMethod<int, int>((_, a0) => _[a0], 0));
+        ValueSummary<int> current_state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], 0);
         this.states.InvokeMethod<int>((_, a0) => _.RemoveAt(a0), 0);
         {
             var vs_cond_28 = (this.ExitFunctions.GetIndex(current_state).InvokeBinary<PMachine.ExitFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.ExitFunction>(null))).Cond();
@@ -151,7 +151,7 @@ abstract class PMachine : IPType<PMachine>
 
     public void RunStateMachine(ValueSummary<int> state_idx, ValueSummary<PInteger> e, ValueSummary<IPType> payload)
     {
-        ValueSummary<int> state = ValueSummary<int>.InitializeFrom(this.states.InvokeMethod<int, int>((_, a0) => _[a0], state_idx));
+        ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], state_idx);
         {
             var vs_cond_31 = (this.IsGotoTransition.GetIndex(state, e)).Cond();
             if (vs_cond_31.CondTrue())
@@ -163,7 +163,7 @@ abstract class PMachine : IPType<PMachine>
         }
 
         this.retcode.Assign<int>(Constants.EXECUTE_FINISHED);
-        ValueSummary<TransitionFunction> transition_fn = ValueSummary<TransitionFunction>.InitializeFrom(this.Transitions.GetIndex(state, e));
+        ValueSummary<TransitionFunction> transition_fn = this.Transitions.GetIndex(state, e);
         transition_fn.Invoke(payload);
     }
 
