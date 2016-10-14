@@ -1,0 +1,29 @@
+
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+
+#for @project in @include_projects:
+Project("@sln_guid") = "@project.name", "@project.path", "@{project.guid}"
+EndProject
+#end
+
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+#for @project in @include_projects:
+		@{project.guid}.Debug|x86.ActiveCfg = Debug|x86
+		@{project.guid}.Debug|x86.Build.0 = Debug|x86
+		@{project.guid}.Release|x86.ActiveCfg = Release|x86
+		@{project.guid}.Release|x86.Build.0 = Release|x86
+		@{project.guid}.Debug|x64.ActiveCfg = Debug|x64
+		@{project.guid}.Debug|x64.Build.0 = Debug|x64
+		@{project.guid}.Release|x64.ActiveCfg = Release|x64
+		@{project.guid}.Release|x64.Build.0 = Release|x64
+#end
+	EndGlobalSection
+EndGlobal

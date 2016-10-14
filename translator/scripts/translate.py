@@ -5,12 +5,18 @@ from pparser.p_java_parser import pJavaParser
 from ordered_set import OrderedSet
 from collections import defaultdict, OrderedDict
 
+import pkgutil
+
+viable_translators = []
+for _, name, _ in pkgutil.iter_modules(['translators']):
+    if name.endswith("_translator"):
+        viable_translators.append(name)
+
 def translate(options):
-    pparser = pJavaParser(options.search_dirs.split(","))
+    pparser = pJavaParser(options.search_dirs)
     ast = pparser.parse(options.input_file)
     translator = options.translator(ast, options.out_dir)
     translator.translate()
-
 
 def process_options(options):
     if not options.out_dir:
@@ -18,15 +24,17 @@ def process_options(options):
     options.translator = __import__("translators." + options.translator, globals(), locals(), ['Translator'], -1).Translator
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser("Translates P code into cs code")
     parser.add_argument('-o', '--out-dir', type=str, dest="out_dir",
                         help="ouput directory, defaults to input file's name")
     parser.add_argument('-t', '--translator', type=str, dest="translator",
                         default="basic_csharp_translator",
+                        choices=viable_translators,
                         help="which translator to use")
-    parser.add_argument('-I', '--include', type=str, dest="search_dirs", 
-                        default="",
-                        help="directories for the translator to search for P source files")
+    parser.add_argument('-I', '--include', dest="search_dirs", 
+                        default=[],
+                        action="append",
+                        help="include directory for the translator to search for P source files")
     parser.add_argument('input_file')
     options = parser.parse_args()
     process_options(options)

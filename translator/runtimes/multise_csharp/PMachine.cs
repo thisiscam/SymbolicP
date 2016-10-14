@@ -5,7 +5,7 @@ abstract class PMachine : IPType<PMachine>
 {
     protected delegate void TransitionFunction(ValueSummary<IPType> payload);
     protected delegate void ExitFunction();
-    protected ValueSummary<int> retcode;
+    protected ValueSummary<int> retcode = new ValueSummary<int>(default (int));
     protected ValueSummary<List<int>> states = new ValueSummary<List<int>>(new List<int>());
     protected Scheduler scheduler;
     protected bool[, ] DeferedSet;
@@ -21,31 +21,74 @@ abstract class PMachine : IPType<PMachine>
     /* Returns the index that can serve this event */
     public ValueSummary<int> CanServeEvent(ValueSummary<PInteger> e)
     {
-        for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count)).Cond(); i.Increment())
+        PathConstraint.PushFrame();
+        var vs_ret_1 = new ValueSummary<int>();
         {
-            ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], i);
-            if (this.DeferedSet.GetIndex(state, e).InvokeUnary<bool>(_ => !_).InvokeBinary<bool, bool>((l, r) => l && r, this.Transitions.GetIndex(state, e).InvokeBinary<PMachine.TransitionFunction, bool>((l, r) => l != r, ValueSummary<PMachine.TransitionFunction>.Null)).Cond())
+            PathConstraint.BeginLoop();
+            for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count)).Loop(); i.Increment())
             {
-                return i;
+                ValueSummary<bool> vs_lgc_tmp_0;
+                ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], i);
+                {
+                    var vs_cond_26 = ((new Func<ValueSummary<bool>>(() =>
+                    {
+                        var vs_cond_0 = ((vs_lgc_tmp_0 = ValueSummary<bool>.InitializeFrom(this.DeferedSet.GetIndex(state, e).InvokeUnary<bool>(_ => !_)))).Cond();
+                        var vs_cond_ret_0 = new ValueSummary<bool>();
+                        if (vs_cond_0.CondTrue())
+                            vs_cond_ret_0.Merge(vs_lgc_tmp_0.InvokeBinary<bool, bool>((l, r) => l & r, this.Transitions.GetIndex(state, e).InvokeBinary<PMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.TransitionFunction>(null))));
+                        if (vs_cond_0.CondFalse())
+                            vs_cond_ret_0.Merge(vs_lgc_tmp_0);
+                        vs_cond_0.MergeBranch();
+                        return vs_cond_ret_0;
+                    }
+
+                    )())).Cond();
+                    if (vs_cond_26.CondTrue())
+                    {
+                        vs_ret_1.RecordReturn(i);
+                    }
+
+                    vs_cond_26.MergeBranch();
+                }
             }
         }
 
-        return -1;
+        if (PathConstraint.MergedPcFeasible())
+        {
+            vs_ret_1.RecordReturn(-1);
+        }
+
+        PathConstraint.PopFrame();
+        return vs_ret_1;
     }
 
     protected void RaiseEvent(ValueSummary<PInteger> e, ValueSummary<IPType> payload)
     {
-        for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count)).Cond(); i.Increment())
+        PathConstraint.PushFrame();
         {
-            ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], i);
-            if (this.Transitions.GetIndex(state, e).InvokeBinary<PMachine.TransitionFunction, bool>((l, r) => l != r, ValueSummary<PMachine.TransitionFunction>.Null).Cond())
+            PathConstraint.BeginLoop();
+            for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count)).Loop(); i.Increment())
             {
-                this.RunStateMachine(i, e, payload);
-                return;
+                ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], i);
+                {
+                    var vs_cond_27 = (this.Transitions.GetIndex(state, e).InvokeBinary<PMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.TransitionFunction>(null))).Cond();
+                    if (vs_cond_27.CondTrue())
+                    {
+                        this.RunStateMachine(i, e, payload);
+                        PathConstraint.RecordReturnPath();
+                    }
+
+                    vs_cond_27.MergeBranch();
+                }
             }
         }
 
-        throw new SystemException("Unhandled event");
+        if (PathConstraint.MergedPcFeasible())
+        {
+            throw new SystemException("Unhandled event");
+        }
+
+        PathConstraint.PopFrame();
     }
 
     protected void SendMsg(ValueSummary<PMachine> other, ValueSummary<PInteger> e, ValueSummary<IPType> payload)
@@ -61,12 +104,17 @@ abstract class PMachine : IPType<PMachine>
 
     protected void PopState()
     {
-        this.retcode = Constants.EXECUTE_FINISHED;
+        this.retcode.Assign<int>(Constants.EXECUTE_FINISHED);
         ValueSummary<int> current_state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], 0);
         this.states.InvokeMethod<int>((_, a0) => _.RemoveAt(a0), 0);
-        if (this.ExitFunctions.GetIndex(current_state).InvokeBinary<PMachine.ExitFunction, bool>((l, r) => l != r, ValueSummary<PMachine.ExitFunction>.Null).Cond())
         {
-            this.ExitFunctions.GetIndex(current_state).Invoke();
+            var vs_cond_28 = (this.ExitFunctions.GetIndex(current_state).InvokeBinary<PMachine.ExitFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.ExitFunction>(null))).Cond();
+            if (vs_cond_28.CondTrue())
+            {
+                this.ExitFunctions.GetIndex(current_state).Invoke();
+            }
+
+            vs_cond_28.MergeBranch();
         }
     }
 
@@ -77,29 +125,44 @@ abstract class PMachine : IPType<PMachine>
 
     protected void Assert(ValueSummary<PBool> cond, ValueSummary<string> msg)
     {
-        if (cond.InvokeUnary<PBool>(_ => !_).Cond())
         {
-            throw new SystemException(msg);
+            var vs_cond_29 = (cond.InvokeUnary<PBool>(_ => !_)).Cond();
+            if (vs_cond_29.CondTrue())
+            {
+                throw new SystemException(msg);
+            }
+
+            vs_cond_29.MergeBranch();
         }
     }
 
     protected void Assert(ValueSummary<PBool> cond)
     {
-        if (cond.InvokeUnary<PBool>(_ => !_).Cond())
         {
-            throw new SystemException("Assertion failure");
+            var vs_cond_30 = (cond.InvokeUnary<PBool>(_ => !_)).Cond();
+            if (vs_cond_30.CondTrue())
+            {
+                throw new SystemException("Assertion failure");
+            }
+
+            vs_cond_30.MergeBranch();
         }
     }
 
     public void RunStateMachine(ValueSummary<int> state_idx, ValueSummary<PInteger> e, ValueSummary<IPType> payload)
     {
         ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], state_idx);
-        if (this.IsGotoTransition.GetIndex(state, e).Cond())
         {
-            this.states.InvokeMethod<int, int>((_, a0, a1) => _.RemoveRange(a0, a1), 0, state_idx);
+            var vs_cond_31 = (this.IsGotoTransition.GetIndex(state, e)).Cond();
+            if (vs_cond_31.CondTrue())
+            {
+                this.states.InvokeMethod<int, int>((_, a0, a1) => _.RemoveRange(a0, a1), 0, state_idx);
+            }
+
+            vs_cond_31.MergeBranch();
         }
 
-        this.retcode = Constants.EXECUTE_FINISHED;
+        this.retcode.Assign<int>(Constants.EXECUTE_FINISHED);
         ValueSummary<TransitionFunction> transition_fn = this.Transitions.GetIndex(state, e);
         transition_fn.Invoke(payload);
     }

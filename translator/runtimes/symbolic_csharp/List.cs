@@ -57,7 +57,7 @@ public class List<T> {
 		for (int i = start + count; i < this._count; i++) {
 			this.data [i - count] = this.data [i];
 		}
-		this._count -= count;
+		this._count = this._count - count;
 	}
 
 	public T this[int index] { 

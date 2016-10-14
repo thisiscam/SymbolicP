@@ -8,15 +8,15 @@ public struct PInteger : IPType<PInteger> {
 		this.value = new SymbolicInteger(value); 
     } 
 
+	public PInteger(SymbolicInteger value) 
+	{ 
+		this.value = value;
+	}
+
     public static implicit operator PInteger(int value) 
     { 
         return new PInteger(value); 
     }
-
-	public static implicit operator int(PInteger value) 
-	{ 
-		return value.value;
-	}
 
     public static explicit operator PInteger(SymbolicInteger value) {
         return new PInteger(value);
@@ -83,7 +83,7 @@ public struct PInteger : IPType<PInteger> {
 
 	public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PInteger> other)
 	{
-		return this.value == other.value.value;
+		return other.InvokeBinary<PInteger, SymbolicBool> ((_, a0) => _.value == a0.value, new ValueSummary<PInteger>(this));
 	}
 
 	public ValueSummary<SymbolicInteger> PTypeGetHashCode()

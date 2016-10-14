@@ -49,25 +49,15 @@ public struct PBool : IPType<PBool> {
 		return new PBool(a.value | b.value); 
 	}
 
-	public static bool operator true(PBool op)
-	{
-		return op.value;
-	}
-
-	public static bool operator false(PBool op)
-	{
-		return !op.value;
-	}
-
 	public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PBool> other)
 	{
-		return this.value == other.value.value;
+		return other.InvokeBinary<PBool, SymbolicBool> ((_, a0) => _.value == a0.value, new ValueSummary<PBool>(this));
 	}
 
 	public ValueSummary<SymbolicInteger> PTypeGetHashCode()
 	{
 		if (this.value.IsAbstract()) {
-			return new SymbolicInteger((BitVecExpr)SymbolicEngine.ctx.MkITE(this.value.AbstractValue, SymbolicEngine.ctx.MkBV(1, SymbolicInteger.INT_SIZE), SymbolicEngine.ctx.MkBV(0, SymbolicInteger.INT_SIZE)));
+			return new SymbolicInteger((BitVecExpr)PathConstraint.ctx.MkITE(this.value.AbstractValue, PathConstraint.ctx.MkBV(1, SymbolicInteger.INT_SIZE), PathConstraint.ctx.MkBV(0, SymbolicInteger.INT_SIZE)));
 		} else {
 			return new SymbolicInteger(this.value.ConcreteValue ? 1 : 0);
 		}

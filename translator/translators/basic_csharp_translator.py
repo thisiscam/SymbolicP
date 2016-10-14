@@ -141,22 +141,27 @@ class PProgramToCSharpTranslator(TranslatorBase):
             self.out_fn_body(machine, fn_name)
         self.out("}\n")
 
+    def get_csproj_template_parameters(self, paramters):
+        return paramters
+
     def create_csproj(self):
         runtime_srcs =  [os.path.basename(src) for src in glob.glob("{0}/*.cs".format(self.runtime_dir))]
         generated_srcs = [os.path.basename(src) for src in glob.glob("{0}/*.cs".format(self.out_dir))]
         loader = FileLoader(self.runtime_dir)
         csproj_template = loader.load_template("template.csproj.in")
-        with open("{0}/{0}.csproj".format(self.out_dir), "w+") as csprojf:
+        self.out_csproj_path = os.path.join(self.out_dir, "{0}.csproj".format(self.out_dir))
+        with open(self.out_csproj_path, "w+") as csprojf:
             csprojf.write(csproj_template.render(
-                {
-                    'generated_srcs': generated_srcs, 
-                    'runtime_srcs': runtime_srcs, 
-                    'project_name': self.out_dir, 
-                    'runtime_dir': os.path.abspath(self.runtime_dir),
-                    'lib_dir': os.path.abspath(os.path.dirname(__file__) + "/../libraries"),
-                    'guid': str(uuid.uuid1()).upper()
-                }
-            ))
+                self.get_csproj_template_parameters(
+                    {
+                        'generated_srcs': generated_srcs, 
+                        'runtime_srcs': runtime_srcs, 
+                        'project_name': self.out_dir, 
+                        'runtime_dir': os.path.abspath(self.runtime_dir),
+                        'lib_dir': os.path.abspath(os.path.dirname(__file__) + "/../libraries"),
+                        'guid': "{" + str(uuid.uuid1()).upper() + "}"
+                    }
+            )))
 
     def make_output_dir(self):
         if not os.path.exists(self.out_dir):
@@ -290,20 +295,19 @@ class PProgramToCSharpTranslator(TranslatorBase):
                         if len(self.pprogram.observes_map) > 0:
                             self.out("/* Observers */\n")
                             self.out("public static void AnnounceEvent({0} e, {1} payload) {{\n".format(self.translate_type(PTypeEvent), self.translate_type(PTypeAny)))
-                            self.out("switch(e) {")
                             for observed_event, observing_machines in self.pprogram.observes_map.items():
-                                self.out("case {0}: {{\n".format(self.translate_event(observed_event)))
+                                self.out("if(e == {0}) {{\n".format(self.translate_event(observed_event)))
                                 for m in observing_machines:
                                     self.out("{0}.ServeEvent({1}, payload);\n".format("monitor_" + m.name.lower(), self.translate_event(observed_event)))
-                                self.out("break;\n")
+                                self.out("return;\n")
                                 self.out("}\n")
-                            self.out("}\n}\n")
+                            self.out("}\n")
                         self.out("}\n")
 
-    pipline = [make_output_dir, create_proj_macros, generate_foreach_machine, create_csproj]
+    pipeline = [make_output_dir, create_proj_macros, generate_foreach_machine, create_csproj]
 
     def translate(self):
-        for procedure in self.pipline:
+        for procedure in self.pipeline:
             procedure(self)
     
     def allocate_local_var(self):

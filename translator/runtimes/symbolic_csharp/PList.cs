@@ -4,7 +4,7 @@ using System.Collections.Generic;
 class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T> {
 	public PInteger Count {
 		get {
-			return new PInteger(this._count);
+			return (PInteger)this._count;
 		}
 	}
 

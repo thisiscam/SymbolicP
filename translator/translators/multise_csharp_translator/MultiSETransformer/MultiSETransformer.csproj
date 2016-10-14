@@ -139,9 +139,6 @@
     <None Include="..\..\..\runtimes\multise_csharp\SymbolicBool.cs">
       <Link>multise_csharp\SymbolicBool.cs</Link>
     </None>
-    <None Include="..\..\..\runtimes\multise_csharp\SymbolicEngine.cs">
-      <Link>multise_csharp\SymbolicEngine.cs</Link>
-    </None>
     <None Include="..\..\..\runtimes\multise_csharp\SymbolicInteger.cs">
       <Link>multise_csharp\SymbolicInteger.cs</Link>
     </None>

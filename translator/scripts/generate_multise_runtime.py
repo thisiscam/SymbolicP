@@ -14,7 +14,7 @@ def main():
                     "PathConstraint.cs",
                     "PInteger.cs",
                     "Program.cs",
-                    "Scheduler.cs",
+                    # "Scheduler.cs",
                     "PBool.cs",
                 }
     transform_srcs = filter(lambda s: os.path.basename(s) not in ignore_srcs, all_srcs)

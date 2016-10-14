@@ -1,0 +1,4 @@
+[submodule "translator/libraries/BuDDySharp"]
+	path = translator/libraries/BuDDySharp
+	url = https://github.com/thisiscam/BuDDySharp.git
+	branch = swig_cpp
