@@ -627,22 +627,26 @@ public static class ValueSummaryExt
 	}
 
 	private static PathConstraint.BranchPoint CondConcreteHelper(bdd trueBDD, bdd falseBDD)
-	{
-#if DEBUG
-		var a0 = trueBDD.ToZ3Expr();
-		var a1 = falseBDD.ToZ3Expr();
-		PathConstraint.solver.Push();
-		PathConstraint.solver.Assert(PathConstraint.ctx.MkNot(PathConstraint.ctx.MkIff(a0, PathConstraint.ctx.MkNot(a1))));
-		var s = PathConstraint.solver.Check();	
-		PathConstraint.solver.Pop();
-		if (s != Status.UNSATISFIABLE) {
-			BuDDySharp.BuDDySharp.printdot(trueBDD);
-			BDDToZ3Wrap.PInvoke.debug_print_used_bdd_vars();
-			Debugger.Break();
-		}
-#endif
+	{		
 		var trueFeasible = !trueBDD.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(trueBDD.ToZ3Expr());
 		var falseFeasible = !falseBDD.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(falseBDD.ToZ3Expr());
+#if DEBUG
+		if (trueFeasible && falseFeasible) {
+			var a0 = trueBDD.ToZ3Expr();
+			var a1 = falseBDD.ToZ3Expr();
+			PathConstraint.solver.Push();
+			PathConstraint.solver.Assert(PathConstraint.ctx.MkAnd(a0, a1));
+			var s = PathConstraint.solver.Check();
+			PathConstraint.solver.Pop();
+			if (s != Status.UNSATISFIABLE) {
+				BuDDySharp.BuDDySharp.printdot(trueBDD);
+				BuDDySharp.BuDDySharp.printdot(falseBDD);
+				BDDToZ3Wrap.PInvoke.debug_print_used_bdd_vars();
+				Console.WriteLine(a0);
+				Debugger.Break();
+			}
+		}
+#endif
 		if (trueFeasible) {
 			if (falseFeasible) {
 				return new PathConstraint.BranchPoint(trueBDD, falseBDD, PathConstraint.BranchPoint.State.Both);
