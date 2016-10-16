@@ -65,7 +65,7 @@ public class ValueSummary<T>
 			}
 		}
 #if DEBUG
-		ret.AssertPredExcusion();
+		ret.AssertPredExclusion();
 #endif
 		return ret;
 	}
@@ -116,14 +116,14 @@ public class ValueSummary<T>
 			if (EqualityComparer<T>.Default.Equals(guardedValue.value, val)) {
 				guardedValue.bddForm = guardedValue.bddForm.Or(pred);
 #if DEBUG
-				this.AssertPredExcusion();
+				this.AssertPredExclusion();
 #endif
 				return;
 			}
 		}
 		this.values.Add(new GuardedValue<T>(pred, val));
 #if DEBUG
-		this.AssertPredExcusion();
+		this.AssertPredExclusion();
 #endif
 	}
 
@@ -228,7 +228,7 @@ public class ValueSummary<T>
 		var pc = PathConstraint.GetPC();
 		foreach (var guardedTarget in this.values) {
 			bdd newPC = pc.And (guardedTarget.bddForm);
-			if (!newPC.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+			if (!newPC.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(guardedTarget.bddForm.ToZ3Expr())) {
 				NullTargetCheck((c, v) => 
 				{
 					PathConstraint.PushScope();
@@ -282,7 +282,7 @@ public class ValueSummary<T>
 		var pc = PathConstraint.GetPC();
 		foreach (var guardedTarget in this.values) {
 			bdd newPC = pc.And (guardedTarget.bddForm);
-			if (!newPC.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+			if (!newPC.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(guardedTarget.bddForm.ToZ3Expr())) {
 				NullTargetCheck((c, v) => 
 				{
 					PathConstraint.PushScope();
@@ -343,7 +343,7 @@ public class ValueSummary<T>
 			}
 		}
 #if DEBUG
-		ret.AssertPredExcusion();
+		ret.AssertPredExclusion();
 #endif
 		return ret;
 	}
@@ -636,6 +636,8 @@ public static class ValueSummaryExt
 		var s = PathConstraint.solver.Check();	
 		PathConstraint.solver.Pop();
 		if (s != Status.UNSATISFIABLE) {
+			BuDDySharp.BuDDySharp.printdot(trueBDD);
+			BDDToZ3Wrap.PInvoke.debug_print_used_bdd_vars();
 			Debugger.Break();
 		}
 #endif
@@ -857,7 +859,7 @@ public static class ValueSummaryExt
 
 
 #region DEBUG_VS
-	public static void AssertPredExcusion<T>(this ValueSummary<T> x)
+	public static void AssertPredExclusion<T>(this ValueSummary<T> x)
 	{
 		PathConstraint.solver.Push();
 		var a = PathConstraint.ctx.MkTrue();
