@@ -98,7 +98,7 @@ Z3_ast bdd_to_Z3_formula(bdd* r)
 	for (unordered_map<int, Z3_ast>::iterator it = visited.begin(); it != visited.end(); ++it) {
 		Z3_dec_ref(ctx, it->second);
 	}
-	printf("traversal count: %d, bddnodecount: %d\n", i, bdd_nodecount(*r));
+	// printf("traversal count: %d, bddnodecount: %d\n", i, bdd_nodecount(*r));
 	return ret;
 }
 

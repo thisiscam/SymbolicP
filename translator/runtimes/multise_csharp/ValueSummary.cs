@@ -112,15 +112,14 @@ public class ValueSummary<T>
 
 	public void AddValue(bdd pred, T val)
 	{
+#if !NO_MERGE_VS
 		foreach (var guardedValue in this.values) {
 			if (EqualityComparer<T>.Default.Equals(guardedValue.value, val)) {
 				guardedValue.bddForm = guardedValue.bddForm.Or(pred);
-#if DEBUG
-				this.AssertPredExclusion();
-#endif
 				return;
 			}
 		}
+#endif
 		this.values.Add(new GuardedValue<T>(pred, val));
 #if DEBUG
 		this.AssertPredExclusion();
@@ -672,6 +671,12 @@ public static class ValueSummaryExt
 		}
 	}
 
+#if NO_MERGE_VS
+	public static PathConstraint.BranchPoint _Cond(this ValueSummary<bool> b)
+	{
+		return _Cond(b.Cast<SymbolicBool>((arg) => (SymbolicBool)arg));
+	}
+#else
 	public static PathConstraint.BranchPoint _Cond(this ValueSummary<bool> b)
 	{
 		var pc = PathConstraint.GetPC();
@@ -703,7 +708,8 @@ public static class ValueSummaryExt
 			else {
 				return CondConcreteHelper(b.values[1].bddForm.And(pc), b.values[0].bddForm.And(pc));
 			}
-		} else {
+		}
+		else {
 				if (!PathConstraint.EvalPc())
 				{
 					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None);	
@@ -714,7 +720,8 @@ public static class ValueSummaryExt
 				}
 		}
 	}
-	
+#endif
+
 	public static PathConstraint.BranchPoint Cond(this ValueSummary<bool> b) 
 	{
 		var ret = _Cond(b);
