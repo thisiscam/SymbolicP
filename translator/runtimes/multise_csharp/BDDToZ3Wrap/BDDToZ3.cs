@@ -22,7 +22,6 @@ namespace BDDToZ3Wrap
 		public static BoolExpr ToZ3Expr(this bdd x) {
 			Watch.Start();
 			var y = PInvoke.bdd_to_Z3_formula(bdd.getCPtr(x));
-			//Console.WriteLine("count: {0}", BuDDySharp.BuDDySharp.nodecount(x));	
 			Watch.Stop();
 			var ret = (BoolExpr)ctx.WrapAST (y);
 			return ret;
