@@ -675,15 +675,25 @@ public static class ValueSummaryExt
 	public static PathConstraint.BranchPoint _Cond(this ValueSummary<bool> b)
 	{
 		var pc = PathConstraint.GetPC();
-		if (b.values.Count > 2) { Debugger.Break();}
+		if (b.values.Count > 2) 
+		{ 
+			Debugger.Break();
+		}
 		if (b.values.Count == 1) {
+			var bddForm = b.values[0].bddForm.And(pc);
+#if DEBUG
+			if (!PathConstraint.SolveBooleanExpr(bddForm.ToZ3Expr())) 
+			{
+				Debugger.Break();
+			}
+#endif
 			if (b.values[0].value) {
-				//if (!pc.EqualEqual(b.values[0].bddForm)) { Debugger.Break();}
-				return new PathConstraint.BranchPoint(b.values[0].bddForm.And(pc), null, PathConstraint.BranchPoint.State.True);
+
+				return new PathConstraint.BranchPoint(bddForm, null, PathConstraint.BranchPoint.State.True);
 			}
 			else {
 				//if (!pc.EqualEqual(b.values[0].bddForm)) { Debugger.Break();}
-				return new PathConstraint.BranchPoint(null, b.values[0].bddForm.And(pc), PathConstraint.BranchPoint.State.False);
+				return new PathConstraint.BranchPoint(null, bddForm, PathConstraint.BranchPoint.State.False);
 			}
 		}
 		else if (b.values.Count == 2) {
@@ -709,7 +719,6 @@ public static class ValueSummaryExt
 	{
 		var ret = _Cond(b);
 		PathConstraint.PushScope();
-		PathConstraint.GetCurrentFrame().return_stack.Push(BuDDySharp.BuDDySharp.bddfalse);
 		return ret;
  	}
 
@@ -786,7 +795,6 @@ public static class ValueSummaryExt
 	{
 		var ret = _Cond(b);
 		PathConstraint.PushScope();
-		PathConstraint.GetCurrentFrame().return_stack.Push(BuDDySharp.BuDDySharp.bddfalse);
 		return ret;
  	}
 	
@@ -804,62 +812,8 @@ public static class ValueSummaryExt
 	{
 		var ret = _Cond(b);
 		PathConstraint.PushScope();
-		PathConstraint.GetCurrentFrame().return_stack.Push(BuDDySharp.BuDDySharp.bddfalse);
 		return ret;
  	}
-
-	public static bool LoopHelper(Func<PathConstraint.BranchPoint> f)
-	{
-		var not_return_paths = PathConstraint.GetCurrentFrame().return_stack.Peek().Not();
-		PathConstraint.AddAxiom(not_return_paths);
-		if (PathConstraint.EvalPc()) {
-			var c = f.Invoke();
-			switch (c.state) {
-				case PathConstraint.BranchPoint.State.Both:
-				case PathConstraint.BranchPoint.State.True: 
-					{
-						PathConstraint.AddAxiom(c.trueBDD);
-						return true;
-					}
-				case PathConstraint.BranchPoint.State.None:
-				case PathConstraint.BranchPoint.State.False: 
-					{
-						PathConstraint.MergeBranch();
-						return false;
-					}
-				default: 
-					{
-						throw new Exception("Not reachable");
-					}
-			}
-		}
-		else 
-		{
-			PathConstraint.MergeBranch();
-			return false;	
- 		}
-	}
-
-	public static bool Loop(this ValueSummary<bool> b)
-	{
-		return LoopHelper(() => _Cond(b));
-	}
-
-	public static bool Loop(this ValueSummary<SymbolicBool> b)
-	{
-		return LoopHelper(() => _Cond(b));
-	}
-	
-	public static bool Loop(this ValueSummary<PBool> b)
-	{
-		return LoopHelper(() => _Cond(b));
-	}
-
-	public static void RecordReturn<T>(this ValueSummary<T> x, ValueSummary<T> other)
-	{
-		PathConstraint.RecordReturnPath();
-		x.Merge(other, PathConstraint.GetPC());
-	}
 
 
 #region DEBUG_VS

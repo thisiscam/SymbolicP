@@ -11,11 +11,10 @@ set(BUDDY_DIR ${BUDDYSHARP_DIR}/buddy/)
 
 include_directories(${BUDDY_DIR}/src)
 
-file(GLOB BUDDY_INCLUDES ${BUDDY_DIR}/src/*.h)
-
+include_directories(${BUDDYSHARP_DIR}/build/buddy/src)
 link_directories(${BUDDYSHARP_DIR}/build/buddy/src)
 
-add_library(BDD_Z3_Wrap MODULE ${SRC} ${BUDDY_INCLUDES})
+add_library(BDD_Z3_Wrap MODULE ${SRC})
 
 find_library(Z3_LIBRARY
   NAMES z3

@@ -3,6 +3,7 @@ using Microsoft.Z3;
 using BuDDySharp;
 using System.Runtime.InteropServices;
 using System.Reflection;
+using System.Diagnostics;
 
 namespace BDDToZ3Wrap
 {
@@ -16,9 +17,15 @@ namespace BDDToZ3Wrap
 			PInvoke.init_bdd_z3_wrap (nCtx);
 			Converter.ctx = ctx;
 		}
-
+		
+		public static Stopwatch Watch = new Stopwatch();
 		public static BoolExpr ToZ3Expr(this bdd x) {
-			return (BoolExpr)ctx.WrapAST (PInvoke.bdd_to_Z3_formula(bdd.getCPtr(x)));
+			Watch.Start();
+			var y = PInvoke.bdd_to_Z3_formula(bdd.getCPtr(x));
+			//Console.WriteLine("count: {0}", BuDDySharp.BuDDySharp.nodecount(x));	
+			Watch.Stop();
+			var ret = (BoolExpr)ctx.WrapAST (y);
+			return ret;
 		}
 
 		public static bdd ToBDD(this BoolExpr expr) {

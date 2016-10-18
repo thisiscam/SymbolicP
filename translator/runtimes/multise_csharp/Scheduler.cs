@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using BDDToZ3Wrap;
 using Microsoft.Z3;
 
 class Scheduler
@@ -19,142 +18,135 @@ class Scheduler
         }
     }
 
-    ValueSummary<List<PMachine>> machines = ValueSummary<List<PMachine>>.InitializeFrom(new ValueSummary<List<PMachine>>(new List<PMachine>()));
+    ValueSummary<List<PMachine>> machines = new ValueSummary<List<PMachine>>(new List<PMachine>());
 
     public ValueSummary<bool> ChooseAndRunMachine()
     {
         PathConstraint.PushFrame();
         var vs_ret_0 = new ValueSummary<bool>();
-        
-        ValueSummary<List<SchedulerChoice>> choices = new List<SchedulerChoice>();
+        ValueSummary<// Collect all servable events
+        List<SchedulerChoice>> choices = new ValueSummary<List<Scheduler.SchedulerChoice>>(new List<SchedulerChoice>());
+        var vs_cond_53 = PathConstraint.BeginLoop();
+        for (ValueSummary<int> i = 0; vs_cond_53.Loop(i.InvokeBinary<int, bool>((l, r) => l < r, this.machines.GetField<int>(_ => _.Count))); i.Increment())
         {
-            PathConstraint.BeginLoop();
-            for (ValueSummary<int> i = 0; i.InvokeBinary<int, bool>((l, r) => l < r, this.machines.GetField<int>(_ => _.Count)).Loop(); i.Increment())
+            ValueSummary<bool> vs_lgc_tmp_0;
+            ValueSummary<PMachine> machine = this.machines.InvokeMethod<int, PMachine>((_, a0) => _[a0], i);
+            ValueSummary<// Collect from send queue
+            List<SendQueueItem>> sendQueue = machine.GetConstField<List<SendQueueItem>>(_ => _.sendQueue);
+            ValueSummary<bool> do_loop = true;
+            var vs_cond_50 = PathConstraint.BeginLoop();
+            for (ValueSummary<int> j = 0; vs_cond_50.Loop((new Func<ValueSummary<bool>>(() =>
             {
-                ValueSummary<bool> vs_lgc_tmp_0;
-                ValueSummary<PMachine> machine = ValueSummary<PMachine>.InitializeFrom(this.machines.InvokeMethod<int, PMachine>((_, a0) => _[a0], i));
-                ValueSummary<// Collect from send queue
-                List<SendQueueItem>> sendQueue = ValueSummary<// Collect from send queue
-                List<SendQueueItem>>.InitializeFrom(machine.GetConstField<List<SendQueueItem>>(_ => _.sendQueue));
-                ValueSummary<bool> do_loop = ValueSummary<bool>.InitializeFrom(true);
+                var vs_cond_64 = ((vs_lgc_tmp_0 = ValueSummary<bool>.InitializeFrom(do_loop))).Cond();
+                var vs_cond_ret_64 = new ValueSummary<bool>();
+                if (vs_cond_64.CondTrue())
+                    vs_cond_ret_64.Merge(vs_lgc_tmp_0.InvokeBinary<bool, bool>((l, r) => l & r, j.InvokeBinary<int, bool>((l, r) => l < r, sendQueue.GetField<int>(_ => _.Count))));
+                if (vs_cond_64.CondFalse())
+                    vs_cond_ret_64.Merge(vs_lgc_tmp_0);
+                vs_cond_64.MergeBranch();
+                return vs_cond_ret_64;
+            }
+
+            )())); j.Increment())
+            {
+                ValueSummary<SendQueueItem> item = sendQueue.InvokeMethod<int, SendQueueItem>((_, a0) => _[a0], j);
+                var vs_cond_49 = (item.GetField<PInteger>(_ => _.e).InvokeBinary<PInteger, PBool>((l, r) => l == r, (PInteger)Constants.EVENT_NEW_MACHINE)).Cond();
                 {
-                    PathConstraint.BeginLoop();
-                    for (ValueSummary<int> j = 0; (new  Func<ValueSummary<bool>>(() =>
+                    if (vs_cond_49.CondTrue())
                     {
-                        var vs_cond_8 = ((vs_lgc_tmp_0 = ValueSummary<bool>.InitializeFrom(do_loop))).Cond();
-                        var vs_cond_ret_8 = new ValueSummary<bool>();
-                        if (vs_cond_8.CondTrue())
-                            vs_cond_ret_8.Merge(vs_lgc_tmp_0.InvokeBinary<bool, bool>((l, r) => l & r, j.InvokeBinary<int, bool>((l, r) => l < r, sendQueue.GetField<int>(_ => _.Count))));
-                        if (vs_cond_8.CondFalse())
-                            vs_cond_ret_8.Merge(vs_lgc_tmp_0);
-                        vs_cond_8.MergeBranch();
-                        return vs_cond_ret_8;
+                        choices.InvokeMethod<Scheduler.SchedulerChoice>((_, a0) => _.Add(a0), new ValueSummary<Scheduler.SchedulerChoice>(new SchedulerChoice(machine, j, -1)));
+                        do_loop.Assign<bool>(false);
                     }
 
-                    )()).Loop(); j.Increment())
+                    if (vs_cond_49.CondFalse())
                     {
-                        ValueSummary<SendQueueItem> item = ValueSummary<SendQueueItem>.InitializeFrom(sendQueue.InvokeMethod<int, SendQueueItem>((_, a0) => _[a0], j));
+                        ValueSummary<int> state_idx = item.GetField<PMachine>(_ => _.target).InvokeMethod<PInteger, int>((_, a0) => _.CanServeEvent(a0), item.GetField<PInteger>(_ => _.e));
+                        var vs_cond_48 = (state_idx.InvokeBinary<int, bool>((l, r) => l >= r, 0)).Cond();
                         {
-                            var vs_cond_43 = (item.GetField<PInteger>(_ => _.e).InvokeBinary<PInteger, PBool>((l, r) => l == r, (PInteger)Constants.EVENT_NEW_MACHINE)).Cond();
-                            if (vs_cond_43.CondTrue())
+                            if (vs_cond_48.CondTrue())
                             {
-                                choices.InvokeMethod<SchedulerChoice>((_, a0) => _.Add(a0), new SchedulerChoice(machine, j, -1));                                
+                                choices.InvokeMethod<Scheduler.SchedulerChoice>((_, a0) => _.Add(a0), new ValueSummary<Scheduler.SchedulerChoice>(new SchedulerChoice(machine, j, state_idx)));
                                 do_loop.Assign<bool>(false);
                             }
-
-                            if (vs_cond_43.CondFalse())
-                            {
-                                ValueSummary<int> state_idx = ValueSummary<int>.InitializeFrom(
-										item.GetField<PMachine>(_ => _.target)
-										.InvokeMethod<PInteger, int>((_, a0) => _.CanServeEvent(a0), 
-										item.GetField<PInteger>(_ => _.e)));
-                                {
-                                    var vs_cond_44 = (state_idx.InvokeBinary<int, bool>((l, r) => l >= r, 0)).Cond();
-                                    if (vs_cond_44.CondTrue())
-                                    {
-                                        choices.InvokeMethod<SchedulerChoice>((_, a0) => _.Add(a0), new SchedulerChoice(machine, j, state_idx));                        
-                                        do_loop.Assign<bool>(false);
-                                    }
-
-                                    vs_cond_44.MergeBranch();
-                                }
-                            }
-
-                            vs_cond_43.MergeBranch();
                         }
-                    }
-                }
-				
-                ValueSummary<// Machine is state that can serve null event?
-                int> null_state_idx = ValueSummary<// Machine is state that can serve null event?
-                int>.InitializeFrom(machine.InvokeMethod<PInteger, int>((_, a0) => _.CanServeEvent(a0), (PInteger)Constants.EVENT_NULL));
-                {
-                    var vs_cond_45 = (null_state_idx.InvokeBinary<int, bool>((l, r) => l >= r, 0)).Cond();
-                    if (vs_cond_45.CondTrue())
-                    {
-                        choices.InvokeMethod<SchedulerChoice>((_, a0) => _.Add(a0), new SchedulerChoice(machine, -1, null_state_idx));                                
-                    }
 
-                    vs_cond_45.MergeBranch();
+                        vs_cond_48.MergeBranch();
+                    }
                 }
+
+                vs_cond_49.MergeBranch();
+            }
+
+            vs_cond_50.MergeBranch();
+            ValueSummary<// Machine is state that can serve null event?
+            int> null_state_idx = machine.InvokeMethod<PInteger, int>((_, a0) => _.CanServeEvent(a0), (PInteger)Constants.EVENT_NULL);
+            var vs_cond_51 = (null_state_idx.InvokeBinary<int, bool>((l, r) => l >= r, 0)).Cond();
+            {
+                if (vs_cond_51.CondTrue())
+                {
+                    choices.InvokeMethod<Scheduler.SchedulerChoice>((_, a0) => _.Add(a0), new ValueSummary<Scheduler.SchedulerChoice>(new SchedulerChoice(machine, -1, null_state_idx)));
+                }
+            }
+
+            vs_cond_51.MergeBranch();
+        }
+
+        vs_cond_53.MergeBranch();
+        var vs_cond_54 = (choices.GetField<int>(_ => _.Count).InvokeBinary<int, bool>((l, r) => l == r, 0)).Cond();
+        {
+            if (vs_cond_54.CondTrue())
+            {
+                PathConstraint.RecordReturnPath(vs_ret_0, false, vs_cond_54);
             }
         }
 
+        if (vs_cond_54.MergeBranch())
         {
-            var vs_cond_46 = choices.GetField((_) => _.Count).InvokeBinary<int, bool>((l, r) => l == r, 0).Cond();
-            if (vs_cond_46.CondTrue())
+            
+            PathConstraint.solver.Push();
+            ValueSummary<// Choose one and remove from send queue
+            SymbolicInteger> idx = PathConstraint.NewSymbolicIntVar("SI", 0, choices.GetField((_) => _.Count));
+            ValueSummary<SchedulerChoice> chosen = choices.InvokeMethod<SymbolicInteger, SchedulerChoice>((arg, a0) => arg[a0], idx);
+        	PathConstraint.solver.Pop();
+        	
+            ValueSummary<int> sourceMachineSendQueueIndex = chosen.GetField<int>(_ => _.sourceMachineSendQueueIndex);
+            var vs_cond_55 = (sourceMachineSendQueueIndex.InvokeBinary<int, bool>((l, r) => l < r, 0)).Cond();
             {
-                vs_ret_0.RecordReturn(false);
-            }
-			
-			vs_cond_46.MergeBranch();
-			
-            if (PathConstraint.MergedPcFeasible())
-            {
-                ValueSummary<// Choose one and remove from send queue
-				SymbolicInteger> idx = PathConstraint.NewSymbolicIntVar("SI", 0, choices.GetField((_) => _.Count));
-		
-				ValueSummary<SchedulerChoice> chosen = choices.InvokeMethod<SymbolicInteger, SchedulerChoice>((arg, a0) => arg[a0], idx);
-                ValueSummary<int> sourceMachineSendQueueIndex = ValueSummary<int>.InitializeFrom(chosen.GetField<int>(_ => _.sourceMachineSendQueueIndex));
+                if (vs_cond_55.CondTrue())
                 {
-                    var vs_cond_47 = (sourceMachineSendQueueIndex.InvokeBinary<int, bool>((l, r) => l < r, 0)).Cond();
-                    if (vs_cond_47.CondTrue())
-                    {
-                        ValueSummary<PMachine> chosenTargetMachine = ValueSummary<PMachine>.InitializeFrom(chosen.GetField<PMachine>(_ => _.sourceMachine));
-                        Console.WriteLine(chosenTargetMachine.ToString() + chosenTargetMachine.GetHashCode() + " executes EVENT_NULL");
-                        chosenTargetMachine.InvokeMethod<int, PInteger, IPType>((_, a0, a1, a2) => _.RunStateMachine(a0, a1, a2), chosen.GetField<int>(_ => _.targetMachineStateIndex), (PInteger)Constants.EVENT_NULL, new ValueSummary<IPType>(null));
-                    }
+                    ValueSummary<PMachine> chosenTargetMachine = chosen.GetField<PMachine>(_ => _.sourceMachine);
+                    Console.WriteLine(chosenTargetMachine.ToString() + chosenTargetMachine.GetHashCode() + " executes EVENT_NULL");
+                    chosenTargetMachine.InvokeMethod<int, PInteger, IPType>((_, a0, a1, a2) => _.RunStateMachine(a0, a1, a2), chosen.GetField<int>(_ => _.targetMachineStateIndex), (PInteger)Constants.EVENT_NULL, new ValueSummary<IPType>(null));
+                }
 
-                    if (vs_cond_47.CondFalse())
+                if (vs_cond_55.CondFalse())
+                {
+                    ValueSummary<PMachine> chosenSourceMachine = chosen.GetField<PMachine>(_ => _.sourceMachine);
+                    ValueSummary<SendQueueItem> dequeuedItem = chosenSourceMachine.GetConstField<List<SendQueueItem>>(_ => _.sendQueue).InvokeMethod<int, SendQueueItem>((_, a0) => _[a0], sourceMachineSendQueueIndex);
+                	chosenSourceMachine.GetConstField<List<SendQueueItem>>(_ => _.sendQueue).InvokeMethod<int>((_, a0) => _.RemoveAt(a0), sourceMachineSendQueueIndex);
+                    var vs_cond_52 = (dequeuedItem.GetField<PInteger>(_ => _.e).InvokeBinary<PInteger, PBool>((l, r) => l == r, (PInteger)Constants.EVENT_NEW_MACHINE)).Cond();
                     {
-                        ValueSummary<PMachine> chosenSourceMachine = ValueSummary<PMachine>.InitializeFrom(chosen.GetField<PMachine>(_ => _.sourceMachine));
-                        ValueSummary<SendQueueItem> dequeuedItem = ValueSummary<SendQueueItem>.InitializeFrom(chosenSourceMachine.GetConstField<List<SendQueueItem>>(_ => _.sendQueue).InvokeMethod<int, SendQueueItem>((_, a0) => _[a0], sourceMachineSendQueueIndex));
-						chosenSourceMachine.GetConstField<List<SendQueueItem>>(_ => _.sendQueue).InvokeMethod<int>((_, a0) => _.RemoveAt(a0), sourceMachineSendQueueIndex);
+                        if (vs_cond_52.CondTrue())
                         {
-                            var vs_cond_48 = (dequeuedItem.GetField<PInteger>(_ => _.e).InvokeBinary<PInteger, PBool>((l, r) => l == r, (PInteger)Constants.EVENT_NEW_MACHINE)).Cond();
-							if (vs_cond_48.CondTrue())
-                            {
-                                ValueSummary<PMachine> newMachine = ValueSummary<PMachine>.InitializeFrom(dequeuedItem.GetField<PMachine>(_ => _.target));
-                                Console.WriteLine(chosenSourceMachine.ToString() + chosenSourceMachine.GetHashCode() + " creates " + newMachine.ToString() + chosenSourceMachine.GetHashCode());
-								this.StartMachine(newMachine, dequeuedItem.GetField<IPType>(_ => _.payload));
-                            }
+                            ValueSummary<PMachine> newMachine = dequeuedItem.GetField<PMachine>(_ => _.target);
+                            Console.WriteLine(chosenSourceMachine.ToString() + chosenSourceMachine.GetHashCode() + " creates " + newMachine.ToString() + chosenSourceMachine.GetHashCode());
+                            this.StartMachine(newMachine, dequeuedItem.GetField<IPType>(_ => _.payload));
+                        }
 
-                            if (vs_cond_48.CondFalse())
-                            {
-                                ValueSummary<PMachine> targetMachine = ValueSummary<PMachine>.InitializeFrom(dequeuedItem.GetField<PMachine>(_ => _.target));
-                                Console.WriteLine(chosenSourceMachine.ToString() + chosenSourceMachine.GetHashCode() + " sends event " + dequeuedItem.GetField<PInteger>(_ => _.e).ToString() + " to " + targetMachine.ToString() + targetMachine.GetHashCode());
-								targetMachine.InvokeMethod<int, PInteger, IPType>((_, a0, a1, a2) => _.RunStateMachine(a0, a1, a2), chosen.GetField<int>(_ => _.targetMachineStateIndex), dequeuedItem.GetField<PInteger>(_ => _.e), dequeuedItem.GetField<IPType>(_ => _.payload));
-							}
-
-                            vs_cond_48.MergeBranch();
+                        if (vs_cond_52.CondFalse())
+                        {
+                            ValueSummary<PMachine> targetMachine = dequeuedItem.GetField<PMachine>(_ => _.target);
+                            Console.WriteLine(chosenSourceMachine.ToString() + chosenSourceMachine.GetHashCode() + " sends event " + dequeuedItem.GetField<PInteger>(_ => _.e).ToString() + " to " + targetMachine.ToString() + targetMachine.GetHashCode());
+                            targetMachine.InvokeMethod<int, PInteger, IPType>((_, a0, a1, a2) => _.RunStateMachine(a0, a1, a2), chosen.GetField<int>(_ => _.targetMachineStateIndex), dequeuedItem.GetField<PInteger>(_ => _.e), dequeuedItem.GetField<IPType>(_ => _.payload));
                         }
                     }
 
-                    vs_cond_47.MergeBranch();
+                    vs_cond_52.MergeBranch();
                 }
-
-                vs_ret_0.RecordReturn(true);
             }
+
+            vs_cond_55.MergeBranch();
+            PathConstraint.RecordReturnPath(vs_ret_0, true);
         }
 
         PathConstraint.PopFrame();

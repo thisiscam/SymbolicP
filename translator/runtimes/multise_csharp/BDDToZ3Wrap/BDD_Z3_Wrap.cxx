@@ -42,23 +42,28 @@ void init_bdd_z3_wrap(void* c)
 	ctx = (Z3_context)c;
 }
 
-static Z3_ast _bdd_to_Z3_formula(bdd root)
+static Z3_ast _bdd_to_Z3_formula(bdd root, unordered_map<int, Z3_ast> &visited, int* count)
 {
 	// TODO, optimize to make smt form more compact? e.g. using ITE, 
 	// or switch over shape of root for possible simplier forms
+	*count += 1;
+	Z3_ast ret;
+	if(visited.count(root.id()) > 0) {
+		ret = visited[root.id()];
+		Z3_inc_ref(ctx, ret);
+		return ret;
+	}
 	if(root == bddtrue) {
-		Z3_ast ret = Z3_mk_true(ctx);
+		ret = Z3_mk_true(ctx);
 		Z3_inc_ref(ctx, ret);
-		return ret;
 	} else if (root == bddfalse) {
-		Z3_ast ret = Z3_mk_false(ctx);
+		ret = Z3_mk_false(ctx);
 		Z3_inc_ref(ctx, ret);
-		return ret;
 	} else {
 		Z3_ast t = bdd_vars_to_z3_formula[bdd_var(root)];
 
-		Z3_ast left = _bdd_to_Z3_formula(bdd_low(root));
-		Z3_ast right = _bdd_to_Z3_formula(bdd_high(root));
+		Z3_ast left = _bdd_to_Z3_formula(bdd_low(root), visited, count);
+		Z3_ast right = _bdd_to_Z3_formula(bdd_high(root), visited, count);
 
 		Z3_ast not_t = Z3_mk_not(ctx, t);
 		Z3_inc_ref(ctx, not_t);
@@ -75,19 +80,25 @@ static Z3_ast _bdd_to_Z3_formula(bdd root)
 
 		Z3_ast const or_args[] = {t_and_not_left, t_and_right};
 
-		Z3_ast ret = Z3_mk_or(ctx, 2, or_args);
+		ret = Z3_mk_or(ctx, 2, or_args);
 		Z3_inc_ref(ctx, ret);
 		Z3_dec_ref(ctx, t_and_not_left);
 		Z3_dec_ref(ctx, t_and_right);
-		return ret;
 	}
+	Z3_inc_ref(ctx, ret);
+	visited[root.id()] = ret;
+	return ret;
 }
 
 Z3_ast bdd_to_Z3_formula(bdd* r)
 {
-	Z3_ast ret = _bdd_to_Z3_formula(*r);
-	Z3_ast ret_simplified = Z3_simplify(ctx, ret);
-	Z3_inc_ref(ctx, ret_simplified);
+	int i = 0;
+	unordered_map<int, Z3_ast> visited;
+	Z3_ast ret = _bdd_to_Z3_formula(*r, visited, &i);
+	for (unordered_map<int, Z3_ast>::iterator it = visited.begin(); it != visited.end(); ++it) {
+		Z3_dec_ref(ctx, it->second);
+	}
+	printf("traversal count: %d, bddnodecount: %d\n", i, bdd_nodecount(*r));
 	return ret;
 }
 

@@ -7,74 +7,18 @@ using SCG = System.Collections.Generic;
 using BDDToZ3Wrap;
 
 
-
-public class PathConstraint
+public partial class PathConstraint
 {
 	public static Context ctx;
 	public static Solver solver;
-
-	public struct BranchPoint
-	{
-		public enum State
-		{
-			Both,
-			True,
-			False,
-			None
-		}
-
-		public State state;
-
-		public bdd trueBDD;
-		public bdd falseBDD;
-
-		public BranchPoint(bdd trueBDD, bdd falseBDD, State state)
-		{
-			this.state = state;
-			this.trueBDD = trueBDD;
-			this.falseBDD = falseBDD;
-		}
-
-		public bool CondTrue()
-		{
-			var takeBranch = state == State.Both || state == State.True;
-			if (takeBranch) {
-				PathConstraint.AddAxiom(this.trueBDD);
-			}
-			return takeBranch;
-		}
-
-		public bool CondFalse()
-		{
-			if (state == State.Both) {
-				PathConstraint.pcs[PathConstraint.pcs.Count - 1] = PathConstraint.pcs[PathConstraint.pcs.Count - 2].And(this.falseBDD);
-				return true;
-			}
-			else if (state == State.False) {
-				PathConstraint.AddAxiom(this.falseBDD);
-				return true;
-			}
-			else {
-				return false;
-			}
-		}
-
-		public void MergeBranch()
-		{
-			PathConstraint.MergeBranch();
-		}
-	}
 
 	public class Frame
 	{
 		public int pcs_idx;
 
-		public SCG.Stack<bdd> return_stack = new SCG.Stack<bdd>();
-
 		public Frame(int pcs_idx)
 		{
 			this.pcs_idx = pcs_idx;
-			return_stack.Push(BuDDySharp.BuDDySharp.bddfalse);
 		}
 	}
 
@@ -126,17 +70,6 @@ public class PathConstraint
 		pcs.RemoveRange(pcs.Count - count, count);
 	}
 
-	//public static bool TryAddAxiom(bdd bddForm)
-	//{
-	//	bdd newPC = pcs[pcs.Count - 1].And (bddForm);
-	//	if (newPC.EqualEqual (BuDDySharp.BuDDySharp.bddfalse)) {
-	//		return false;
-	//	} else {
-	//		pcs [pcs.Count - 1] = newPC;
-	//		return true;
-	//	}
-	//}
-
 	public static void PushFrame()
 	{
 		PushScope();
@@ -150,7 +83,7 @@ public class PathConstraint
 
 	public static void PopFrame()
 	{
-		var top = frames.Pop();
+		frames.Pop();
 		PopScope();
 	}
 
@@ -159,49 +92,73 @@ public class PathConstraint
 		return frames.Peek();
 	}
 
-	public static void RecordReturnPath()
+#region record_return_paths
+	public static void RecordReturnPath<T>(ValueSummary<T> ret, ValueSummary<T> val, BranchPoint bp)
+	{
+		ret.Merge(val);
+		RecordReturnPath(bp);
+	}
+	
+	public static void RecordReturnPath(BranchPoint bp)
 	{
 		var pc = GetPC();
-		var return_stack = GetCurrentFrame().return_stack;
-		var top = return_stack.Pop();
-		return_stack.Push(top.Or(pc));
+		bp.RecordReturn(true, pc);
+	}
+	
+	public static void RecordReturnPath<T>(ValueSummary<T> ret, ValueSummary<T> val, LoopPoint bp)
+	{
+		ret.Merge(val);
+		RecordReturnPath(bp);
+	}
+	
+	public static void RecordReturnPath(LoopPoint bp)
+	{
+		var pc = GetPC();
+		bp.RecordReturn(true, pc);
 	}
 
-	public static void BeginLoop()
+	public static void RecordReturnPath<T>(ValueSummary<T> ret, ValueSummary<T> val)
+	{
+		ret.Merge(val);
+	}
+#endregion
+
+	public static LoopPoint BeginLoop()
 	{
 		PushScope();
-		PathConstraint.GetCurrentFrame().return_stack.Push(BuDDySharp.BuDDySharp.bddfalse);
+		return LoopPoint.NewLoopPoint();
 	}
 
-	public static void MergeBranch()
-	{
-		var return_stack = PathConstraint.GetCurrentFrame().return_stack;
-		var return_paths = return_stack.Pop();
-		var top = return_stack.Pop();
-		return_stack.Push(top.Or(return_paths));
-		PathConstraint.PopScope();
-		PathConstraint.pcs[PathConstraint.pcs.Count - 1] = PathConstraint.pcs[PathConstraint.pcs.Count - 1].And(return_paths.Not());
-	}
-
-	public static bool MergedPcFeasible()
-	{
-		var bdd_f = !GetPC().EqualEqual(BuDDySharp.BuDDySharp.bddfalse);
-		var z3_f = EvalPc();
-		return z3_f;
-	}
-
+	public static Stopwatch SolverStopWatch = new Stopwatch();
+	
 	public static IEnumerable<Tuple<bdd, int>> GetAllPossibleValues(BitVecExpr abstractVal)
 	{
 		var constraint = GetPC().ToZ3Expr();
+		SolverStopWatch.Start();
 		solver.Push();
 		solver.Assert(constraint);
 		Status status = solver.Check();
+		SolverStopWatch.Stop();
+		var ret = new SCG.List<Tuple<bdd, int>>();
 		while (status == Status.SATISFIABLE) {
+			SolverStopWatch.Start();
 			var one_sln = ((BitVecNum)solver.Model.Eval(abstractVal, true));
+			SolverStopWatch.Stop();
 			constraint = ctx.MkEq(abstractVal, one_sln);
-			yield return new Tuple<bdd, int>(constraint.ToBDD(), one_sln.Int);
+			ret.Add(new Tuple<bdd, int>(constraint.ToBDD(), one_sln.Int));
+			SolverStopWatch.Start();
 			solver.Assert(ctx.MkNot(constraint));
 			status = solver.Check();
+			SolverStopWatch.Stop();
+		}
+		foreach(var t1 in ret)
+		{
+			var bddForm = t1.Item1;
+			foreach(var t2 in ret)
+			{
+				if(t1 != t2) { bddForm = bddForm.And(t2.Item1.Not()); }
+			}
+			yield return new Tuple<bdd, int>(bddForm, t1.Item2);
 		}
 		if (status == Status.UNKNOWN) {
 			Console.WriteLine("Solver failure");
@@ -212,10 +169,12 @@ public class PathConstraint
 	public static bool SolveBooleanExpr(BoolExpr val)
 	{
 		var constraint = GetPC().ToZ3Expr();
+		SolverStopWatch.Start();
 		solver.Push();
 		solver.Assert(ctx.MkAnd(constraint, val));
 		Status status = solver.Check();
 		solver.Pop();
+		SolverStopWatch.Stop();
 		switch (status) {
 			case Status.SATISFIABLE: {
 					return true;
