@@ -1,12 +1,13 @@
 /* Dummy Two Phase Commit Protocol */
 
+event eUnit;
 event eTransaction: int;
 event eCommit;
 event eAbort;
 event eSuccess;
 event eFailure;
 
-machine Main {
+main machine Main {
 	start state Init {
 		entry {
 			var coor: machine;
@@ -22,7 +23,6 @@ machine Main {
 				}
 			    index = index + 1;
 			}
-			raise halt;
 		}
 	}
 }
@@ -41,8 +41,9 @@ machine CoordinateMachine {
 				participants += (index, temp);
 			    index = index + 1;
 			}
-			goto WaitForRequest;
+			raise eUnit;
 		}	
+		on eUnit goto WaitForRequest;
 	}
 
 	state WaitForRequest {
@@ -86,8 +87,9 @@ machine ParticipantMachine {
 	start state Init {
 		entry (payload: machine) {
 			coor = payload;
-			goto WaitForRequest;
+			raise eUnit;
 		}
+		on eUnit goto WaitForRequest;
 	}
 	
 	state WaitForRequest {
