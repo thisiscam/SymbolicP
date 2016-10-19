@@ -713,6 +713,17 @@ namespace MultiSETransformer
                         }
                         goto default;
                     }
+                case 2:
+                {
+                    var need_cast = false;
+                    TypeSyntax nodeType = null, type = null;
+                    if(node.Parent.IsKind(SyntaxKind.Argument) && node.Parent.Parent.IsKind(SyntaxKind.ArgumentList)) {
+                        type = ConvertedType(node, ref need_cast, ref nodeType);
+                        if (need_cast)
+                           return CastTypeNode(base.VisitIdentifierName(node) as IdentifierNameSyntax, type);
+                    }
+                    goto default;
+                }
                 default:
                     {
                         return base.VisitIdentifierName(node);

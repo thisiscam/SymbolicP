@@ -14,7 +14,9 @@ class Program {
 		var loop = PathConstraint.BeginLoop();
         for(int i=0; i < maxExplorationSteps; i++) {
         	Watch.Start();
-			if (!loop.Loop(scheduler.ChooseAndRunMachine())) { break; }
+			if (!loop.Loop(scheduler.ChooseAndRunMachine())) { 
+				break; 
+			}
 			Watch.Stop();
 			Console.WriteLine("==== Iter {0}========", i);
 			Console.WriteLine("Solver: {0}, Total: {1}, Convert: {2}", PathConstraint.SolverStopWatch.Elapsed, Watch.Elapsed, BDDToZ3Wrap.Converter.Watch.Elapsed);

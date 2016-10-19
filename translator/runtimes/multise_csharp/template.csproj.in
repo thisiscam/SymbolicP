@@ -71,6 +71,14 @@
     <Externalconsole>true</Externalconsole>
     <PlatformTarget>Any CPU</PlatformTarget>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'ReleaseVSNoMerging|x64' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\x64\ReleaseVSNoMerging</OutputPath>
+    <DefineConstants>NO_MERGE_VS</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="Microsoft.Z3">

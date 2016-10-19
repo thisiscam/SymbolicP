@@ -65,8 +65,10 @@ namespace MultiSETransformer
 
 			MetadataReference mscorlib =
 				MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
+            MetadataReference systemlib =
+                MetadataReference.CreateFromFile(typeof(System.Console).Assembly.Location);
 
-			MetadataReference[] references = { mscorlib };
+			MetadataReference[] references = { mscorlib , systemlib };
 
 			return CSharpCompilation.Create("TransformationCS",
 				sourceTrees,

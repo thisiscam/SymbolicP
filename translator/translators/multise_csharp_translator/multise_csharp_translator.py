@@ -56,14 +56,16 @@ class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
         return parameters
 
     def create_cssln(self):
-        projects = [self.find_project(self.out_csproj_path)] + self.reference_projects
+        main_project = self.find_project(self.out_csproj_path)
+        projects = [main_project] + self.reference_projects
         loader = FileLoader(self.runtime_dir)
         csproj_template = loader.load_template("template.sln.in")
         with open("{0}/{0}.sln".format(self.out_dir), "w+") as csprojf:
             csprojf.write(csproj_template.render(
                 {
                     "sln_guid": "{" + str(uuid.uuid1()).upper() + "}",
-                    "include_projects": projects
+                    "include_projects": projects,
+                    "main_project": main_project
                 }
             ))
 
