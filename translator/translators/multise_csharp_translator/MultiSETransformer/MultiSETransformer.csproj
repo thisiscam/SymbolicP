@@ -51,9 +51,6 @@
     <Compile Include="ValueSummaryRewriter.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <Target Name="AfterBuild">
-    <Copy SourceFiles="$(OutputPath)\$(AssemblyName).exe" DestinationFiles="$(AssemblyName).exe" />
-  </Target>
   <ItemGroup>
     <None Include="..\..\..\runtimes\symbolic_csharp\Constants.cs">
       <Link>symbolic_csharp\Constants.cs</Link>
