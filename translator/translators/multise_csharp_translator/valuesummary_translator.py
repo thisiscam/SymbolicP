@@ -1,11 +1,15 @@
 import subprocess, os
 
 transformer_proj_path = os.path.realpath(os.path.join(os.path.dirname(__file__), "MultiSETransformer"))
+transformer_exe = None
 for root, dirs, files in os.walk(os.path.join(transformer_proj_path, "bin"), topdown=False):
     for name in files:
         if name == "MultiSETransformer.exe":
         	transformer_exe = os.path.join(root, name)
         	break
+
+if not transformer_exe:
+	raise Exception("MultiSETransformer.exe not found, please build MultiSETransformer first")
 
 if os.name == "nt":
 	transformer_cmd = [transformer_exe]
