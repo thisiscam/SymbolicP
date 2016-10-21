@@ -21,7 +21,7 @@ public struct BoolPathConstraint : IPathConstraint {
 	
 	public BoolPathConstraint(Solver solver, BoolExpr abstractVal) {
 		solver.Check ();
-		var solverResult = solver.Model.Evaluate(abstractVal);
+		var solverResult = solver.Model.Evaluate(abstractVal, true);
 		switch(solverResult.BoolValue) {
 			case Z3_lbool.Z3_L_TRUE: {
 				explored = true;
@@ -74,42 +74,31 @@ public struct BoolPathConstraint : IPathConstraint {
 }
 
 public struct IntPathConstraint : IPathConstraint {
-	System.Collections.Generic.List<BoolExpr> notEqs;
-	BoolExpr currentEq;
-	
-	int currentVal;
-	BitVecNum nextVal;
-	
+	System.Collections.Generic.List<int> possible_vals;
+	int current_idx;
 	public IntPathConstraint(Solver solver, BitVecExpr abstractVal) {
-		notEqs = new System.Collections.Generic.List<BoolExpr> ();
-		var status = solver.Check();
-		Debug.Assert(status == Status.SATISFIABLE);
-		var tmp = solver.Model.Evaluate (abstractVal);
-		BitVecNum result = (BitVecNum)tmp;
-		var eq = SymbolicEngine.ctx.MkEq(abstractVal, result);
-		var not_eq = SymbolicEngine.ctx.MkNot(eq);
-		currentEq = eq;
-		currentVal = result.Int;
-		solver.Push ();
-		solver.Assert (not_eq);
-		if(solver.Check () == Status.UNSATISFIABLE) {
-			nextVal = null;
-		} else {
-			notEqs.Add(not_eq);
-			nextVal = (BitVecNum)solver.Model.Evaluate(abstractVal);
+		possible_vals = new System.Collections.Generic.List<int>();
+		solver.Push();
+		Status status = solver.Check();
+		while (status == Status.SATISFIABLE) {
+			var one_sln = ((BitVecNum)solver.Model.Eval(abstractVal, true));
+			possible_vals.Add(one_sln.Int);
+			solver.Assert(SymbolicEngine.ctx.MkNot(SymbolicEngine.ctx.MkEq(abstractVal, one_sln)));
+			status = solver.Check();
 		}
-		solver.Pop ();
-		solver.Assert(currentEq);
+		solver.Pop();
+		current_idx = 0;
+		solver.Assert(SymbolicEngine.ctx.MkEq(abstractVal, SymbolicEngine.ctx.MkBV(possible_vals[current_idx], SymbolicInteger.INT_SIZE)));
 		solver.Push();
 	}
-	public bool Done { get { return nextVal == null; }}
+	public bool Done { get { return current_idx == possible_vals.Count - 1; }}
 
 	public bool CurrentBool(Solver solver, BoolExpr abstractVal) { 
 		throw new SystemException("Invalid get value from int path constraint"); 
 	}
 
 	public int CurrentInt(Solver solver, BitVecExpr abstractVal) {
-		return currentVal;
+		return possible_vals[current_idx];
 	}
 
 	public bool NextBool(Solver solver, BoolExpr abstractVal) {
@@ -117,24 +106,10 @@ public struct IntPathConstraint : IPathConstraint {
 	}
 
 	public int NextInt(Solver solver, BitVecExpr abstractVal) {
+		current_idx++;
 		solver.Push();
-		foreach(var constraint in notEqs) {
-			solver.Assert(constraint);
-		}
-		currentEq = SymbolicEngine.ctx.MkEq(abstractVal, nextVal);
-		currentVal = nextVal.Int;
-		var not_eq = SymbolicEngine.ctx.MkNot(currentEq);
-		solver.Assert (not_eq);
-		if(solver.Check() == Status.UNSATISFIABLE) {
-			nextVal = null;
-		} else {
-			notEqs.Add(not_eq);
-			nextVal = (BitVecNum) solver.Model.Evaluate (abstractVal);
-		}
-		solver.Pop ();
-		solver.Assert(currentEq);
-		solver.Push ();
-		return currentVal;
+		solver.Assert(SymbolicEngine.ctx.MkEq(abstractVal, SymbolicEngine.ctx.MkBV(possible_vals[current_idx], SymbolicInteger.INT_SIZE)));
+		return possible_vals[current_idx];
 	}
 
 }

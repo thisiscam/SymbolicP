@@ -17,17 +17,8 @@ class Scheduler {
         }
     }
 
-    Random rng;
-
     List<PMachine> machines = new List<PMachine>();
 
-    public Scheduler() : this(new Random()) {
-        
-    }
-
-    public Scheduler(Random rng) {
-        this.rng = rng;
-    }
 
     public bool ChooseAndRunMachine() {
         // Collect all servable events

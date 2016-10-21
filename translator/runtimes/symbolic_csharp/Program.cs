@@ -3,12 +3,11 @@ using System;
 class Program {
     static int Main(string[] args) {
         int maxExplorationSteps = 200;
-        Random rng = new Random();
 
         int iteration = 0;
 		while(true) {
             Console.WriteLine(String.Format("========BEGIN NEW TRACE {0}=========", iteration));
-            Scheduler scheduler = new Scheduler(rng);
+            Scheduler scheduler = new Scheduler();
 
             PMachine mainMachine = MachineController.CreateMainMachine();
             scheduler.StartMachine(mainMachine, null);

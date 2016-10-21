@@ -72,40 +72,21 @@ public class SymbolicEngine {
 		}
 	}
 
-	private System.Collections.Generic.List<SymbolicInteger> intVars = new System.Collections.Generic.List<SymbolicInteger>();
 	private int intVarRecoveredIdx;
 	public SymbolicInteger NewSymbolicIntVar(string prefix, SymbolicInteger ge, SymbolicInteger lt) {
-		if (idx < pathConstraints.Count - 1) {
-			var recovered = intVars [intVarRecoveredIdx];
-			intVarRecoveredIdx++;
-			return recovered;
-		} else {
-			if (intVarRecoveredIdx < this.intVars.Count - 1) {
-				intVars.RemoveRange (intVarRecoveredIdx + 1, intVars.Count - intVarRecoveredIdx - 1);
-			}
-			var fresh_const = new SymbolicInteger((BitVecExpr)SymbolicEngine.ctx.MkFreshConst (prefix, SymbolicInteger.bitVecSort));
+		var fresh_const = new SymbolicInteger((BitVecExpr)SymbolicEngine.ctx.MkBVConst (
+							string.Format("i{0}", intVarRecoveredIdx), SymbolicInteger.INT_SIZE));
+		if(idx >= pathConstraints.Count - 1) {
 			solver.Assert((ge <= fresh_const).AbstractValue, (fresh_const < lt).AbstractValue);
-			intVars.Add (fresh_const);
-			intVarRecoveredIdx++;
-			return fresh_const;
 		}
+		intVarRecoveredIdx++;
+		return fresh_const;
 	}
 
-	private System.Collections.Generic.List<SymbolicBool> boolVars = new System.Collections.Generic.List<SymbolicBool>();
 	private int boolVarRecoveredIdx;
 	public SymbolicBool NewSymbolicBoolVar(string prefix) {
-		if (idx < pathConstraints.Count - 1) {
-			var recovered = boolVars [boolVarRecoveredIdx];
-			boolVarRecoveredIdx++;
-			return recovered;
-		} else {
-			if (boolVarRecoveredIdx < boolVars.Count - 1) {
-				boolVars.RemoveRange (boolVarRecoveredIdx + 1, boolVars.Count - boolVarRecoveredIdx - 1);
-			}
-			var fresh_const = new SymbolicBool((BoolExpr)SymbolicEngine.ctx.MkFreshConst (prefix, SymbolicEngine.ctx.BoolSort));
-			boolVars.Add (fresh_const);
-			boolVarRecoveredIdx++;
-			return fresh_const;
-		}
+		var fresh_const = new SymbolicBool((BoolExpr)SymbolicEngine.ctx.MkBoolConst (string.Format("b{0}", boolVarRecoveredIdx)));
+		boolVarRecoveredIdx++;
+		return fresh_const;
 	}
 }
