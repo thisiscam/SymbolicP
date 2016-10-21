@@ -30,7 +30,7 @@ public partial class PathConstraint
 		ctx = new Context();
 		solver = ctx.MkSolver();
 
-		BuDDySharp.BuDDySharp.cpp_init(5000000, 5000000);
+		BuDDySharp.BuDDySharp.cpp_init(50000000, 50000000);
 		BuDDySharp.BuDDySharp.setcacheratio(64);
 		BuDDySharp.BuDDySharp.setvarnum(10000);
 

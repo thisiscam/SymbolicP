@@ -149,14 +149,14 @@ class PProgramToCSharpTranslator(TranslatorBase):
         generated_srcs = [os.path.basename(src) for src in glob.glob("{0}/*.cs".format(self.out_dir))]
         loader = FileLoader(self.runtime_dir)
         csproj_template = loader.load_template("template.csproj.in")
-        self.out_csproj_path = os.path.join(self.out_dir, "{0}.csproj".format(self.out_dir))
+        self.out_csproj_path = os.path.join(self.out_dir, "{0}.csproj".format(self.project_name))
         with open(self.out_csproj_path, "w+") as csprojf:
             csprojf.write(csproj_template.render(
                 self.get_csproj_template_parameters(
                     {
                         'generated_srcs': generated_srcs, 
                         'runtime_srcs': runtime_srcs, 
-                        'project_name': self.out_dir, 
+                        'project_name': self.project_name, 
                         'runtime_dir': os.path.abspath(self.runtime_dir),
                         'lib_dir': os.path.abspath(os.path.dirname(__file__) + "/../libraries"),
                         'guid': "{" + str(uuid.uuid1()).upper() + "}"
@@ -164,8 +164,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
             )))
 
     def make_output_dir(self):
-        if not os.path.exists(self.out_dir):
-            os.makedirs(self.out_dir)
+        shutil.rmtree(self.out_dir, ignore_errors=True, onerror=None)
+        os.makedirs(self.out_dir)            
 
     def create_proj_macros(self):
         # create ProjectMacros

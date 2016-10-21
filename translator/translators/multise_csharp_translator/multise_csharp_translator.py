@@ -36,7 +36,7 @@ class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
         csproj_xml = ET.parse(csproj_path)
         guid = csproj_xml.xpath("//*[local-name() = 'ProjectGuid']")[0].text
         project = {
-                    "name": os.path.basename(csproj_path),
+                    "name": os.path.splitext(os.path.basename(csproj_path))[0],
                     "path": os.path.realpath(csproj_path),
                     "guid": guid
                 }
@@ -60,7 +60,7 @@ class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
         projects = [main_project] + self.reference_projects
         loader = FileLoader(self.runtime_dir)
         csproj_template = loader.load_template("template.sln.in")
-        with open("{0}/{0}.sln".format(self.out_dir), "w+") as csprojf:
+        with open("{0}/{1}.sln".format(self.out_dir, self.project_name), "w+") as csprojf:
             csprojf.write(csproj_template.render(
                 {
                     "sln_guid": "{" + str(uuid.uuid1()).upper() + "}",

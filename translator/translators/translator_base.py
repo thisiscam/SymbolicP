@@ -6,14 +6,15 @@ from StringIO import StringIO
 
 class TranslatorBase(PTypeTranslatorVisitor):
 
-    def __init__(self, ast, out_dir):
+    def __init__(self, ast, project_name, out_dir):
         super(TranslatorBase, self).__init__()
         visitor = AntlrTreeToPProgramVisitor()
         self.pprogram = ast.accept(visitor)
         PProgramTypeAnnotator(self.pprogram).annotate_types()
         PProgramCallGraphASTAnnotator(self.pprogram).annotate_with_call_graph()
+        self.project_name = project_name
         self.out_dir = out_dir
-
+        
     def warning(self, msg, ctx):
         print("Warning: {}".format(msg), file=sys.stderr)
 
