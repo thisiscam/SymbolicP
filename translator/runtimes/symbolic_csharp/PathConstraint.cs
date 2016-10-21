@@ -22,6 +22,7 @@ public struct BoolPathConstraint : IPathConstraint {
 	public BoolPathConstraint(Solver solver, BoolExpr abstractVal) {
 		solver.Check ();
 		var solverResult = solver.Model.Evaluate(abstractVal, true);
+		solver.Push();
 		switch(solverResult.BoolValue) {
 			case Z3_lbool.Z3_L_TRUE: {
 				explored = true;
@@ -47,7 +48,6 @@ public struct BoolPathConstraint : IPathConstraint {
 				throw new SystemException ("Unreachable");
 			}
 		}
-		solver.Push();
 	}
 
 	public bool Done { get { return done; }}
@@ -77,6 +77,7 @@ public struct IntPathConstraint : IPathConstraint {
 	System.Collections.Generic.List<int> possible_vals;
 	int current_idx;
 	public IntPathConstraint(Solver solver, BitVecExpr abstractVal) {
+		solver.Push();
 		possible_vals = new System.Collections.Generic.List<int>();
 		solver.Push();
 		Status status = solver.Check();
@@ -89,7 +90,6 @@ public struct IntPathConstraint : IPathConstraint {
 		solver.Pop();
 		current_idx = 0;
 		solver.Assert(SymbolicEngine.ctx.MkEq(abstractVal, SymbolicEngine.ctx.MkBV(possible_vals[current_idx], SymbolicInteger.INT_SIZE)));
-		solver.Push();
 	}
 	public bool Done { get { return current_idx == possible_vals.Count - 1; }}
 

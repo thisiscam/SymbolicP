@@ -23,7 +23,7 @@ public class SymbolicEngine {
 		boolVarRecoveredIdx = 0;
 		for(int i=pathConstraints.Count-1; i >=0; i--) {
 			if(!pathConstraints[i].Done) {
-				solver.Pop((uint)(pathConstraints.Count - i - 1));
+				solver.Pop((uint)(pathConstraints.Count - i));
 				pathConstraints.RemoveRange(i + 1, pathConstraints.Count - i - 1);
 				return true;
 			}
