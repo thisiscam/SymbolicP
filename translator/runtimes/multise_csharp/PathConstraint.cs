@@ -255,7 +255,7 @@ public partial class PathConstraint
 			} else {
 				ret = ret.And(vars[i]);
 			}
-			idx >>= 1;
+			idx /= 2;
 		}
 		return ret;
 	}
@@ -264,8 +264,8 @@ public partial class PathConstraint
 	{
 		if(idx == max_decisions - 1)
 		{
-			var ret = DecisionTreeFromIdx(vars, idx);
-			for(int i=max_decisions; i < Math.Pow(vars.Length, 2); i++)
+			var ret = BuDDySharp.BuDDySharp.bddfalse;
+			for(int i=idx; i < Math.Pow(2, vars.Length); i++)
 			{
 				ret = ret.Or(DecisionTreeFromIdx(vars, i));
 			}
@@ -287,7 +287,9 @@ public partial class PathConstraint
 				}
 			}
 		);
-		Debug.Assert(max_count >= 1);
+		if(max_count < 1) {
+			Debugger.Break();
+		}
 		// Create BDD vars
 		var num_decision_vars = (int) Math.Ceiling(Math.Log(max_count, 2));
 		var all_vars = new bdd[num_decision_vars];
