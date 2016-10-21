@@ -21,12 +21,8 @@ public struct BoolPathConstraint : IPathConstraint {
 	
 	public BoolPathConstraint(Solver solver, BoolExpr abstractVal) {
 		solver.Check ();
-<<<<<<< HEAD
-		var solverResult = solver.Model.Eval(abstractVal, true);
-=======
 		var solverResult = solver.Model.Evaluate(abstractVal, true);
 		solver.Push();
->>>>>>> tmp
 		switch(solverResult.BoolValue) {
 			case Z3_lbool.Z3_L_TRUE: {
 				explored = true;
