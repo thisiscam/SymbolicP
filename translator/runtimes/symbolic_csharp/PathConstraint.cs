@@ -21,7 +21,7 @@ public struct BoolPathConstraint : IPathConstraint {
 	
 	public BoolPathConstraint(Solver solver, BoolExpr abstractVal) {
 		solver.Check ();
-		var solverResult = solver.Model.Evaluate(abstractVal);
+		var solverResult = solver.Model.Eval(abstractVal, true);
 		switch(solverResult.BoolValue) {
 			case Z3_lbool.Z3_L_TRUE: {
 				explored = true;
@@ -84,7 +84,7 @@ public struct IntPathConstraint : IPathConstraint {
 		notEqs = new System.Collections.Generic.List<BoolExpr> ();
 		var status = solver.Check();
 		Debug.Assert(status == Status.SATISFIABLE);
-		var tmp = solver.Model.Evaluate (abstractVal);
+		var tmp = solver.Model.Eval (abstractVal, true);
 		BitVecNum result = (BitVecNum)tmp;
 		var eq = SymbolicEngine.ctx.MkEq(abstractVal, result);
 		var not_eq = SymbolicEngine.ctx.MkNot(eq);
