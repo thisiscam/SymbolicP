@@ -77,28 +77,6 @@ public struct IntPathConstraint : IPathConstraint {
 	System.Collections.Generic.List<int> possible_vals;
 	int current_idx;
 	public IntPathConstraint(Solver solver, BitVecExpr abstractVal) {
-<<<<<<< HEAD
-		notEqs = new System.Collections.Generic.List<BoolExpr> ();
-		var status = solver.Check();
-		Debug.Assert(status == Status.SATISFIABLE);
-		var tmp = solver.Model.Eval (abstractVal, true);
-		BitVecNum result = (BitVecNum)tmp;
-		var eq = SymbolicEngine.ctx.MkEq(abstractVal, result);
-		var not_eq = SymbolicEngine.ctx.MkNot(eq);
-		currentEq = eq;
-		currentVal = result.Int;
-		solver.Push ();
-		solver.Assert (not_eq);
-		if(solver.Check () == Status.UNSATISFIABLE) {
-			nextVal = null;
-		} else {
-			notEqs.Add(not_eq);
-			nextVal = (BitVecNum)solver.Model.Evaluate(abstractVal);
-		}
-		solver.Pop ();
-		solver.Assert(currentEq);
-=======
->>>>>>> tmp
 		solver.Push();
 		possible_vals = new System.Collections.Generic.List<int>();
 		solver.Push();
