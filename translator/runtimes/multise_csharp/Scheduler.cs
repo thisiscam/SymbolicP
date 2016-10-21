@@ -102,11 +102,8 @@ class Scheduler
 
         if (vs_cond_54.MergeBranch())
         {
-            
-            ValueSummary<// Choose one and remove from send queue
-            SymbolicInteger> idx = PathConstraint.NewSymbolicIntVar("SI", 0, choices.GetField((_) => _.Count));
-            ValueSummary<SchedulerChoice> chosen = choices.InvokeMethod<SymbolicInteger, SchedulerChoice>((arg, a0) => arg[a0], idx);
-        	
+			ValueSummary<SchedulerChoice> chosen = PathConstraint.ChooseRandomFromList<SchedulerChoice>(choices);        	
+	
             ValueSummary<int> sourceMachineSendQueueIndex = chosen.GetField<int>(_ => _.sourceMachineSendQueueIndex);
             var vs_cond_55 = (sourceMachineSendQueueIndex.InvokeBinary<int, bool>((l, r) => l < r, 0)).Cond();
             {

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using BuDDySharp;
 using SCG = System.Collections.Generic;
 using BDDToZ3Wrap;
-
+using System.Linq;
 
 public partial class PathConstraint
 {
@@ -244,8 +244,72 @@ public partial class PathConstraint
 		solver_bool_var_cnt.Increment();
 		return ret;
 	}
-
-
+	
+	private static int decision_cnt = 0;
+	private static bdd DecisionTreeFromIdx(bdd[] vars, int idx)
+	{
+		var ret = BuDDySharp.BuDDySharp.bddtrue;
+		for(int i=0; i < vars.Length; i++) {
+			if(idx % 2 == 0) {
+				ret = ret.And(vars[i].Not());
+			} else {
+				ret = ret.And(vars[i]);
+			}
+			idx >>= 1;
+		}
+		return ret;
+	}
+	
+	private static bdd DecisionTreeFromIdx(bdd[] vars, int idx, int max_decisions)
+	{
+		if(idx == max_decisions - 1)
+		{
+			var ret = DecisionTreeFromIdx(vars, idx);
+			for(int i=max_decisions; i < Math.Pow(vars.Length, 2); i++)
+			{
+				ret = ret.Or(DecisionTreeFromIdx(vars, i));
+			}
+			return ret;
+		}
+		return DecisionTreeFromIdx(vars, idx);
+	}
+	
+	public static ValueSummary<T> ChooseRandomFromList<T>(ValueSummary<List<T>> list)
+	{
+		var pc = GetPC();
+		var count = list.GetField<int>((arg) => arg._count);
+		var max_count = count.values.Max((GuardedValue<int> arg) => 
+			{	
+				if(!arg.bddForm.And(pc).EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+					return arg.value;
+				} else {
+					return 0;
+				}
+			}
+		);
+		Debug.Assert(max_count >= 1);
+		// Create BDD vars
+		var num_decision_vars = (int) Math.Ceiling(Math.Log(max_count, 2));
+		var all_vars = new bdd[num_decision_vars];
+		for(int i=0; i < num_decision_vars; i++)
+		{
+			var sym_var_name = String.Format("decision_{0}_{1}", decision_cnt, i);
+			var fresh_const = new SymbolicBool((BoolExpr)ctx.MkBoolConst(sym_var_name));
+			all_vars[i] = fresh_const.AbstractValue.ToBDD();
+		}
+		decision_cnt++;
+		ValueSummary<int> idx = new ValueSummary<int>();
+		foreach(var guardedCnt in count.values)
+		{
+			var bddForm = guardedCnt.bddForm.And(pc);
+			for(int i=0; i < guardedCnt.value; i++) {
+				idx.AddValue(bddForm.And(DecisionTreeFromIdx(all_vars, i, guardedCnt.value)), i);
+			}
+		}
+		var ret = list.InvokeMethod<int, T>((List<T> arg1, ValueSummary<int> arg2) => arg1[arg2], idx);
+		return ret;
+	}
+	
 	public static bool DebugProofEquivalence(BoolExpr e1, BoolExpr e2)
 	{
 		solver.Push();
