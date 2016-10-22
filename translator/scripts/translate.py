@@ -8,9 +8,10 @@ from collections import defaultdict, OrderedDict
 import pkgutil
 
 viable_translators = []
+translator_suffix = "_translator"
 for _, name, _ in pkgutil.iter_modules([os.path.realpath(os.path.join(__file__, '../../translators'))]):
-    if name.endswith("_translator"):
-        viable_translators.append(name)
+    if name.endswith(translator_suffix):
+        viable_translators.append(name[:-len(translator_suffix)])
 
 def translate(options):
     pparser = pJavaParser(options.search_dirs)
@@ -23,7 +24,8 @@ def translate(options):
 def process_options(options):
     if not options.out_dir:
         options.out_dir = os.path.splitext(os.path.basename(options.input_file))[0]
-    options.translator = __import__("translators." + options.translator, globals(), locals(), ['Translator'], -1).Translator
+    options.translator = __import__("translators." + options.translator + translator_suffix, 
+                                globals(), locals(), ['Translator'], -1).Translator
 
 def main(argv):
     parser = argparse.ArgumentParser("Translates P code into cs code")
