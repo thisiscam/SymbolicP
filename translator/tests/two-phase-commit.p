@@ -7,7 +7,6 @@ event WRITE_REQ:(client:machine, idx:int, val:int);
 event WRITE_FAIL;
 event WRITE_SUCCESS;
 event READ_REQ:(client:machine, idx:int);
-event READ_FAIL;
 event READ_UNAVAILABLE;
 event READ_SUCCESS:int;
 event Unit;
@@ -246,7 +245,7 @@ model Client {
 	    entry {
 			send coordinator, READ_REQ, (client=this, idx=idx);
 		}
-		on READ_FAIL goto End;
+		on READ_UNAVAILABLE goto End;
 		on READ_SUCCESS goto End;
 	}
 
