@@ -60,7 +60,7 @@ public class ValueSummary<T>
 		ret.values = new SCG.List<GuardedValue<T>>();
 		foreach (var val in t.values) {
 			var bddForm = val.bddForm.And(pc);
-			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+			if (bddForm.FormulaBDDSAT()) {
 				ret.values.Add(new GuardedValue<T>(bddForm, val.value));
 			}
 		}
@@ -76,7 +76,7 @@ public class ValueSummary<T>
 		var ret = new ValueSummary<ValueSummary<T>[]>();
 		foreach (var guardedSize in size.values) {
 			var bddForm = pc.And(guardedSize.bddForm);
-			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+			if (bddForm.FormulaBDDSAT()) {
 				var array = new ValueSummary<T>[guardedSize.value];
 				for (int i = 0; i < guardedSize.value; i++) {
 					array[i] = new ValueSummary<T>(default(T));
@@ -104,7 +104,7 @@ public class ValueSummary<T>
 	{
 		foreach (var v2 in other.values) {
 			var bddForm = v2.bddForm.And(pred);
-			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+			if (bddForm.FormulaBDDSAT()) {
 				AddValue(bddForm, v2.value);
 			}
 		}
@@ -146,7 +146,7 @@ public class ValueSummary<T>
 			var not_pred = pred.Not();
 			foreach (var guardedThisVal in this.values) {
 				var bddForm = guardedThisVal.bddForm.And(not_pred);
-				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+				if (bddForm.FormulaBDDSAT()) {
 					newVals.Add(new GuardedValue<T>(bddForm, guardedThisVal.value));
 				}
 			}
@@ -162,7 +162,7 @@ public class ValueSummary<T>
 			f.Invoke(pred, target);
 		}
 		else {
-			if (PathConstraint.SolveBooleanExpr(pred.ToZ3Expr())) {
+			if (pred.FormulaBDDSolverSAT()) {
 				throw new Exception("Null target");
 			}
 		}
@@ -174,7 +174,7 @@ public class ValueSummary<T>
 		var pc = PathConstraint.GetPC();
 		foreach (var guardedVal in values) {
 			var bddForm = guardedVal.bddForm.And(pc);
-			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+			if (bddForm.FormulaBDDSAT()) {
 				NullTargetCheck((c, v) => ret.Merge(f.Invoke(v), c), guardedVal.value, bddForm);
 			}
 		}
@@ -186,7 +186,7 @@ public class ValueSummary<T>
 		var pc = PathConstraint.GetPC();
 		foreach (var guardedVal in values) {
 			var bddForm = guardedVal.bddForm.And(pc);
-			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+			if (bddForm.FormulaBDDSAT()) {
 				NullTargetCheck((c, v) => f.Invoke(v).Update(val, c), guardedVal.value, bddForm);
 			}
 		}
@@ -198,7 +198,7 @@ public class ValueSummary<T>
 		var pc = PathConstraint.GetPC();
 		foreach (var guardedVal in values) {
 			var bddForm = guardedVal.bddForm.And(pc);
-			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+			if (bddForm.FormulaBDDSAT()) {
 				NullTargetCheck((c, v) => ret.AddValue(c, f.Invoke(v)), guardedVal.value, bddForm);
 			}
 		}
@@ -226,8 +226,8 @@ public class ValueSummary<T>
 		var ret = new ValueSummary<R>();
 		var pc = PathConstraint.GetPC();
 		foreach (var guardedTarget in this.values) {
-			bdd newPC = pc.And (guardedTarget.bddForm);
-			if (!newPC.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(guardedTarget.bddForm.ToZ3Expr())) {
+			bdd newPC = pc.And(guardedTarget.bddForm);
+			if (newPC.FormulaBDDSolverSAT()) {
 				NullTargetCheck((c, v) => 
 				{
 					PathConstraint.PushScope();
@@ -280,8 +280,8 @@ public class ValueSummary<T>
 	{
 		var pc = PathConstraint.GetPC();
 		foreach (var guardedTarget in this.values) {
-			bdd newPC = pc.And (guardedTarget.bddForm);
-			if (!newPC.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(guardedTarget.bddForm.ToZ3Expr())) {
+			bdd newPC = pc.And(guardedTarget.bddForm);
+			if (newPC.FormulaBDDSolverSAT()) {
 				NullTargetCheck((c, v) => 
 				{
 					PathConstraint.PushScope();
@@ -336,8 +336,14 @@ public class ValueSummary<T>
 		foreach (var guardedVals in this.values) {
 			foreach (var otherGuardedVals in other.values) {
 				var bddForm = guardedVals.bddForm.And(otherGuardedVals.bddForm).And(pc);
-				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
-					ret.AddValue(bddForm, f.Invoke(guardedVals.value, otherGuardedVals.value));
+				if (bddForm.FormulaBDDSAT()) {
+					try {
+						ret.AddValue(bddForm, f.Invoke(guardedVals.value, otherGuardedVals.value));
+					} catch(DivideByZeroException) {
+						if(bddForm.FormulaBDDSolverSAT()) {
+							throw new Exception("Divide by zero");
+						}
+					}
 				}
 			}
 		}
@@ -353,7 +359,7 @@ public class ValueSummary<T>
 		var pc = PathConstraint.GetPC();	
 		foreach (var guardedVal in this.values) {
 			var bddForm = guardedVal.bddForm.And(pc);
-			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+			if (bddForm.FormulaBDDSAT()) {
 				ret.AddValue(bddForm, f.Invoke(guardedVal.value));
 			}
 		}
@@ -366,14 +372,14 @@ public class ValueSummary<T>
 		var pc = PathConstraint.GetPC();
 		foreach (var guardedVal in this.values) {
 			var bddForm = guardedVal.bddForm.And(pc);
-			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+			if (bddForm.FormulaBDDSAT()) {
 				NullTargetCheck((c, v) =>
 				{
 					try {
 						ret.AddValue(c, f.Invoke(v));
 					}
 					catch (InvalidCastException e) {
-						if (PathConstraint.SolveBooleanExpr(bddForm.ToZ3Expr())) {
+						if (bddForm.FormulaBDDSolverSAT()) {
 							throw e;
 						}
 					}
@@ -398,7 +404,7 @@ public static class ValueSummaryExt
 			ifInBoundThenRun.Invoke(bddForm, array, index);
 		}
 		else {
-			if (PathConstraint.SolveBooleanExpr(bddForm.ToZ3Expr())) {
+			if (bddForm.FormulaBDDSolverSAT()) {
 				BuDDySharp.BuDDySharp.printdot(bddForm);
 				BDDToZ3Wrap.PInvoke.debug_print_used_bdd_vars();
 				throw new Exception("Array index out of bound!");
@@ -412,7 +418,7 @@ public static class ValueSummaryExt
 			ifInBoundThenRun.Invoke(bddForm, array, i1, i2);
 		}
 		else {
-			if (PathConstraint.SolveBooleanExpr(bddForm.ToZ3Expr())) {
+			if (bddForm.FormulaBDDSolverSAT()) {
 				throw new Exception("Array index out of bound!");
 			}
 		}
@@ -424,7 +430,7 @@ public static class ValueSummaryExt
 		var pc = PathConstraint.GetPC();
 		foreach (var guardedIndex in index.values) {
 			var bddForm = guardedIndex.bddForm.And(pc);
-			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+			if (bddForm.FormulaBDDSAT()) {
 				ArrayIndexOutOfBoundCheck((c, a, i) => ret.AddValue(c, a[i]), array, guardedIndex.value, bddForm);
 			}
 		}
@@ -437,7 +443,7 @@ public static class ValueSummaryExt
 		var pc = PathConstraint.GetPC();
 		foreach (var guardedIndex in index.values) {
 			var bddForm = guardedIndex.bddForm.And(pc);
-			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+			if (bddForm.FormulaBDDSAT()) {
 				if (guardedIndex.value.IsAbstract()) {
 					var allVals = PathConstraint.GetAllPossibleValues(guardedIndex.value.AbstractValue);
 					foreach (var val in allVals) {
@@ -459,7 +465,7 @@ public static class ValueSummaryExt
 		foreach (var g2 in idx2.values) {
 			foreach (var g1 in idx1.values) {
 				var bddForm = g2.bddForm.And(g1.bddForm.And(pc));
-				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+				if (bddForm.FormulaBDDSAT()) {
 					ArrayIndexOutOfBoundCheck((c, a, i1, i2) => ret.AddValue(c, a[i1, i2]), array, g1.value, g2.value, bddForm);
 				}
 			}
@@ -474,7 +480,7 @@ public static class ValueSummaryExt
 		foreach (var g1 in idx1.values) {
 			foreach (var g2 in idx2.values) {
 				var bddForm = g1.bddForm.And(g2.bddForm).And(pc);
-				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+				if (bddForm.FormulaBDDSAT()) {
 					if (g2.value.value.IsAbstract()) {
 						var allVals = PathConstraint.GetAllPossibleValues(g2.value.value.AbstractValue);
 						foreach (var val in allVals) {
@@ -497,7 +503,7 @@ public static class ValueSummaryExt
 		foreach (var guardedArray in vs_array.values) {
 			foreach (var guardedIndex in index.values) {
 				var bddForm = guardedArray.bddForm.And(guardedIndex.bddForm.And(pc));
-				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+				if (bddForm.FormulaBDDSAT()) {
 					ArrayIndexOutOfBoundCheck((c, a, i) => ret.Merge(a[i], c), guardedArray.value, guardedIndex.value, bddForm);
 				}
 			}
@@ -512,7 +518,7 @@ public static class ValueSummaryExt
 		foreach (var guardedArray in vs_array.values) {
 			foreach (var guardedIndex in index.values) {
 				var bddForm = guardedArray.bddForm.And(guardedIndex.bddForm.And(pc));
-				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+				if (bddForm.FormulaBDDSAT()) {
 					if (guardedIndex.value.IsAbstract()) {
 						foreach (var t in PathConstraint.GetAllPossibleValues(guardedIndex.value.AbstractValue)) {
 							ArrayIndexOutOfBoundCheck((c, a, i) => ret.Merge(a[i], c), guardedArray.value, t.Item2, bddForm.And(t.Item1));
@@ -534,7 +540,7 @@ public static class ValueSummaryExt
 		foreach (var guardedIndex in index.values) {
 			foreach (var guardedArray in vs_array.values) {
 				var bddForm = guardedArray.bddForm.And(guardedIndex.bddForm.And(pc));
-				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+				if (bddForm.FormulaBDDSAT()) {
 					if (guardedIndex.value.value.IsAbstract()) {
 						foreach (var t in PathConstraint.GetAllPossibleValues(guardedIndex.value.value.AbstractValue)) {
 							ArrayIndexOutOfBoundCheck((c, a, i) => ret.Merge(a[i], c), guardedArray.value, t.Item2, bddForm.And(t.Item1));
@@ -555,7 +561,7 @@ public static class ValueSummaryExt
 		foreach (var guardedIndex in index.values) {
 			foreach (var guardedArray in vs_array.values) {
 				var bddForm = guardedArray.bddForm.And(guardedIndex.bddForm.And(pc));
-				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+				if (bddForm.FormulaBDDSAT()) {
 					ArrayIndexOutOfBoundCheck((c, a, i) => a[i].Update(val, c), guardedArray.value, guardedIndex.value, bddForm);
 				}
 			}
@@ -568,7 +574,7 @@ public static class ValueSummaryExt
 		foreach (var guardedIndex in index.values) {
 			foreach (var guardedArray in vs_array.values) {
 				var bddForm = guardedArray.bddForm.And(guardedIndex.bddForm.And(pc));
-				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+				if (bddForm.FormulaBDDSAT()) {
 					if (guardedIndex.value.IsAbstract()) {
 						foreach (Tuple<bdd, int> t in PathConstraint.GetAllPossibleValues(guardedIndex.value.AbstractValue)) {
 							ArrayIndexOutOfBoundCheck((c, a, i) => a[i].Update(val, c), guardedArray.value, t.Item2, bddForm.And(t.Item1));
@@ -587,7 +593,7 @@ public static class ValueSummaryExt
 		foreach (var guardedIndex in index.values) {
 			foreach (var guardedArray in vs_array.values) {
 				var bddForm = guardedArray.bddForm.And(guardedIndex.bddForm.And(PathConstraint.GetPC()));
-				if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+				if (bddForm.FormulaBDDSAT()) {
 					if (guardedIndex.value.value.IsAbstract()) {
 						foreach (Tuple<bdd, int> t in PathConstraint.GetAllPossibleValues(guardedIndex.value.value.AbstractValue)) {
 							ArrayIndexOutOfBoundCheck((c, a, i) => a[i].Update(val, c), guardedArray.value, t.Item2, bddForm.And(t.Item1));
@@ -627,8 +633,8 @@ public static class ValueSummaryExt
 
 	private static PathConstraint.BranchPoint CondConcreteHelper(bdd trueBDD, bdd falseBDD)
 	{		
-		var trueFeasible = !trueBDD.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(trueBDD.ToZ3Expr());
-		var falseFeasible = !falseBDD.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(falseBDD.ToZ3Expr());
+		var trueFeasible = trueBDD.FormulaBDDSolverSAT();
+		var falseFeasible = falseBDD.FormulaBDDSolverSAT();
 #if DEBUG
 		if (trueFeasible && falseFeasible) {
 			var a0 = trueBDD.ToZ3Expr();
@@ -687,7 +693,7 @@ public static class ValueSummaryExt
 		if (b.values.Count == 1) {
 			var bddForm = b.values[0].bddForm.And(pc);
 #if DEBUG
-			if (!PathConstraint.SolveBooleanExpr(bddForm.ToZ3Expr())) 
+			if (!bddForm.FormulaBDDSolverSAT()) 
 			{
 				Debugger.Break();
 			}
@@ -697,7 +703,6 @@ public static class ValueSummaryExt
 				return new PathConstraint.BranchPoint(bddForm, null, PathConstraint.BranchPoint.State.True);
 			}
 			else {
-				//if (!pc.EqualEqual(b.values[0].bddForm)) { Debugger.Break();}
 				return new PathConstraint.BranchPoint(null, bddForm, PathConstraint.BranchPoint.State.False);
 			}
 		}
@@ -739,30 +744,30 @@ public static class ValueSummaryExt
 				if (guardedBooleanVal.value.IsAbstract()) {
 					var c = guardedBooleanVal.value.AbstractValue.ToBDD();
 					if (c.EqualEqual(BuDDySharp.BuDDySharp.bddtrue)) {
-						if (PathConstraint.SolveBooleanExpr(guardedValuePcPred.ToZ3Expr())) {
+						if (guardedValuePcPred.FormulaBDDSolverSAT()) {
 							predTrue = predTrue.Or(guardedValuePcPred);
 						}
 					}
 					else if (c.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
-						if (PathConstraint.SolveBooleanExpr(guardedValuePcPred.ToZ3Expr())) {
+						if (guardedValuePcPred.FormulaBDDSolverSAT()) {
 							predFalse = predFalse.Or(guardedValuePcPred);
 						}
 					}
 					else {
 						var tmp = guardedValuePcPred.And(c);
-						var trueFeasible = !tmp.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(tmp.ToZ3Expr());
+						var trueFeasible = tmp.FormulaBDDSolverSAT();
 						if (trueFeasible) {
 							predTrue = predTrue.Or(tmp);
 						}
 						tmp = guardedValuePcPred.And(c.Not());
-						var falseFeasible = !tmp.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && PathConstraint.SolveBooleanExpr(tmp.ToZ3Expr());
+						var falseFeasible = tmp.FormulaBDDSolverSAT();
 						if (falseFeasible) {
 							predFalse = predFalse.Or(tmp);
 						}
 					}
 				}
 				else {
-					if (PathConstraint.SolveBooleanExpr(guardedValuePcPred.ToZ3Expr())) {
+					if (guardedValuePcPred.FormulaBDDSolverSAT()) {
 						if (guardedBooleanVal.value.ConcreteValue) {
 							predTrue = predTrue.Or(guardedValuePcPred);
 						}

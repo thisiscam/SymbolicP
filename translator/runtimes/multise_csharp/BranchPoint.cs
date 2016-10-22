@@ -1,7 +1,7 @@
 using System;
 using BuDDySharp;
 
-public partial class PathConstraint
+public static partial class PathConstraint
 {
 	public class BranchPoint
 	{
