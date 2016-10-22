@@ -27,8 +27,24 @@ And when you are done:
 
 * Currently, only Basic C# Translator is complete. You can try with:
 
-    $ python -m scripts.translate tests/PingPong.p
+```
+    $ python -m scripts.translate -h
+```
+
+* Three targets are supported:
+
+    | Target                   | Commandline Option |
+    |--------------------------|--------------------|
+    | Random explorer          | -t basic_csharp    |
+    | Naive Symbolic Execution | -t symbolic_csharp |
+    | MultiSE                  | -t multise_csharp  |
+
+For instance
+
+```
+    $ python -m scripts.translate -t basic_csharp tests/PingPong.p
+```
 
 This wil generate a folder PingPong, filled with translated .cs sources and a .csproj file. You should be able to build the project by opening the .csproj file or with msbuild/xbuild
 
-You should now have an executable under PingPong/bin/
+
