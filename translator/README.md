@@ -25,7 +25,7 @@ And when you are done:
 
 ## Translators
 
-* Currently, only Basic C# Translator is complete. You can try with:
+To use the translator tool:
 
 ```
     $ python -m scripts.translate -h
