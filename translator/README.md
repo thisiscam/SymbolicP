@@ -2,7 +2,15 @@
 
 A set of translators that translates the P language into basic C# source code(complete), symbolic C# source code(under progress). 
 
-## Get Started
+## Requirements
+
+* python 2.7 
+* pip (optionally also virtualenv)
+* mono 64 bit(to run generated code, on non-Windows machines)
+* cmake >= 3.0
+* java >= 7(for ANTLR parser backend, we are in progress of removing this dependency at the moment)
+
+## Getting Started
 
 This project uses ANTLR4 as its parser front end; it uses ANTLR4's java runtime to parse P program sources efficiently, after which the parse result is converted to python objects through s-expression, so that the translators are written in python.
 
