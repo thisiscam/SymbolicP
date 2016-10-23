@@ -118,7 +118,7 @@ class Scheduler
                 {
                     ValueSummary<PMachine> chosenSourceMachine = chosen.GetField<PMachine>(_ => _.sourceMachine);
                     ValueSummary<SendQueueItem> dequeuedItem = chosenSourceMachine.GetConstField<List<SendQueueItem>>(_ => _.sendQueue).InvokeMethod<int, SendQueueItem>((_, a0) => _[a0], sourceMachineSendQueueIndex);
-                	chosenSourceMachine.GetConstField<List<SendQueueItem>>(_ => _.sendQueue).InvokeMethod<int>((_, a0) => _.RemoveAt(a0), sourceMachineSendQueueIndex);
+                	chosenSourceMachine.GetConstField<List<SendQueueItem>>(_ => _.sendQueue).InvokeMethod<SymbolicInteger>((_, a0) => _.RemoveAt(a0), sourceMachineSendQueueIndex.Cast<SymbolicInteger>(arg => (SymbolicInteger)arg));
                     var vs_cond_52 = (dequeuedItem.GetField<PInteger>(_ => _.e).InvokeBinary<PInteger, PBool>((l, r) => l == r, (PInteger)Constants.EVENT_NEW_MACHINE)).Cond();
                     {
                         if (vs_cond_52.CondTrue())

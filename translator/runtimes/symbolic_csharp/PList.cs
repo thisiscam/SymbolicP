@@ -13,6 +13,11 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T> {
 		this.Insert((SymbolicInteger)t.Item1, t.Item2);
     }
 
+    public void RemoveAt(PInteger idx)
+    {
+		this.RemoveAt((SymbolicInteger)idx);
+    }
+
 	public T this[PInteger index] { 
 		get {
 			return this.data [index];

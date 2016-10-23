@@ -102,7 +102,7 @@ abstract class PMachine : IPType<PMachine>
     {
         this.retcode.Assign<int>(Constants.EXECUTE_FINISHED);
         ValueSummary<int> current_state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], 0);
-        this.states.InvokeMethod<int>((_, a0) => _.RemoveAt(a0), 0);
+        this.states.InvokeMethod<SymbolicInteger>((_, a0) => _.RemoveAt(a0), (SymbolicInteger)0);
         var vs_cond_22 = (this.ExitFunctions.GetIndex(current_state).InvokeBinary<PMachine.ExitFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.ExitFunction>(null))).Cond();
         {
             if (vs_cond_22.CondTrue())
