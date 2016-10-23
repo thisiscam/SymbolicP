@@ -140,16 +140,15 @@ main machine User {
 
     state Loop {
         entry {
-            var i:int;
-            while(i < 50) {
-               if ($) {
-                    send ElevatorV, eOpenDoor;
-                } else if ($) {
-                   send ElevatorV,eCloseDoor;
-                }
-                i = i + 1; 
+            if ($) {
+                send ElevatorV, eOpenDoor;
+            } else if ($) {
+               send ElevatorV,eCloseDoor;
             }
+            send this, eUnit;
         }
+
+        on eUnit goto Loop;
     }
 }
 
