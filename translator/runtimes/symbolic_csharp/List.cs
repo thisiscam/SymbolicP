@@ -46,8 +46,8 @@ public class List<T> {
 		}
 	}
 
-	public void RemoveAt(int idx) {
-		for (int i = idx + 1; i < this._count; i++) {
+	public void RemoveAt(SymbolicInteger idx) {
+		for (SymbolicInteger i = idx + 1; i < this._count; i++) {
 			this.data [i - 1] = this.data [i];
 		}
 		this._count--;

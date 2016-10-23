@@ -622,12 +622,11 @@ namespace MultiSETransformer
                         bool need_cast = false;
                         TypeSyntax retType = null;
                         var converted_type = ConvertedType(node, ref need_cast, ref retType);
-                        if (!need_cast)
-                        {
-                            converted_type = retType;
-                        }
                         node = base.VisitObjectCreationExpression(node) as ObjectCreationExpressionSyntax;
-                        return node.WithType(SyntaxFactory.GenericName(SyntaxFactory.Identifier(@"ValueSummary"), SyntaxFactory.TypeArgumentList().AddArguments(converted_type))).WithArgumentList(SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(node)));
+                        node = node.WithType(SyntaxFactory.GenericName(SyntaxFactory.Identifier(@"ValueSummary"), SyntaxFactory.TypeArgumentList().AddArguments(retType))).WithArgumentList(SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(node)));
+                        if(need_cast)
+                            return CastTypeNode(node, converted_type);
+                        return node;
                     }
                 default:
                     {
@@ -1155,7 +1154,8 @@ namespace MultiSETransformer
         {
             var leftType = model.GetTypeInfo(node.Left).Type;
             var rightType = model.GetTypeInfo(node.Right).Type;
-            SimpleNameSyntax invoke_name = leftType.TypeKind == TypeKind.Array ? (SimpleNameSyntax)SyntaxFactory.IdentifierName("Assign") : (SimpleNameSyntax)SyntaxFactory.GenericName(SyntaxFactory.Identifier("Assign"), SyntaxFactory.TypeArgumentList().AddArguments(SyntaxFactory.ParseTypeName(rightType.ToDisplayString())));
+            rightType = rightType == null ? leftType : rightType;
+            SimpleNameSyntax invoke_name = leftType.TypeKind == TypeKind.Array ? (SimpleNameSyntax)SyntaxFactory.IdentifierName("Assign") : (SimpleNameSyntax)SyntaxFactory.GenericName(SyntaxFactory.Identifier("Assign"), SyntaxFactory.TypeArgumentList().AddArguments(SyntaxFactory.ParseTypeName(leftType.ToDisplayString())));
             return SyntaxFactory.InvocationExpression(
                 SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,

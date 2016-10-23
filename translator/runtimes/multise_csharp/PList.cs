@@ -16,6 +16,11 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
         this.Insert(t.GetField<PInteger>(_ => _.Item1).Cast<SymbolicInteger>(_ => (SymbolicInteger)_), t.GetField<T>(_ => _.Item2));
     }
 
+    public void RemoveAt(ValueSummary<PInteger> idx)
+    {
+        this.RemoveAt(idx.Cast<SymbolicInteger>(_ => (SymbolicInteger)_));
+    }
+
     public ValueSummary<T> this[ValueSummary<PInteger> index]
     {
         get
@@ -58,12 +63,12 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
     public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PList<T>> other)
     {
         PathConstraint.PushFrame();
-        var vs_ret_3 = new ValueSummary<SymbolicBool>();
+        var vs_ret_4 = new ValueSummary<SymbolicBool>();
         var vs_cond_16 = (this._count.InvokeBinary<int, bool>((l, r) => l != r, other.GetField<int>(_ => _._count))).Cond();
         {
             if (vs_cond_16.CondTrue())
             {
-                PathConstraint.RecordReturnPath(vs_ret_3, (SymbolicBool)false, vs_cond_16);
+                PathConstraint.RecordReturnPath(vs_ret_4, (SymbolicBool)false, vs_cond_16);
             }
         }
 
@@ -76,7 +81,7 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
                 {
                     if (vs_cond_15.CondTrue())
                     {
-                        PathConstraint.RecordReturnPath(vs_ret_3, (SymbolicBool)false, vs_cond_15);
+                        PathConstraint.RecordReturnPath(vs_ret_4, (SymbolicBool)false, vs_cond_15);
                     }
                 }
 
@@ -85,11 +90,11 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
 
             if (vs_cond_17.MergeBranch())
             {
-                PathConstraint.RecordReturnPath(vs_ret_3, (SymbolicBool)true);
+                PathConstraint.RecordReturnPath(vs_ret_4, (SymbolicBool)true);
             }
         }
 
         PathConstraint.PopFrame();
-        return vs_ret_3;
+        return vs_ret_4;
     }
 }

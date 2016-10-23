@@ -7,7 +7,7 @@ using SCG = System.Collections.Generic;
 using BDDToZ3Wrap;
 using System.Linq;
 
-public partial class PathConstraint
+public static partial class PathConstraint
 {
 	public static Context ctx;
 	public static Solver solver;
@@ -22,8 +22,8 @@ public partial class PathConstraint
 		}
 	}
 
-	protected static Stack<Frame> frames = new Stack<Frame>();
-	protected static SCG.List<bdd> pcs = new SCG.List<bdd>();
+	static Stack<Frame> frames = new Stack<Frame>();
+	static SCG.List<bdd> pcs = new SCG.List<bdd>();
 
 	static PathConstraint()
 	{
@@ -42,10 +42,10 @@ public partial class PathConstraint
 		InitSymVar();
 	}
 
-	protected static SCG.List<SymbolicBool> sym_bool_vars;
-	protected static ValueSummary<int> solver_bool_var_cnt;
-	protected static SCG.List<SymbolicInteger> sym_int_vars;
-	protected static ValueSummary<int> solver_int_var_cnt;
+	static SCG.List<SymbolicBool> sym_bool_vars;
+	static ValueSummary<int> solver_bool_var_cnt;
+	static SCG.List<SymbolicInteger> sym_int_vars;
+	static ValueSummary<int> solver_int_var_cnt;
 
 	private static void InitSymVar()
 	{
@@ -191,7 +191,7 @@ public partial class PathConstraint
 
 	public static bool EvalPc()
 	{
-		return SolveBooleanExpr(ctx.MkTrue());
+		return BuDDySharp.BuDDySharp.bddtrue.FormulaBDDSolverSAT();
 	}
 
 	public static ValueSummary<SymbolicInteger> NewSymbolicIntVar(string prefix, int ge, ValueSummary<int> lt)
@@ -200,7 +200,7 @@ public partial class PathConstraint
 		var pc = GetPC();
 		foreach (var guardedCnt in solver_int_var_cnt.values) {
 			var bddForm = pc.And(guardedCnt.bddForm);
-			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) && SolveBooleanExpr(bddForm.ToZ3Expr())) {
+			if (bddForm.FormulaBDDSolverSAT()) {
 				var idx = guardedCnt.value;
 				if (idx < sym_int_vars.Count) {
 					ret.AddValue(bddForm, sym_int_vars[idx]);
@@ -330,4 +330,20 @@ public partial class PathConstraint
 		}
 		return false;
  	}
+ 	
+#region BDD_Z3_Ext
+	public static bool FormulaBDDSAT(this bdd x)
+	{
+		return !x.EqualEqual(BuDDySharp.BuDDySharp.bddfalse);
+	}
+	public static bool FormulaBDDSolverSAT(this bdd x)
+	{
+		return !x.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) 
+			&& (!BuDDySharp.BuDDySharp.not_pure_bool(x) || SolveBooleanExpr(x.ToZ3Expr()));
+	}
+	public static bool FormulaSolverSAT(this bdd x)
+	{
+		return SolveBooleanExpr(x.ToZ3Expr());
+	}
+#endregion	
 }

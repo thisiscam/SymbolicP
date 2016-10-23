@@ -80,12 +80,12 @@ public class List<T>
         vs_cond_5.MergeBranch();
     }
 
-    public void RemoveAt(ValueSummary<int> idx)
+    public void RemoveAt(ValueSummary<SymbolicInteger> idx)
     {
         var vs_cond_6 = PathConstraint.BeginLoop();
-        for (ValueSummary<int> i = idx.InvokeBinary<int, int>((l, r) => l + r, 1); vs_cond_6.Loop(i.InvokeBinary<int, bool>((l, r) => l < r, this._count)); i.Increment())
+        for (ValueSummary<SymbolicInteger> i = idx.InvokeBinary<int, SymbolicInteger>((l, r) => l + r, 1); vs_cond_6.Loop(i.InvokeBinary<int, SymbolicBool>((l, r) => l < r, this._count)); i.Increment())
         {
-            this.data.SetIndex<T>(i.InvokeBinary<int, int>((l, r) => l - r, 1), this.data.GetIndex<T>(i));
+            this.data.SetIndex<T>(i.InvokeBinary<int, SymbolicInteger>((l, r) => l - r, 1), this.data.GetIndex<T>(i));
         }
 
         vs_cond_6.MergeBranch();
