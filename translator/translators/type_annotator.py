@@ -97,7 +97,7 @@ class PProgramTypeAnnotator(PTypeTranslatorVisitor):
     def visitExp_call_with_arguments(self, ctx):
         fn_name = ctx.getChild(0).getText()
         ctx.getChild(2).accept(self)
-        ctx.exp_type = self.current_visited_machine[fn_name].ret_type
+        ctx.exp_type = self.current_visited_machine.fun_decls[fn_name].ret_type
         return ctx.exp_type
 
     # Visit a parse tree produced by pParser#exp_nondet.

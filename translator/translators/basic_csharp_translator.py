@@ -245,7 +245,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
                 self.out("this.ExitFunctions = new ExitFunction[{0}];\n".format(len(machine.state_decls)))
                 for state in machine.state_decls.values():
                     if state.exit_fn:
-                        self.out("this.ExitFunctions[{state}] = {state}_Exit;\n".format(state=self.translate_state(machine, state)))
+                        self.out("this.ExitFunctions[{state}] = {exit_fn};\n".format(state=self.translate_state(machine,state), exit_fn=state.exit_fn))
                 # StartMachine
                 if machine.is_spec:
                     self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
@@ -560,8 +560,10 @@ class PProgramToCSharpTranslator(TranslatorBase):
     
     def visitExp_4(self, ctx, **kwargs):
         if ctx.getChildCount() > 1:
-            ret_type = ctx.getChild(2).accept(self, **kwargs)
+            ret_type = self.translate_type(ctx.exp_type)
             c0 = ctx.getChild(0).accept(self, **kwargs)
+            if ctx.getChild(0).exp_type == PTypeAny:
+                c0 = exp_emit_do_copy(ctx, c0)
             return "(({0}) {1})".format(ret_type, c0)
         else:
             return ctx.getChild(0).accept(self, **kwargs)
@@ -637,10 +639,14 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#exp_id.
     def visitExp_id(self, ctx, **kwargs):
+        identifier = ctx.getChild(0).getText()
         if ctx.exp_type is PTypeEvent:
-            return self.translate_event(ctx.getChild(0).getText())
+            if identifier in self.current_visited_fn.local_decls or identifier in self.current_visited_fn.params or identifier in self.current_visited_machine.var_decls:
+                return identifier
+            else:
+                return self.translate_event(identifier)
         else:
-            return self.exp_emit_do_copy(ctx, ctx.getChild(0).getText(), **kwargs)
+            return self.exp_emit_do_copy(ctx, identifier, **kwargs)
 
     # Visit a parse tree produced by pParser#exp_getattr.
     def visitExp_getattr(self, ctx, **_kwargs):
@@ -658,7 +664,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
         kwargs["do_copy"] = True
         c3 = ctx.getChild(3).accept(self, **kwargs)
         nmd_tuple_type = ctx.exp_type
-        return "new {T}({arg})".format(self.translate_type(nmd_tuple_type), c3)
+        return "new {0}({1})".format(self.translate_type(nmd_tuple_type), c3)
 
     # Visit a parse tree produced by pParser#exp_keys.
     def visitExp_keys(self, ctx, **_kwargs):

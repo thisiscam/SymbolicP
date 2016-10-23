@@ -58,7 +58,7 @@ class PTypeEvent(object):
     clonable = False
 PTypeEvent = PTypeEvent()
 class PTypeAny(object):
-    clonable = True
+    clonable = False
 PTypeAny = PTypeAny()
 class PTypeSeq(object):
     clonable = True
