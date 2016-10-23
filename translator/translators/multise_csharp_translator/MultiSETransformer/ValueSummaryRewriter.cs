@@ -227,7 +227,7 @@ namespace MultiSETransformer
                             {
                                 return v;
                             }
-                            else if (v.Initializer.IsKind(SyntaxKind.IdentifierName))
+                            else if (v.Initializer.Value.IsKind(SyntaxKind.IdentifierName) || (v.Initializer.Value.IsKind(SyntaxKind.SimpleMemberAccessExpression) && (v.Initializer.Value as MemberAccessExpressionSyntax).Expression.IsKind(SyntaxKind.ThisExpression)))
                             {
                                 return v.WithInitializer(SyntaxFactory.EqualsValueClause(
                                     SyntaxFactory.InvocationExpression(

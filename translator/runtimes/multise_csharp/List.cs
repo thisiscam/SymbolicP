@@ -66,7 +66,7 @@ public class List<T>
             if (vs_cond_5.CondFalse())
             {
                 var vs_cond_4 = PathConstraint.BeginLoop();
-                for (ValueSummary<int> i = this._count; vs_cond_4.Loop(i.InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l > r, idx)); i.Decrement())
+                for (ValueSummary<int> i = ValueSummary<int>.InitializeFrom(this._count); vs_cond_4.Loop(i.InvokeBinary<SymbolicInteger, SymbolicBool>((l, r) => l > r, idx)); i.Decrement())
                 {
                     this.data.SetIndex<T>(i, this.data.GetIndex<T>(i.InvokeBinary<int, int>((l, r) => l - r, 1)));
                 }
