@@ -559,13 +559,23 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     visitExp = visitBinary_Exp
     visitExp_7 = visitBinary_Exp
-    visitExp_6 = visitBinary_Exp
+
+    def visitExp_6(self, ctx, **kwargs):            
+        if ctx.getChildCount() > 1:
+            c0 = ctx.getChild(0).accept(self, **kwargs)
+            c2 = ctx.getChild(2).accept(self, **kwargs)
+            r = "{0}.PTypeEquals({1})".format(c0, c2)
+            if ctx.getChild(1).getText() == "!=":
+                r = "!" + r
+            return "new PBool({0})".format(r)
+        else:
+            return self.visitBinary_Exp(ctx, **kwargs)
 
     def visitExp_5(self, ctx, **kwargs):            
         if ctx.getChildCount() > 1 and ctx.getChild(1).getText() == "in":
-                c2 = ctx.getChild(2).accept(self, **kwargs)
-                c0 = ctx.getChild(0).accept(self, **kwargs)
-                return "{0}.ContainsKey({1})".format(c2, c0)
+            c2 = ctx.getChild(2).accept(self, **kwargs)
+            c0 = ctx.getChild(0).accept(self, **kwargs)
+            return "{0}.ContainsKey({1})".format(c2, c0)
         else:
             return self.visitBinary_Exp(ctx, **kwargs)
     

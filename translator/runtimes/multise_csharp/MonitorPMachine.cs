@@ -17,8 +17,21 @@ abstract class MonitorPMachine
         var vs_cond_10 = PathConstraint.BeginLoop();
         for (ValueSummary<int> i = 0; vs_cond_10.Loop(i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count))); i.Increment())
         {
+            ValueSummary<bool> vs_lgc_tmp_0;
             ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], i);
-            var vs_cond_9 = (this.Transitions.GetIndex(state, e).InvokeBinary<MonitorPMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<MonitorPMachine.TransitionFunction>(null))).Cond();
+            var vs_cond_9 = ((new Func<ValueSummary<bool>>(() =>
+            {
+                var vs_cond_49 = ((vs_lgc_tmp_0 = ValueSummary<bool>.InitializeFrom(this.DeferedSet.GetIndex(state, e).InvokeUnary<bool>(_ => !_)))).Cond();
+                var vs_cond_ret_49 = new ValueSummary<bool>();
+                if (vs_cond_49.CondTrue())
+                    vs_cond_ret_49.Merge(vs_lgc_tmp_0.InvokeBinary<bool, bool>((l, r) => l & r, this.Transitions.GetIndex(state, e).InvokeBinary<MonitorPMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<MonitorPMachine.TransitionFunction>(null))));
+                if (vs_cond_49.CondFalse())
+                    vs_cond_ret_49.Merge(vs_lgc_tmp_0);
+                vs_cond_49.MergeBranch();
+                return vs_cond_ret_49;
+            }
+
+            )())).Cond();
             {
                 if (vs_cond_9.CondTrue())
                 {
@@ -49,6 +62,27 @@ abstract class MonitorPMachine
         PathConstraint.PopFrame();
     }
 
+    protected void RaiseEvent(ValueSummary<PInteger> e, ValueSummary<IPType> payload)
+    {
+        this.ServeEvent(e, payload);
+    }
+
+    protected void PopState()
+    {
+        this.retcode.Assign<int>(Constants.EXECUTE_FINISHED);
+        ValueSummary<int> current_state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], 0);
+        this.states.InvokeMethod<SymbolicInteger>((_, a0) => _.RemoveAt(a0), (SymbolicInteger)0);
+        var vs_cond_11 = (this.ExitFunctions.GetIndex(current_state).InvokeBinary<MonitorPMachine.ExitFunction, bool>((l, r) => l != r, new ValueSummary<MonitorPMachine.ExitFunction>(null))).Cond();
+        {
+            if (vs_cond_11.CondTrue())
+            {
+                this.ExitFunctions.GetIndex(current_state).Invoke();
+            }
+        }
+
+        vs_cond_11.MergeBranch();
+    }
+
     protected void Transition_Ignore(ValueSummary<IPType> payload)
     {
         return;
@@ -56,27 +90,27 @@ abstract class MonitorPMachine
 
     protected void Assert(ValueSummary<PBool> cond, ValueSummary<string> msg)
     {
-        var vs_cond_11 = (cond.InvokeUnary<PBool>(_ => !_)).Cond();
+        var vs_cond_12 = (cond.InvokeUnary<PBool>(_ => !_)).Cond();
         {
-            if (vs_cond_11.CondTrue())
+            if (vs_cond_12.CondTrue())
             {
                 throw new SystemException(msg);
             }
         }
 
-        vs_cond_11.MergeBranch();
+        vs_cond_12.MergeBranch();
     }
 
     protected void Assert(ValueSummary<PBool> cond)
     {
-        var vs_cond_12 = (cond.InvokeUnary<PBool>(_ => !_)).Cond();
+        var vs_cond_13 = (cond.InvokeUnary<PBool>(_ => !_)).Cond();
         {
-            if (vs_cond_12.CondTrue())
+            if (vs_cond_13.CondTrue())
             {
                 throw new SystemException("Assertion failure");
             }
         }
 
-        vs_cond_12.MergeBranch();
+        vs_cond_13.MergeBranch();
     }
 }

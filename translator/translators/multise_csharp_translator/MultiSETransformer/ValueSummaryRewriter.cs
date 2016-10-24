@@ -991,7 +991,9 @@ namespace MultiSETransformer
                     }
                 }
             }
-            if (t.Type != t.ConvertedType)
+            if (t.Type != t.ConvertedType &&
+                !(node.Parent.IsKind(SyntaxKind.IfStatement) || node.Parent.IsKind(SyntaxKind.WhileStatement) || node.Parent.IsKind(SyntaxKind.WhileStatement) || node.Parent.IsKind(SyntaxKind.ForStatement) 
+                || (node.Parent.IsKind(SyntaxKind.ConditionalExpression) && (node.Parent as ConditionalExpressionSyntax).Condition == node)))
             {
                 need_cast = true;
             }
@@ -1035,7 +1037,10 @@ namespace MultiSETransformer
                             {
                                 return node;
                             }
-                            else if (accessExpression.Expression.IsKind(SyntaxKind.ThisExpression) || method.Locations.Any(loc => loc.IsInMetadata) || method.Locations.Any(loc => loc.IsInSource && !this.transformSources.Contains(loc.SourceTree.FilePath)))
+                            else if (accessExpression.Expression.IsKind(SyntaxKind.ThisExpression) || 
+                                       method.Locations.Any(loc => loc.IsInMetadata) || 
+                                       (method.Locations.Any(loc => loc.IsInSource && !this.transformSources.Contains(loc.SourceTree.FilePath)) && accessExpression.Name.Identifier.Text != "PTypeEquals")
+                            )
                             {
                                 if (accessExpression.Name.Identifier.Text.Contains("ToString"))
                                 {

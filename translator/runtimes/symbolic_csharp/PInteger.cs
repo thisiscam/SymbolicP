@@ -81,6 +81,11 @@ public struct PInteger : IPType<PInteger> {
 		return new PInteger(a.value ^ b.value); 
     }
 
+    public static PInteger operator -(PInteger a) 
+    { 
+        return new PInteger(-a.value);
+    }
+
 	public SymbolicBool PTypeEquals(PInteger other)
 	{
 		return this.value == other.value;
