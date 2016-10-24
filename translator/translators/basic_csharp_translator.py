@@ -9,7 +9,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
         PTypeBool: "PBool",
         PTypeInt: "PInteger",
         PTypeMachine: "PMachine",
-        PTypeEvent: "PInteger",
+        PTypeEventUnknown: "PInteger",
         PTypeAny: "IPType"
     }
 
@@ -18,7 +18,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
         PTypeBool: "new PBool(false)",
         PTypeInt: "new PInteger(0)",
         PTypeMachine: "null",
-        PTypeEvent: "EVENT_NULL"
+        PTypeEventUnknown: "EVENT_NULL"
     }
 
     runtime_dir = os.environ.get("RUNTIME_DIR", os.path.realpath(os.path.dirname(__file__) + "/../runtimes/basic_csharp"))
@@ -30,6 +30,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
         t = None
         if T in self.type_to_csharp_type_name_map:
             return self.type_to_csharp_type_name_map[T]
+        elif isinstance(T, PTypeEvent):
+            return self.type_to_csharp_type_name_map[PTypeEventUnknown]
         elif isinstance(T, PTypeSeq):
             t = "PList<{0}>".format(self.translate_type(T.T))
         elif isinstance(T, PTypeMap):
@@ -64,6 +66,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
         r = None
         if T in self.type_to_default_exp_map:
             r = self.type_to_default_exp_map[T]
+        elif isinstance(T, PTypeEvent):
+            r = self.type_to_default_exp_map[PTypeEventUnknown]
         elif isinstance(T, PTypeSeq) or isinstance(T, PTypeMap):
             r = "new {0}()".format(self.translate_type(T))
         elif isinstance(T, PTypeTuple):
@@ -104,9 +108,11 @@ class PProgramToCSharpTranslator(TranslatorBase):
         PTypeBool: "false",
         PTypeInt: "-1",
         PTypeMachine: "null",
-        PTypeEvent: "-1"
+        PTypeEventUnknown: "-1"
     }
     def out_check_raise_exit(self, ret_type):
+        if isinstance(ret_type, PTypeEvent):
+            ret_type = PTypeEventUnknown
         default_exp = self.raise_return_type_to_default_exp_map.get(ret_type, "null")
         self.out(" if(retcode == Constants.RAISED_EVENT) {{ return {0}; }}\n".format(default_exp))
 
@@ -294,7 +300,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
                         self.out("public static PMachine CreateMainMachine() {{\nreturn new {0}();\n}}\n\n".format(classname))
                         if len(self.pprogram.observes_map) > 0:
                             self.out("/* Observers */\n")
-                            self.out("public static void AnnounceEvent({0} e, {1} payload) {{\n".format(self.translate_type(PTypeEvent), self.translate_type(PTypeAny)))
+                            self.out("public static void AnnounceEvent({0} e, {1} payload) {{\n".format(self.translate_type(PTypeEventUnknown), self.translate_type(PTypeAny)))
                             for observed_event, observing_machines in self.pprogram.observes_map.items():
                                 self.out("if(e == {0}) {{\n".format(self.translate_event(observed_event)))
                                 for m in observing_machines:
@@ -501,6 +507,9 @@ class PProgramToCSharpTranslator(TranslatorBase):
         c2 = ctx.getChild(2).accept(self, **kwargs)
         c4 = ctx.getChild(4).accept(self, **kwargs)
         self.out("this.SendMsg({0},{1},null);\n".format(c2, c4))
+        event_type = ctx.getChild(4).exp_type
+        if not event_type.is_static_event() or event_type.name in self.pprogram.observes_map:
+            self.out("MachineController.AnnounceEvent({0}, null);\n".format(c4))
 
 
     # Visit a parse tree produced by pParser#stmt_send_with_arguments.
@@ -511,7 +520,9 @@ class PProgramToCSharpTranslator(TranslatorBase):
         c4 = ctx.getChild(4).accept(self, **kwargs)
         c6 = ctx.getChild(6).accept(self, **kwargs)
         self.out("this.SendMsg({0},{1},{2});\n".format(c2, c4, c6))
-
+        event_type = ctx.getChild(4).exp_type
+        if not event_type.is_static_event() or event_type.name in self.pprogram.observes_map:
+            self.out("MachineController.AnnounceEvent({0},{1});\n".format(c4, c6))
 
     # Visit a parse tree produced by pParser#stmt_monitor.
     def visitStmt_monitor(self, ctx, **kwargs):
@@ -640,7 +651,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
     # Visit a parse tree produced by pParser#exp_id.
     def visitExp_id(self, ctx, **kwargs):
         identifier = ctx.getChild(0).getText()
-        if ctx.exp_type is PTypeEvent:
+        if type(ctx.exp_type) is PTypeEvent:
             if identifier in self.current_visited_fn.local_decls or identifier in self.current_visited_fn.params or identifier in self.current_visited_machine.var_decls:
                 return identifier
             else:

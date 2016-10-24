@@ -120,7 +120,7 @@ class PProgramTypeAnnotator(PTypeTranslatorVisitor):
         elif identifier in self.current_visited_machine.var_decls:
             ctx.exp_type = self.current_visited_machine.var_decls[identifier]
         elif identifier in self.pprogram.events:
-            ctx.exp_type = PTypeEvent
+            ctx.exp_type = PTypeEvent.get_or_create(identifier)
         else:
             self.warning("Cannot find identifier {0}".format(identifier), ctx)
             ctx.exp_type = PTypeAny
@@ -196,7 +196,7 @@ class PProgramTypeAnnotator(PTypeTranslatorVisitor):
 
     # Visit a parse tree produced by pParser#exp_halt.
     def visitExp_halt(self, ctx):
-        ctx.exp_type =  PTypeEvent
+        ctx.exp_type =  PTypeEventHalt
         return ctx.exp_type
 
     # Visit a parse tree produced by pParser#exp_getitem.

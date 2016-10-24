@@ -56,7 +56,19 @@ class PTypeInt(object):
 PTypeInt = PTypeInt()
 class PTypeEvent(object):
     clonable = False
-PTypeEvent = PTypeEvent()
+    events = {}
+    def __init__(self, name):
+        self.name = name
+    def is_static_event(self):
+        return self.name != "*unknown"
+    @staticmethod
+    def get_or_create(event_name):
+        if event_name not in PTypeEvent.events:
+            PTypeEvent.events[event_name] = PTypeEvent(event_name)
+        return PTypeEvent.events[event_name]
+PTypeEventUnknown = PTypeEvent("*unknown")
+PTypeEventHalt = PTypeEvent("*halt")
+
 class PTypeAny(object):
     clonable = False
 PTypeAny = PTypeAny()
@@ -100,7 +112,7 @@ class PTypeTranslatorVisitor(pVisitor):
 
     # Visit a parse tree produced by pParser#ptype_event.
     def visitPtype_event(self, ctx):
-        return PTypeEvent
+        return PTypeEventUnknown
 
 
     # Visit a parse tree produced by pParser#ptype_machine.
