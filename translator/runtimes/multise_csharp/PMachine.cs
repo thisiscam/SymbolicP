@@ -30,14 +30,14 @@ abstract class PMachine : IPType<PMachine>
             ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], i);
             var vs_cond_18 = ((new Func<ValueSummary<bool>>(() =>
             {
-                var vs_cond_48 = ((vs_lgc_tmp_0 = ValueSummary<bool>.InitializeFrom(this.DeferedSet.GetIndex(state, e).InvokeUnary<bool>(_ => !_)))).Cond();
-                var vs_cond_ret_48 = new ValueSummary<bool>();
-                if (vs_cond_48.CondTrue())
-                    vs_cond_ret_48.Merge(vs_lgc_tmp_0.InvokeBinary<bool, bool>((l, r) => l & r, this.Transitions.GetIndex(state, e).InvokeBinary<PMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.TransitionFunction>(null))));
-                if (vs_cond_48.CondFalse())
-                    vs_cond_ret_48.Merge(vs_lgc_tmp_0);
-                vs_cond_48.MergeBranch();
-                return vs_cond_ret_48;
+                var vs_cond_37 = ((vs_lgc_tmp_0 = ValueSummary<bool>.InitializeFrom(this.DeferedSet.GetIndex(state, e).InvokeUnary<bool>(_ => !_)))).Cond();
+                var vs_cond_ret_37 = new ValueSummary<bool>();
+                if (vs_cond_37.CondTrue())
+                    vs_cond_ret_37.Merge(vs_lgc_tmp_0.InvokeBinary<bool, bool>((l, r) => l & r, this.Transitions.GetIndex(state, e).InvokeBinary<PMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<PMachine.TransitionFunction>(null))));
+                if (vs_cond_37.CondFalse())
+                    vs_cond_ret_37.Merge(vs_lgc_tmp_0);
+                vs_cond_37.MergeBranch();
+                return vs_cond_ret_37;
             }
 
             )())).Cond();
@@ -170,11 +170,6 @@ abstract class PMachine : IPType<PMachine>
     public ValueSummary<PMachine> DeepCopy()
     {
         return this;
-    }
-
-    public ValueSummary<SymbolicInteger> PTypeGetHashCode()
-    {
-        return new ValueSummary<SymbolicInteger>(new SymbolicInteger(this.GetHashCode()));
     }
 
     public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PMachine> other)

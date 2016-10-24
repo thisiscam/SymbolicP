@@ -1,49 +1,21 @@
+using System;
+
 public class List<T> {
-	const int INITIAL_CAPACITY = 4;
-
 	internal int _count = 0;
-	internal int _capacity = List<T>.INITIAL_CAPACITY;
 
-	protected T[] data = new T[List<T>.INITIAL_CAPACITY];
+	protected DefaultArray<T> data = new DefaultArray<T>(() => default(T));
 
 	public void Add(T item) {
-		if (this._count >= this._capacity) {
-			int new_capacity = this._capacity * 2;
-			T[] new_data = new T[new_capacity];
-			for (int i = 0; i < this._count; i++) {
-				new_data [i] = this.data [i];
-			}
-			new_data [this._count] = item;
-			this.data = new_data;
-			this._capacity = new_capacity;
-			this._count++;
-		} else {
-			this.data [_count] = item;
-			this._count++;
-		}
+		this.data [_count] = item;
+		this._count++;
 	}
 
 	public void Insert(SymbolicInteger idx, T item) {
-		if (this._count >= this._capacity) {
-			int new_capacity = this._capacity * 2;
-			T[] new_data = new T[new_capacity];
-			int i = 0;
-			for (; i < idx; i++) {
-				new_data [i] = this.data [i];
-			}
-			new_data [i] = item;
-			for (; i < this._capacity; i++) {
-				new_data [i + 1] = this.data [i];
-			}
-			this._capacity = new_capacity;
-			this._count++;
-		} else {
-			for (int i = this._count; i > idx; i--) {
-				this.data [i] = this.data [i - 1];
-			}
-			this.data [idx] = item;
-			this._count++;
+		for (int i = this._count; i > idx; i--) {
+			this.data [i] = this.data [i - 1];
 		}
+		this.data [idx] = item;
+		this._count++;
 	}
 
 	public void RemoveAt(SymbolicInteger idx) {
@@ -62,18 +34,30 @@ public class List<T> {
 
 	public T this[int index] { 
 		get {
+			if(index >= this._count) {
+				throw new IndexOutOfRangeException();
+			}
 			return this.data [index];
 		} 
 		set {
+			if(index >= this._count) {
+				throw new IndexOutOfRangeException();
+			}
 			this.data [index] = value;
 		}
 	}
 
 	public T this[SymbolicInteger index] { 
 		get {
+			if(index >= this._count) {
+				throw new IndexOutOfRangeException();
+			}
 			return this.data [index];
 		} 
 		set {
+			if(index >= this._count) {
+				throw new IndexOutOfRangeException();
+			}
 			this.data [index] = value;
 		}
 	}

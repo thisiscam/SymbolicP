@@ -64,15 +64,6 @@ public struct PBool : IPType<PBool> {
 		return this.value == other.value;
 	}
 
-	public SymbolicInteger PTypeGetHashCode()
-	{
-		if (this.value.IsAbstract()) {
-			return new SymbolicInteger((BitVecExpr)SymbolicEngine.ctx.MkITE(this.value.AbstractValue, SymbolicEngine.ctx.MkBV(1, SymbolicInteger.INT_SIZE), SymbolicEngine.ctx.MkBV(0, SymbolicInteger.INT_SIZE)));
-		} else {
-			return new SymbolicInteger(this.value.ConcreteValue ? 1 : 0);
-		}
-	}
-
 	public PBool DeepCopy() {
 		return this;
 	}
