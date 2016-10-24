@@ -80,6 +80,11 @@ public struct PInteger : IPType<PInteger> {
     { 
 		return new PInteger(a.value ^ b.value); 
     }
+    
+    public static PInteger operator -(PInteger a) 
+	{ 
+		return new PInteger(-a.value);
+	}
 
 	public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PInteger> other)
 	{

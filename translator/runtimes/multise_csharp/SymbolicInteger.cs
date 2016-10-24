@@ -353,6 +353,15 @@ public struct SymbolicInteger {
             return new SymbolicInteger(a.concreteValue % b); 
         }
     }
+    
+    public static SymbolicInteger operator -(SymbolicInteger a) 
+	{ 
+		if(a.IsAbstract()) {
+			return new SymbolicInteger(PathConstraint.ctx.MkBVNeg(a.abstractValue));
+        } else {
+            return new SymbolicInteger(-a.concreteValue); 
+        }
+	}
 
 	public override string ToString ()
 	{
