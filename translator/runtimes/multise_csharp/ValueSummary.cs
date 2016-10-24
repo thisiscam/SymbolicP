@@ -392,7 +392,14 @@ public class ValueSummary<T>
 
 	public override string ToString()
 	{
-		return "[VS]{" + values.Select((gv) => String.Format("{0}", gv.value)).Aggregate("", (a, v) => a + v + ",") + "}";
+		return "[VS]{" + values.Select((gv) => {
+				if(gv.value is Delegate) {
+					return (gv.value as Delegate).Method.Name;
+				} else {
+					return String.Format("{0}", gv.value);
+				}
+			}).Aggregate("", (a, v) => a + v + ",")
+			+ "}";
 	}
 }
 

@@ -80,6 +80,15 @@
     <PlatformTarget>x64</PlatformTarget>
     <Externalconsole>true</Externalconsole>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'ReleaseLogTransitions|x64' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\ReleaseVSNoMerging</OutputPath>
+    <DefineConstants>LOG_TRANSITIONS</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
+    <Externalconsole>true</Externalconsole>
+  </PropertyGroup>
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'Default' ">
     <StartAction>Project</StartAction>
     <ExternalConsole>true</ExternalConsole>

@@ -159,6 +159,9 @@ abstract class PMachine : IPType<PMachine>
         vs_cond_25.MergeBranch();
         this.retcode.Assign<int>(Constants.EXECUTE_FINISHED);
         ValueSummary<TransitionFunction> transition_fn = this.Transitions.GetIndex(state, e);
+#if LOG_TRANSITIONS
+		Console.WriteLine("{0}@{1} takes {2}", this, this.GetHashCode(), transition_fn);
+#endif
         transition_fn.Invoke(payload);
     }
 
