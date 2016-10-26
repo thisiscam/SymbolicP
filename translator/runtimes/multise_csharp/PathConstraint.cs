@@ -33,7 +33,8 @@ public static partial class PathConstraint
 		BuDDySharp.BuDDySharp.cpp_init(50000000, 50000000);
 		BuDDySharp.BuDDySharp.setcacheratio(64);
 		BuDDySharp.BuDDySharp.setvarnum(10000);
-
+		BuDDySharp.BuDDySharp.setmaxincrease(10000000);
+		
 		BDDToZ3Wrap.Converter.Init(ctx);
 
 		pcs.Add(BuDDySharp.BuDDySharp.bddtrue);

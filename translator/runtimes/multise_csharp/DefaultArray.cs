@@ -5,7 +5,12 @@ public class DefaultArray<T> {
 	private System.Collections.Generic.List<T> data = new System.Collections.Generic.List<T>();
 
 	private Func<T> defaultValueFunction;
-
+	
+	public DefaultArray<T> NewEmpty()
+	{
+		return new DefaultArray<T>(defaultValueFunction);
+	}
+	
 	public DefaultArray(Func<T> defaultValueFunction) 
 	{
 		this.defaultValueFunction = defaultValueFunction;

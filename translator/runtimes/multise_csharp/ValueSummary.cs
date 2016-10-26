@@ -45,7 +45,7 @@ public class ValueSummary<T>
 
 	public ValueSummary(T t) : this()
 	{
-		this.values.Add(new GuardedValue<T>(PathConstraint.GetPC(), t));
+		this.values.Add(new GuardedValue<T>(BuDDySharp.BuDDySharp.bddtrue, t));
 	}
 
 	public static implicit operator T(ValueSummary<T> vs)
@@ -157,7 +157,7 @@ public class ValueSummary<T>
 		return ret;
 	}
 	
-	private static void DeepMerge(GuardedValue<T> into, GuardedValue<T> from)
+	private static void DeepMergePVal(GuardedValue<T> into, GuardedValue<T> from)
 	{
 		var newVal = (T) into.value.GetType().GetMethod("MemberwiseClone", BindingFlags.NonPublic|BindingFlags.Instance).Invoke(into.value, null);
 		foreach(FieldInfo prop in from.value.GetType().GetFields(BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Instance))
@@ -174,26 +174,55 @@ public class ValueSummary<T>
 	
 	public void MergeMax()
 	{
-		if(typeof(IPType).IsAssignableFrom(typeof(T))) {
+		if(typeof(IPType).IsAssignableFrom(typeof(T)) || typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition().IsEquivalentTo(typeof(DefaultArray<>))) {
 			var newVals = new SCG.List<GuardedValue<T>>();
 			foreach(var sameTypeGroup in this.values.GroupBy((arg) => arg.value == null ? null : arg.value.GetType()))
 			{
-				if(sameTypeGroup.Key != null && (sameTypeGroup.Key.Name.StartsWith("PList") || sameTypeGroup.Key.Name.StartsWith("PTuple") || sameTypeGroup.Key.Name.StartsWith("PMap")))
-				{
-					var enumerator = sameTypeGroup.GetEnumerator();
-					enumerator.MoveNext();
-					var merged = enumerator.Current;
-					while(enumerator.MoveNext()) 
+				if(sameTypeGroup.Key != null) {
+					if((sameTypeGroup.Key.Name.StartsWith("PList") || sameTypeGroup.Key.Name.StartsWith("PTuple") || sameTypeGroup.Key.Name.StartsWith("PMap")))
 					{
-						var curr = enumerator.Current;
-						DeepMerge(merged, curr);
+						var enumerator = sameTypeGroup.GetEnumerator();
+						enumerator.MoveNext();
+						var merged = enumerator.Current;
+						while(enumerator.MoveNext()) 
+						{
+							var curr = enumerator.Current;
+							DeepMergePVal(merged, curr);
+						}
+						newVals.Add(merged);
+						continue;
+					} else if(sameTypeGroup.Key.Name.StartsWith("DefaultArray")) {
+	 					dynamic newArray = sameTypeGroup.First().value.GetType().GetMethod("NewEmpty", BindingFlags.Public|BindingFlags.Instance).Invoke(sameTypeGroup.First().value, null);
+						bdd limit = BuDDySharp.BuDDySharp.bddfalse;
+						foreach(GuardedValue<T> guardedVal in sameTypeGroup)
+	 					{
+	 						dynamic innerdata = guardedVal.value.GetType().GetField("data", BindingFlags.NonPublic|BindingFlags.Instance).GetValue(guardedVal.value);
+	 						int counter = 0;
+	 						foreach(dynamic x in innerdata)
+	 						{
+	 							newArray[counter] = newArray[counter].LimitCombine(limit, x, guardedVal.bddForm);
+	 							counter++;
+							}
+							limit = limit.Or(guardedVal.bddForm);
+						}
+						newVals.Add(new GuardedValue<T>(limit, newArray));
+						continue;
 					}
-					newVals.Add(merged);
-				} else {
-					newVals.AddRange(sameTypeGroup);
 				}
+				newVals.AddRange(sameTypeGroup);
 			}
 			this.values = newVals;
+		} else {
+			this.values = new SCG.List<GuardedValue<T>>(
+				this.values.GroupBy((arg) => arg.value).Select((arg) => {
+					var pred = BuDDySharp.BuDDySharp.bddfalse;
+					foreach(var guardedVal in arg)
+					{
+						pred = pred.Or(guardedVal.bddForm);
+					}
+					return new GuardedValue<T>(pred, arg.Key);
+				})
+			);
 		}
 	}
 	
@@ -203,7 +232,7 @@ public class ValueSummary<T>
 			var p = guardedVal.bddForm.And(pred);
 			Update(guardedVal.value, p);
 		}
-#if NO_MERGE_VAL
+#if true
 		MergeMax();
 #endif
 #if DEBUG
