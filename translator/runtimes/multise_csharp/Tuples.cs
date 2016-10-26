@@ -5,7 +5,7 @@ public class PTuple<T1> : IPType<PTuple<T1>> where T1 : IPType<T1>
     public ValueSummary<T1> Item1 = new ValueSummary<T1>(default (T1));
     public PTuple(ValueSummary<T1> i1)
     {
-        this.Item1 = i1;
+        this.Item1.Assign<T1>(i1);
     }
 
     public ValueSummary<PTuple<T1>> DeepCopy()
@@ -25,8 +25,8 @@ public class PTuple<T1, T2> : IPType<PTuple<T1, T2>> where T1 : IPType<T1> where
     public ValueSummary<T2> Item2 = new ValueSummary<T2>(default (T2));
     public PTuple(ValueSummary<T1> i1, ValueSummary<T2> i2)
     {
-        this.Item1 = i1;
-        this.Item2 = i2;
+        this.Item1.Assign<T1>(i1);
+        this.Item2.Assign<T2>(i2);
     }
 
     public ValueSummary<PTuple<T1, T2>> DeepCopy()
@@ -60,9 +60,9 @@ public class PTuple<T1, T2, T3> : IPType<PTuple<T1, T2, T3>> where T1 : IPType<T
     public ValueSummary<T3> Item3 = new ValueSummary<T3>(default (T3));
     public PTuple(ValueSummary<T1> i1, ValueSummary<T2> i2, ValueSummary<T3> i3)
     {
-        this.Item1 = i1;
-        this.Item2 = i2;
-        this.Item3 = i3;
+        this.Item1.Assign<T1>(i1);
+        this.Item2.Assign<T2>(i2);
+        this.Item3.Assign<T3>(i3);
     }
 
     public ValueSummary<PTuple<T1, T2, T3>> DeepCopy()
@@ -110,10 +110,10 @@ public class PTuple<T1, T2, T3, T4> : IPType<PTuple<T1, T2, T3, T4>> where T1 : 
     public ValueSummary<T4> Item4 = new ValueSummary<T4>(default (T4));
     public PTuple(ValueSummary<T1> i1, ValueSummary<T2> i2, ValueSummary<T3> i3, ValueSummary<T4> i4)
     {
-        this.Item1 = i1;
-        this.Item2 = i2;
-        this.Item3 = i3;
-        this.Item4 = i4;
+        this.Item1.Assign<T1>(i1);
+        this.Item2.Assign<T2>(i2);
+        this.Item3.Assign<T3>(i3);
+        this.Item4.Assign<T4>(i4);
     }
 
     public ValueSummary<PTuple<T1, T2, T3, T4>> DeepCopy()
@@ -175,11 +175,11 @@ public class PTuple<T1, T2, T3, T4, T5> : IPType<PTuple<T1, T2, T3, T4, T5>> whe
     public ValueSummary<T5> Item5 = new ValueSummary<T5>(default (T5));
     public PTuple(ValueSummary<T1> i1, ValueSummary<T2> i2, ValueSummary<T3> i3, ValueSummary<T4> i4, ValueSummary<T5> i5)
     {
-        this.Item1 = i1;
-        this.Item2 = i2;
-        this.Item3 = i3;
-        this.Item4 = i4;
-        this.Item5 = i5;
+        this.Item1.Assign<T1>(i1);
+        this.Item2.Assign<T2>(i2);
+        this.Item3.Assign<T3>(i3);
+        this.Item4.Assign<T4>(i4);
+        this.Item5.Assign<T5>(i5);
     }
 
     public ValueSummary<PTuple<T1, T2, T3, T4, T5>> DeepCopy()

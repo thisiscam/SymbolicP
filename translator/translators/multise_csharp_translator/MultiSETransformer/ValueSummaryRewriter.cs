@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Diagnostics;
 
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+using Microsoft.CodeAnalysis.Text;
 
 namespace MultiSETransformer
 {
@@ -37,17 +38,33 @@ namespace MultiSETransformer
         };
 
         private int pass = 0;
-        private bool noRewrite = false, _inPropertyDecl = false, _inConstructorDecl = false;
+        private bool _inPropertyDecl = false, _inConstructorDecl = false;
         private SemanticModel model;
         private HashSet<string> transformSources;
-
-        public ValueSummaryRewriter(int pass, SemanticModel semanticModel, HashSet<string> transformSources)
+        
+        public ValueSummaryRewriter(int pass, SemanticModel semanticModel, HashSet<string> transformSources):base(true)
         {
             this.pass = pass;
             this.model = semanticModel;
             this.transformSources = transformSources;
         }
-
+        
+        public override SyntaxNode Visit(SyntaxNode node)
+        {   
+            currNoRewriteSpan = new System.Collections.Generic.List<TextSpan>();
+            if(node != null) {
+                foreach(var arg in node.DescendantNodes(descendIntoTrivia:true)) {
+                    if(arg.IsKind(SyntaxKind.RegionDirectiveTrivia)) {
+                        var regionBegin = arg as RegionDirectiveTriviaSyntax;
+                        if(regionBegin.ToFullString().Contains("multisenorewrite")) {
+                            currNoRewriteSpan.Add(new TextSpan(regionBegin.SpanStart, regionBegin.GetNextDirective().Span.End));
+                        }
+                    }
+                }
+            }
+            return base.Visit(node);
+        }
+    
         //		public override SyntaxNode VisitLocalDeclarationStatement(
         //			LocalDeclarationStatementSyntax node)
         //		{
@@ -65,6 +82,8 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitBlock(BlockSyntax node)
         {
+            if(noRewrite(node))
+                return node;
             switch (pass)
             {
                 case 0: 
@@ -183,28 +202,25 @@ namespace MultiSETransformer
                     }
             }
         }
+        
+        private List<TextSpan> currNoRewriteSpan = new List<TextSpan>();
+        //public override SyntaxNode VisitRegionDirectiveTrivia(RegionDirectiveTriviaSyntax node)
+        //{
+        //    if (node.ToFullString().Contains("multisenorewrite"))
+        //    {
+        //        currNoRewriteSpan = new TextSpan(node.Span.Start, node.GetRelatedDirectives().Last().Span.End);
+        //    }
+        //    return base.VisitRegionDirectiveTrivia(node);
+        //}
 
-        public override SyntaxNode VisitRegionDirectiveTrivia(RegionDirectiveTriviaSyntax node)
-        {
-            if (node.DirectiveNameToken.Text == "multisenorewrite")
-            {
-                this.noRewrite = true;
-            }
-            return base.VisitRegionDirectiveTrivia(node);
-        }
-
-        public override SyntaxNode VisitEndRegionDirectiveTrivia(EndRegionDirectiveTriviaSyntax node)
-        {
-            if (node.DirectiveNameToken.Text == "multisenorewrite")
-            {
-                this.noRewrite = false;
-            }
-            return base.VisitEndRegionDirectiveTrivia(node);
+        private bool noRewrite(SyntaxNode node) {
+           var ret = currNoRewriteSpan.Any(arg => arg.Start < node.Span.Start && arg.End > node.Span.End);
+           return ret;
         }
 
         public override SyntaxNode VisitVariableDeclaration(VariableDeclarationSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -258,7 +274,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitFieldDeclaration(FieldDeclarationSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
 
             if (node.Declaration.Variables.Any((arg => IsSpecialKW(arg.Identifier.Text))))
@@ -285,7 +301,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -306,8 +322,9 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitParameter(ParameterSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node)) {
                 return node;
+            }
             switch (pass)
             {
                 case 4:
@@ -324,7 +341,7 @@ namespace MultiSETransformer
         
         public override SyntaxNode VisitArrayType(ArrayTypeSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -373,7 +390,7 @@ namespace MultiSETransformer
         private Dictionary<BlockSyntax, List<Tuple<string, string>>> inserted_logic_vars = new Dictionary<BlockSyntax, List<Tuple<string, string>>>();
         public override SyntaxNode VisitBinaryExpression(BinaryExpressionSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -458,7 +475,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitPrefixUnaryExpression(PrefixUnaryExpressionSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
             {
                 return node;
             }
@@ -497,7 +514,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitPostfixUnaryExpression(PostfixUnaryExpressionSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
             {
                 return node;
             }
@@ -536,7 +553,7 @@ namespace MultiSETransformer
         public override SyntaxNode VisitElementAccessExpression(ElementAccessExpressionSyntax node)
         {
 
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -616,7 +633,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -642,7 +659,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitArrayCreationExpression(ArrayCreationExpressionSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -660,7 +677,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitPropertyDeclaration(PropertyDeclarationSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -689,15 +706,19 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitConstructorDeclaration(ConstructorDeclarationSyntax node)
         {
-            _inConstructorDecl = true;
-            var ret = base.VisitConstructorDeclaration(node);
-            _inConstructorDecl = false;
-            return ret;
+            if(node.Identifier.Text.StartsWith("Machine")) {
+                _inConstructorDecl = true;
+                var ret = base.VisitConstructorDeclaration(node);
+                _inConstructorDecl = false;
+                return ret;
+            } else {
+                return base.VisitConstructorDeclaration(node);
+            }
         }
 
         public override SyntaxNode VisitIdentifierName(IdentifierNameSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -739,8 +760,9 @@ namespace MultiSETransformer
         private bool handle_return = false; // TODO remove this reduntant state variable
         public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node)
         {
-           if (noRewrite)
+           if (noRewrite(node)) {
                 return node;
+           }
            switch (pass)
             {
                 case 0:
@@ -798,7 +820,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitDelegateDeclaration(DelegateDeclarationSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -820,7 +842,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitIndexerDeclaration(IndexerDeclarationSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -842,7 +864,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
 
             bool need_cast = false;
@@ -1031,7 +1053,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -1186,7 +1208,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitAssignmentExpression(AssignmentExpressionSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             if (node.Left.ChildNodes().Any(
                 n =>
@@ -1283,7 +1305,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitLiteralExpression(LiteralExpressionSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -1317,7 +1339,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitCastExpression(CastExpressionSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -1337,7 +1359,7 @@ namespace MultiSETransformer
         private static int cond_cnt = 0;
         public override SyntaxNode VisitIfStatement(IfStatementSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -1372,7 +1394,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitConditionalExpression(ConditionalExpressionSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -1420,7 +1442,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitForStatement(ForStatementSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -1446,7 +1468,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitWhileStatement(WhileStatementSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -1472,7 +1494,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitSwitchStatement(SwitchStatementSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {
@@ -1490,7 +1512,7 @@ namespace MultiSETransformer
 
         public override SyntaxNode VisitReturnStatement(ReturnStatementSyntax node)
         {
-            if (noRewrite)
+            if (noRewrite(node))
                 return node;
             switch (pass)
             {

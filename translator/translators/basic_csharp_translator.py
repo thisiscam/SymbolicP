@@ -82,9 +82,11 @@ class PProgramToCSharpTranslator(TranslatorBase):
         assert(len(machine.fun_decls[fn_name].params) <= 1)
         possible_payload_type = list(machine.fun_decls[fn_name].params.values())
         if possible_payload_type:
-            self.out("(")
-            self.out(self.translate_type(possible_payload_type[0]))
-            self.out(")")
+            # import pdb; pdb.set_trace()
+            if not possible_payload_type[0] == self.current_payload_type:
+                self.out("(")
+                self.out(self.translate_type(possible_payload_type[0]))
+                self.out(")")
             self.out("payload")
         self.out(");")
         if not last_stmt and machine.fun_decls[fn_name].can_raise_event:
@@ -128,6 +130,9 @@ class PProgramToCSharpTranslator(TranslatorBase):
             p, t = fn.params.items()[0]
             t_str = self.translate_type(t)
             self.out("{0} {1} = ({2})_payload;\n".format(t_str, p, t_str))
+            self.current_payload_type = t
+        else:
+            self.current_payload_type = PTypeAny
 
     def out_fn_decl(self, machine, fn_name):
         fn_node = machine.fun_decls[fn_name]
@@ -138,6 +143,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
         else:
             self.out("private {0} {1} ({2}) {{\n".format(self.translate_type(ret_type), fn_name, 
                     ",".join(("{} {}".format(self.translate_type(t), i)) for i,t in fn_node.params.items())))
+            self.current_payload_type = None
         if fn_node.from_to_state:
             from_state, to_state = fn_node.from_to_state
             self.out_exit_state(machine, machine.state_decls[from_state], last_stmt=False, ret_type=ret_type)
@@ -190,125 +196,141 @@ class PProgramToCSharpTranslator(TranslatorBase):
     def generate_foreach_machine(self):
         # generated .cs files for each machine
         for machine in self.pprogram.machines:
-            self.current_visited_machine = machine
-            classname = "Machine" + machine.name
-            with open(os.path.join(self.out_dir, classname + ".cs"), 'w+') as csharpsrcf:
-                self.stream = csharpsrcf
-                self.out("using System;\nusing System.Collections.Generic;\nusing System.Diagnostics;\n\n")
-                base_clase = "MonitorPMachine" if machine.is_spec else "PMachine"
-                self.out("class {0} : {1} {{\n".format(classname, base_clase))
-                # Defered set 
-                self.out("\nprivate readonly static bool[,] _DeferedSet = {\n")
-                for state in machine.state_decls.values():
-                    self.out("{");
-                    for e in self.pprogram.events:
-                        self.out("true ," if e in state.defered_events else "false,")
-                    self.out("},\n")
-                self.out("};\n")
-                # IsGotoTransition
-                self.out("\nprivate readonly static bool[,] _IsGotoTransition = {\n")
-                for state in machine.state_decls.values():
-                    self.out("{")
-                    for e in self.pprogram.events:
-                        if e in state.transitions and state.transitions[e].to_state:
-                            self.out("true, ")
-                        else:
-                            self.out("false,")
-                    self.out("},\n")
-                self.out("};\n")
-                # P local vars
-                self.out("/* P local vars */\n")
-                for i, t in machine.var_decls.items():
-                    self.out("{type} {var_name}={init};\n".format(
-                                    type=self.translate_type(t), 
-                                    var_name=i,
-                                    init=self.translate_default_exp(t)
-                                ))
-                self.out("\n\n")
-                # Constructor(including transition function map)
-                self.out("public {0} () {{\n".format(classname))
-                self.out("this.DeferedSet = _DeferedSet;\nthis.IsGotoTransition = _IsGotoTransition;\n")
-                self.out("this.Transitions = new TransitionFunction[{0},{1}];\n".format(len(machine.state_decls), len(self.pprogram.events)))
-                rtransitions_map = self.build_transition_map(machine)
-                for (state, to_state, fn_name, is_named, is_push), on_es in rtransitions_map.items():
-                    transition_fn_name = None
-                    if to_state:
-                        if is_named or not fn_name:
-                            transition_fn_name = "{0}_on_{1}".format(state.name, "_".join(on_es))
-                        else:
-                            transition_fn_name = fn_name
-                    else:
-                        if is_named and len(machine.fun_decls[fn_name].params) == 1:
-                            transition_fn_name = fn_name
-                        else:
-                            transition_fn_name = "{0}_on_{1}".format(state.name, "_".join(on_es))
-                    for on_e in on_es:
-                        self.out("this.Transitions[{0},{1}] = {2};\n".format(self.translate_state(machine, state), self.translate_event(on_e), transition_fn_name))
-                for state in machine.state_decls.values():
-                    for ignored_event in state.ignored_events:
-                        self.out("this.Transitions[{0},{1}] = Transition_Ignore;\n".format(self.translate_state(machine, state), self.translate_event(ignored_event)))
-                # Exit Functions
-                self.out("this.ExitFunctions = new ExitFunction[{0}];\n".format(len(machine.state_decls)))
-                for state in machine.state_decls.values():
-                    if state.exit_fn:
-                        self.out("this.ExitFunctions[{state}] = {exit_fn};\n".format(state=self.translate_state(machine,state), exit_fn=state.exit_fn))
-                # StartMachine
-                if machine.is_spec:
-                    self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
+            self.generate_for_machine(machine)
+            # if main machine, create machine starter
+            if machine.is_main:
+                self.generate_for_main_machine(machine)
+
+    def get_machine_csclassname(self, machine):
+        return "Machine" + machine.name
+
+    def out_machine_body(self):
+        machine = self.current_visited_machine
+        classname = self.get_machine_csclassname(machine)
+        # Defered set 
+        self.out("\nprivate readonly static bool[,] _DeferedSet = {\n")
+        for state in machine.state_decls.values():
+            self.out("{");
+            for e in self.pprogram.events:
+                self.out("true ," if e in state.defered_events else "false,")
+            self.out("},\n")
+        self.out("};\n")
+        # IsGotoTransition
+        self.out("\nprivate readonly static bool[,] _IsGotoTransition = {\n")
+        for state in machine.state_decls.values():
+            self.out("{")
+            for e in self.pprogram.events:
+                if e in state.transitions and state.transitions[e].to_state:
+                    self.out("true, ")
                 else:
+                    self.out("false,")
+            self.out("},\n")
+        self.out("};\n")
+        # P local vars
+        self.out("/* P local vars */\n")
+        for i, t in machine.var_decls.items():
+            self.out("{type} {var_name}={init};\n".format(
+                            type=self.translate_type(t), 
+                            var_name=i,
+                            init=self.translate_default_exp(t)
+                        ))
+        self.out("\n\n")
+        # Constructor(including transition function map)
+        self.out("public {0} () {{\n".format(classname))
+        self.out("this.DeferedSet = _DeferedSet;\nthis.IsGotoTransition = _IsGotoTransition;\n")
+        self.out("this.Transitions = new TransitionFunction[{0},{1}];\n".format(len(machine.state_decls), len(self.pprogram.events)))
+        rtransitions_map = self.build_transition_map(machine)
+        for (state, to_state, fn_name, is_named, is_push), on_es in rtransitions_map.items():
+            transition_fn_name = None
+            if to_state:
+                if is_named or not fn_name:
+                    transition_fn_name = "{0}_on_{1}".format(state.name, "_".join(on_es))
+                else:
+                    transition_fn_name = fn_name
+            else:
+                if is_named and len(machine.fun_decls[fn_name].params) == 1:
+                    transition_fn_name = fn_name
+                else:
+                    transition_fn_name = "{0}_on_{1}".format(state.name, "_".join(on_es))
+            for on_e in on_es:
+                self.out("this.Transitions[{0},{1}] = {2};\n".format(self.translate_state(machine, state), self.translate_event(on_e), transition_fn_name))
+        for state in machine.state_decls.values():
+            for ignored_event in state.ignored_events:
+                self.out("this.Transitions[{0},{1}] = Transition_Ignore;\n".format(self.translate_state(machine, state), self.translate_event(ignored_event)))
+        # Exit Functions
+        self.out("this.ExitFunctions = new ExitFunction[{0}];\n".format(len(machine.state_decls)))
+        for state in machine.state_decls.values():
+            if state.exit_fn:
+                self.out("this.ExitFunctions[{state}] = {exit_fn};\n".format(state=self.translate_state(machine,state), exit_fn=state.exit_fn))
+        # StartMachine
+        if machine.is_spec:
+            self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
+        else:
+            self.out("}\n")
+            self.out("public override void StartMachine (Scheduler scheduler, {0} payload) {{\n".format(self.translate_type(PTypeAny)))
+            self.out("this.scheduler = scheduler;\n")
+            self.current_payload_type = PTypeAny
+            self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
+        self.out("}\n")
+
+        # Transition functions
+        for (from_state, to_state, with_fn_name, is_named, is_push), on_es in rtransitions_map.items():
+            if to_state or len(machine.fun_decls[with_fn_name].params) != 1:
+                if is_named or not with_fn_name:
+                    transition_fn_name = "{0}_on_{1}".format(from_state.name, "_".join(on_es))
+                    self.out("private void {0} ({1} payload) {{\n".format(transition_fn_name, self.translate_type(PTypeAny)))
+                    self.current_payload_type = PTypeAny
+                    if is_push:
+                        if with_fn_name:
+                            self.out_fn_call(machine, with_fn_name, last_stmt=False)
+                        self.out_enter_state(machine, to_state, last_stmt=True, is_push=True)
+                    else:
+                        if to_state:
+                            self.out_exit_state(machine, from_state, last_stmt=with_fn_name and to_state)
+                        if with_fn_name:
+                            self.out_fn_call(machine, with_fn_name, last_stmt=to_state)
+                        if to_state:
+                            self.out_enter_state(machine, to_state, last_stmt=True)
                     self.out("}\n")
-                    self.out("public override void StartMachine (Scheduler scheduler, {0} payload) {{\n".format(self.translate_type(PTypeAny)))
-                    self.out("this.scheduler = scheduler;\n")
-                    self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
+        # Named and unnamed user defined functions
+        for fn_name in machine.fun_decls:
+            self.out_fn_decl(machine, fn_name)
+
+    def generate_for_machine(self, machine):
+        self.current_visited_machine = machine
+        classname = self.get_machine_csclassname(machine)
+        with open(os.path.join(self.out_dir, classname + ".cs"), 'w+') as csharpsrcf:
+            self.stream = csharpsrcf
+            self.out("using System;\nusing System.Collections.Generic;\nusing System.Diagnostics;\n\n")
+            base_clase = "MonitorPMachine" if machine.is_spec else "PMachine"
+            self.out("class {0} : {1} {{\n".format(classname, base_clase))
+            self.out_machine_body()
+            self.out("}")
+
+    def generate_for_main_machine(self, machine):
+        classname = self.get_machine_csclassname(machine)
+        with open(os.path.join(self.out_dir, "MachineController.cs"), "w+") as ms:
+            self.stream = ms
+            self.out("class MachineController {\n\n")
+            spec_machines = filter(lambda m: m.is_spec, self.pprogram.machines)
+            for spec_machine in spec_machines:
+                self.out("static MonitorPMachine {m_name} = new Machine{m_type}();\n".format(
+                    m_name="monitor_" + spec_machine.name.lower(), 
+                    m_type=spec_machine.name)
+                )
+            self.out("\n")
+            self.out("public static PMachine CreateMainMachine() {{\nreturn new {0}();\n}}\n\n".format(classname))
+            if len(self.pprogram.observes_map) > 0:
+                self.out("/* Observers */\n")
+                self.out("public static void AnnounceEvent({0} e, {1} payload) {{\n".format(self.translate_type(PTypeEventUnknown), self.translate_type(PTypeAny)))
+                for observed_event, observing_machines in self.pprogram.observes_map.items():
+                    self.out("if(e == {0}) {{\n".format(self.translate_event(observed_event)))
+                    for m in observing_machines:
+                        self.out("{0}.ServeEvent({1}, payload);\n".format("monitor_" + m.name.lower(), self.translate_event(observed_event)))
+                    self.out("return;\n")
+                    self.out("}\n")
                 self.out("}\n")
-
-                # Transition functions
-                for (from_state, to_state, with_fn_name, is_named, is_push), on_es in rtransitions_map.items():
-                    if to_state or len(machine.fun_decls[with_fn_name].params) != 1:
-                        if is_named or not with_fn_name:
-                            transition_fn_name = "{0}_on_{1}".format(from_state.name, "_".join(on_es))
-                            self.out("private void {0} ({1} payload) {{\n".format(transition_fn_name, self.translate_type(PTypeAny)))
-                            if is_push:
-                                if with_fn_name:
-                                    self.out_fn_call(machine, with_fn_name, last_stmt=False)
-                                self.out_enter_state(machine, to_state, last_stmt=True, is_push=True)
-                            else:
-                                if to_state:
-                                    self.out_exit_state(machine, from_state, last_stmt=with_fn_name and to_state)
-                                if with_fn_name:
-                                    self.out_fn_call(machine, with_fn_name, last_stmt=to_state)
-                                if to_state:
-                                    self.out_enter_state(machine, to_state, last_stmt=True)
-                            self.out("}\n")
-                # Named and unnamed user defined functions
-                for fn_name in machine.fun_decls:
-                    self.out_fn_decl(machine, fn_name)
-                self.out("}")
-
-                # if main machine, create machine starter
-                if machine.is_main:
-                    with open(os.path.join(self.out_dir, "MachineController.cs"), "w+") as ms:
-                        self.stream = ms
-                        self.out("class MachineController {\n\n")
-                        spec_machines = filter(lambda m: m.is_spec, self.pprogram.machines)
-                        for spec_machine in spec_machines:
-                            self.out("static MonitorPMachine {m_name} = new Machine{m_type}();\n".format(
-                                m_name="monitor_" + spec_machine.name.lower(), 
-                                m_type=spec_machine.name)
-                            )
-                        self.out("\n")
-                        self.out("public static PMachine CreateMainMachine() {{\nreturn new {0}();\n}}\n\n".format(classname))
-                        if len(self.pprogram.observes_map) > 0:
-                            self.out("/* Observers */\n")
-                            self.out("public static void AnnounceEvent({0} e, {1} payload) {{\n".format(self.translate_type(PTypeEventUnknown), self.translate_type(PTypeAny)))
-                            for observed_event, observing_machines in self.pprogram.observes_map.items():
-                                self.out("if(e == {0}) {{\n".format(self.translate_event(observed_event)))
-                                for m in observing_machines:
-                                    self.out("{0}.ServeEvent({1}, payload);\n".format("monitor_" + m.name.lower(), self.translate_event(observed_event)))
-                                self.out("return;\n")
-                                self.out("}\n")
-                            self.out("}\n")
-                        self.out("}\n")
+            self.out("}\n")
 
     pipeline = [make_output_dir, create_proj_macros, generate_foreach_machine, create_csproj]
 
@@ -463,7 +485,6 @@ class PProgramToCSharpTranslator(TranslatorBase):
     def visitStmt_new(self, ctx, **kwargs):
         self.out("NewMachine(new Machine{}(), null);\n".format(ctx.getChild(1).getText()))
 
-
     # Visit a parse tree produced by pParser#stmt_new_with_arguments.
     def visitStmt_new_with_arguments(self, ctx, **kwargs):
         c3 = ctx.getChild(3).accept(self, **kwargs)
@@ -561,7 +582,9 @@ class PProgramToCSharpTranslator(TranslatorBase):
     visitExp_7 = visitBinary_Exp
 
     def visitExp_6(self, ctx, **kwargs):            
-        if ctx.getChildCount() > 1:
+        if ctx.getChildCount() > 1 and not (
+                ctx.getChild(0).exp_type == PTypeBool 
+            or ctx.getChild(0).exp_type == PTypeInt):
             c0 = ctx.getChild(0).accept(self, **kwargs)
             c2 = ctx.getChild(2).accept(self, **kwargs)
             r = "{0}.PTypeEquals({1})".format(c0, c2)

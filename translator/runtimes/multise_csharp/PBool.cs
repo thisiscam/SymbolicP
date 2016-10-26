@@ -64,6 +64,6 @@ public struct PBool : IPType<PBool> {
 	}
 
 	public ValueSummary<PBool> DeepCopy() {
-		return this;
+		return ValueSummary<PBool>.InitializeFrom(this);
 	}
 }
