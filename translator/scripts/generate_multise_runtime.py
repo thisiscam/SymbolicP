@@ -16,6 +16,7 @@ def main():
                     "Program.cs",
                     # "Scheduler.cs",
                     "PBool.cs",
+                    "DefaultArray.cs"
                 }
     transform_srcs = filter(lambda s: os.path.basename(s) not in ignore_srcs, all_srcs)
     nocopy_srcs = ignore_srcs

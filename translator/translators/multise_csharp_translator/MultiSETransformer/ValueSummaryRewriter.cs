@@ -241,6 +241,10 @@ namespace MultiSETransformer
                         })));
                         if (!node.Type.IsVar)
                         {
+                            if(node.Type.ToFullString().StartsWith("DefaultArray"))
+                            {
+                                node = node.WithType(WrapType(node.Type));
+                            }
                             node = node.WithType(SyntaxFactory.GenericName(SyntaxFactory.Identifier("ValueSummary"), SyntaxFactory.TypeArgumentList().AddArguments(node.Type))); ;
                         }
                         return node;
@@ -317,7 +321,7 @@ namespace MultiSETransformer
                     }
             }
         }
-
+        
         public override SyntaxNode VisitArrayType(ArrayTypeSyntax node)
         {
             if (noRewrite)
@@ -335,7 +339,7 @@ namespace MultiSETransformer
                     }
             }
         }
-
+                
         private static Dictionary<string, string> binOperatorMap = new Dictionary<string, string> {
             {"+", "Add"},
             {"-", "Sub"},
@@ -576,7 +580,7 @@ namespace MultiSETransformer
                         invocationTypeParams = invocationTypeParams.AddArguments(elementType);
                         var lambdaExpression = SyntaxFactory.ParenthesizedLambdaExpression(parameterList: lambdaParameters, body: node.WithExpression(SyntaxFactory.IdentifierName("_")).WithArgumentList(lambdaBodyInvocationArugments));
                         ExpressionSyntax ret;
-                        if (model.GetTypeInfo(node.Expression).Type.TypeKind != TypeKind.Array)
+                        if (!IsArrayKind(model.GetTypeInfo(node.Expression).Type))
                         {
                             ret = SyntaxFactory.InvocationExpression(
                                 expression: SyntaxFactory.MemberAccessExpression(
@@ -623,6 +627,7 @@ namespace MultiSETransformer
                         TypeSyntax retType = null;
                         var converted_type = ConvertedType(node, ref need_cast, ref retType);
                         node = base.VisitObjectCreationExpression(node) as ObjectCreationExpressionSyntax;
+                        if(node.Type.ToFullString().StartsWith("DefaultArray")) { node = node.WithType(WrapType(node.Type)); }
                         node = node.WithType(SyntaxFactory.GenericName(SyntaxFactory.Identifier(@"ValueSummary"), SyntaxFactory.TypeArgumentList().AddArguments(retType))).WithArgumentList(SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(node)));
                         if(need_cast)
                             return CastTypeNode(node, converted_type);
@@ -991,7 +996,7 @@ namespace MultiSETransformer
                     }
                 }
             }
-            if (t.Type != t.ConvertedType &&
+            if (t.Type != t.ConvertedType && 
                 !(node.Parent.IsKind(SyntaxKind.IfStatement) || node.Parent.IsKind(SyntaxKind.WhileStatement) || node.Parent.IsKind(SyntaxKind.WhileStatement) || node.Parent.IsKind(SyntaxKind.ForStatement) 
                 || (node.Parent.IsKind(SyntaxKind.ConditionalExpression) && (node.Parent as ConditionalExpressionSyntax).Condition == node)))
             {
@@ -1002,11 +1007,16 @@ namespace MultiSETransformer
 
         private TypeSyntax WrapType(TypeSyntax t)
         {
-            TypeSyntax ret;
+            TypeSyntax ret = null;
             if (t.IsKind(SyntaxKind.ArrayType))
             {
                 var t1 = t as ArrayTypeSyntax;
                 ret = t1.WithElementType(SyntaxFactory.GenericName(SyntaxFactory.Identifier("ValueSummary"), SyntaxFactory.TypeArgumentList().AddArguments(WrapType(t1.ElementType))));
+            } else if (t.ToFullString().StartsWith("DefaultArray"))
+            {
+                var t1 = t as GenericNameSyntax;
+                ret = t1.WithTypeArgumentList(SyntaxFactory.TypeArgumentList().AddArguments(
+                    SyntaxFactory.GenericName(SyntaxFactory.Identifier("ValueSummary"), SyntaxFactory.TypeArgumentList().AddArguments(WrapType(t1.TypeArgumentList.Arguments.First())))));
             }
             else {
                 ret = t;
@@ -1154,13 +1164,18 @@ namespace MultiSETransformer
         {
             return node;
         }
-
+        
+        private bool IsArrayKind(ITypeSymbol t)
+        {
+            return t.TypeKind == TypeKind.Array || t.Name == "DefaultArray";
+        }
+        
         private SyntaxNode MakeTransformedSimpleAssignmentNode(AssignmentExpressionSyntax node)
         {
             var leftType = model.GetTypeInfo(node.Left).Type;
             var rightType = model.GetTypeInfo(node.Right).Type;
             rightType = rightType == null ? leftType : rightType;
-            SimpleNameSyntax invoke_name = leftType.TypeKind == TypeKind.Array ? (SimpleNameSyntax)SyntaxFactory.IdentifierName("Assign") : (SimpleNameSyntax)SyntaxFactory.GenericName(SyntaxFactory.Identifier("Assign"), SyntaxFactory.TypeArgumentList().AddArguments(SyntaxFactory.ParseTypeName(leftType.ToDisplayString())));
+            SimpleNameSyntax invoke_name = IsArrayKind(leftType) ? (SimpleNameSyntax)SyntaxFactory.IdentifierName("Assign") : (SimpleNameSyntax)SyntaxFactory.GenericName(SyntaxFactory.Identifier("Assign"), SyntaxFactory.TypeArgumentList().AddArguments(SyntaxFactory.ParseTypeName(leftType.ToDisplayString())));
             return SyntaxFactory.InvocationExpression(
                 SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
@@ -1230,7 +1245,7 @@ namespace MultiSETransformer
                             lambdaParameters = lambdaParameters.AddParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("r")));
                             invocationTypeParams = invocationTypeParams.AddArguments(SyntaxFactory.ParseTypeName(elementType.ToDisplayString()));
                             var lambdaExpression = SyntaxFactory.ParenthesizedLambdaExpression(parameterList: lambdaParameters, body: node.WithLeft(elementAccess.WithExpression(SyntaxFactory.IdentifierName("_")).WithArgumentList(lambdaBodyInvocationArugments)).WithRight(SyntaxFactory.IdentifierName("r")));
-                            if (model.GetTypeInfo(elementAccess.Expression).Type.TypeKind != TypeKind.Array)
+                            if (!IsArrayKind(model.GetTypeInfo(elementAccess.Expression).Type))
                             {
                                 return SyntaxFactory.InvocationExpression(
                                     expression: SyntaxFactory.MemberAccessExpression(

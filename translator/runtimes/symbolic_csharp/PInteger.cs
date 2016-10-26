@@ -91,11 +91,6 @@ public struct PInteger : IPType<PInteger> {
 		return this.value == other.value;
 	}
 
-	public SymbolicInteger PTypeGetHashCode()
-	{
-		return this.value;
-	}
-
     public PInteger DeepCopy() {
     	return this;
     }

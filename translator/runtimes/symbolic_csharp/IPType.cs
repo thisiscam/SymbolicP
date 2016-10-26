@@ -1,5 +1,4 @@
 public interface IPType {
-	SymbolicInteger PTypeGetHashCode ();
 }
 
 public interface IPType<T> : IPType {

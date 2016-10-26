@@ -9,10 +9,6 @@ public class PTuple<T1> : IPType<PTuple<T1>>
 	public PTuple<T1> DeepCopy() {
 		return new PTuple<T1>(Item1.DeepCopy());
 	}
-	public SymbolicInteger PTypeGetHashCode()
-    {
-        return Item1.PTypeGetHashCode();
-    }
 
     public SymbolicBool PTypeEquals(PTuple<T1> other)
     {
@@ -35,10 +31,6 @@ public class PTuple<T1, T2> : IPType<PTuple<T1, T2>>
 						Item1.DeepCopy(),
 						Item2.DeepCopy());
 	}
-	public SymbolicInteger PTypeGetHashCode()
-    {
-        return Item1.PTypeGetHashCode() ^ Item2.PTypeGetHashCode();
-    }
 
     public SymbolicBool PTypeEquals(PTuple<T1, T2> other)
     {
@@ -65,10 +57,6 @@ public class PTuple<T1, T2, T3> : IPType<PTuple<T1, T2, T3>>
 								Item2.DeepCopy(),
 								Item3.DeepCopy());
 	}
-	public SymbolicInteger PTypeGetHashCode()
-    {
-        return Item1.PTypeGetHashCode() ^ Item2.PTypeGetHashCode() ^ Item3.PTypeGetHashCode();
-    }
 
     public SymbolicBool PTypeEquals(PTuple<T1, T2, T3> other)
     {
@@ -99,10 +87,6 @@ public class PTuple<T1, T2, T3, T4> : IPType<PTuple<T1, T2, T3, T4>>
 									Item3.DeepCopy(),
 									Item4.DeepCopy());
 	}
-	public SymbolicInteger PTypeGetHashCode()
-    {
-        return Item1.PTypeGetHashCode() ^ Item2.PTypeGetHashCode() ^ Item3.PTypeGetHashCode() ^ Item4.PTypeGetHashCode();
-    }
 
     public SymbolicBool PTypeEquals(PTuple<T1, T2, T3, T4> other)
     {
@@ -137,10 +121,6 @@ public class PTuple<T1, T2, T3, T4, T5> : IPType<PTuple<T1, T2, T3, T4, T5>>
 									Item4.DeepCopy(),
 									Item5.DeepCopy());
 	}
-	public SymbolicInteger PTypeGetHashCode()
-    {
-        return Item1.PTypeGetHashCode() ^ Item2.PTypeGetHashCode() ^ Item3.PTypeGetHashCode() ^ Item4.PTypeGetHashCode() ^ Item5.PTypeGetHashCode();
-    }
 
     public SymbolicBool PTypeEquals(PTuple<T1, T2, T3, T4, T5> other)
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
 {
-    public ValueSummary<PInteger> Count
+    public new ValueSummary<PInteger> Count
     {
         get
         {
@@ -25,11 +25,29 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
     {
         get
         {
+            var vs_cond_13 = (index.InvokeBinary<PInteger, PBool>((l, r) => l >= r, this.Count)).Cond();
+            {
+                if (vs_cond_13.CondTrue())
+                {
+                    throw new IndexOutOfRangeException();
+                }
+            }
+
+            vs_cond_13.MergeBranch();
             return this.data.GetIndex<T>(index);
         }
 
         set
         {
+            var vs_cond_14 = (index.InvokeBinary<PInteger, PBool>((l, r) => l >= r, this.Count)).Cond();
+            {
+                if (vs_cond_14.CondTrue())
+                {
+                    throw new IndexOutOfRangeException();
+                }
+            }
+
+            vs_cond_14.MergeBranch();
             this.data.SetIndex<T>(index, value);
         }
     }
@@ -37,23 +55,10 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
     public ValueSummary<PList<T>> DeepCopy()
     {
         ValueSummary<PList<T>> ret = new ValueSummary<PList<T>>(new PList<T>());
-        var vs_cond_14 = PathConstraint.BeginLoop();
-        for (ValueSummary<SymbolicInteger> i = (SymbolicInteger)0; vs_cond_14.Loop(i.InvokeBinary<int, SymbolicBool>((l, r) => l < r, this._count)); i.Increment())
+        var vs_cond_15 = PathConstraint.BeginLoop();
+        for (ValueSummary<SymbolicInteger> i = (SymbolicInteger)0; vs_cond_15.Loop(i.InvokeBinary<int, SymbolicBool>((l, r) => l < r, this._count)); i.Increment())
         {
             ret.InvokeMethod<T>((_, a0) => _.Add(a0), this[i].InvokeMethod((_) => _.DeepCopy()));
-        }
-
-        vs_cond_14.MergeBranch();
-        return ret;
-    }
-
-    public ValueSummary<SymbolicInteger> PTypeGetHashCode()
-    {
-        ValueSummary<SymbolicInteger> ret = (SymbolicInteger)1;
-        var vs_cond_15 = PathConstraint.BeginLoop();
-        for (ValueSummary<int> i = 0; vs_cond_15.Loop(i.InvokeBinary<int, bool>((l, r) => l < r, this._count)); i.Increment())
-        {
-            ret.Assign<SymbolicInteger>(ret.InvokeBinary<int, SymbolicInteger>((l, r) => l * r, 31).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l + r, this[i].InvokeMethod((_) => _.PTypeGetHashCode())));
         }
 
         vs_cond_15.MergeBranch();
@@ -63,12 +68,12 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
     public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PList<T>> other)
     {
         PathConstraint.PushFrame();
-        var vs_ret_4 = new ValueSummary<SymbolicBool>();
+        var vs_ret_3 = new ValueSummary<SymbolicBool>();
         var vs_cond_17 = (this._count.InvokeBinary<int, bool>((l, r) => l != r, other.GetField<int>(_ => _._count))).Cond();
         {
             if (vs_cond_17.CondTrue())
             {
-                PathConstraint.RecordReturnPath(vs_ret_4, (SymbolicBool)false, vs_cond_17);
+                PathConstraint.RecordReturnPath(vs_ret_3, (SymbolicBool)false, vs_cond_17);
             }
         }
 
@@ -81,7 +86,7 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
                 {
                     if (vs_cond_16.CondTrue())
                     {
-                        PathConstraint.RecordReturnPath(vs_ret_4, (SymbolicBool)false, vs_cond_16);
+                        PathConstraint.RecordReturnPath(vs_ret_3, (SymbolicBool)false, vs_cond_16);
                     }
                 }
 
@@ -90,11 +95,11 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
 
             if (vs_cond_18.MergeBranch())
             {
-                PathConstraint.RecordReturnPath(vs_ret_4, (SymbolicBool)true);
+                PathConstraint.RecordReturnPath(vs_ret_3, (SymbolicBool)true);
             }
         }
 
         PathConstraint.PopFrame();
-        return vs_ret_4;
+        return vs_ret_3;
     }
 }

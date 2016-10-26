@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T> {
-	public PInteger Count {
+	public new PInteger Count {
 		get {
 			return (PInteger)this._count;
 		}
@@ -20,9 +20,15 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T> {
 
 	public T this[PInteger index] { 
 		get {
+			if(index >= this.Count) {
+				throw new IndexOutOfRangeException();
+			}
 			return this.data [index];
 		} 
 		set {
+			if(index >= this.Count) {
+				throw new IndexOutOfRangeException();
+			}
 			this.data [index] = value;
 		}
 	}
@@ -35,15 +41,6 @@ class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T> {
 		return ret;
 	}
 	
-	public SymbolicInteger PTypeGetHashCode()
-    {
-		SymbolicInteger ret = 1;
-		for(int i=0; i < this._count; i++) {
-			ret = ret * 31 + this[i].PTypeGetHashCode();
-        }
-        return ret;
-    }
-
 	public SymbolicBool PTypeEquals(PList<T> other)
     {
 		if(this._count != other._count) {

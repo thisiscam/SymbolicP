@@ -97,10 +97,6 @@ abstract class PMachine : IPType<PMachine> {
         return this;
     }
 
-	public SymbolicInteger PTypeGetHashCode() {
-		return new SymbolicInteger(this.GetHashCode ());
-	}
-
 	public SymbolicBool PTypeEquals(PMachine other) {
 		return other == this;
 	}

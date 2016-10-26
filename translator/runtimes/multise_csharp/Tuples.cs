@@ -13,11 +13,6 @@ public class PTuple<T1> : IPType<PTuple<T1>> where T1 : IPType<T1>
         return new ValueSummary<PTuple<T1>>(new PTuple<T1>(Item1.InvokeMethod((_) => _.DeepCopy())));
     }
 
-    public ValueSummary<SymbolicInteger> PTypeGetHashCode()
-    {
-        return Item1.InvokeMethod((_) => _.PTypeGetHashCode());
-    }
-
     public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PTuple<T1>> other)
     {
         return Item1.InvokeMethod<T1, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T1>(_ => _.Item1));
@@ -39,24 +34,19 @@ public class PTuple<T1, T2> : IPType<PTuple<T1, T2>> where T1 : IPType<T1> where
         return new ValueSummary<PTuple<T1, T2>>(new PTuple<T1, T2>(Item1.InvokeMethod((_) => _.DeepCopy()), Item2.InvokeMethod((_) => _.DeepCopy())));
     }
 
-    public ValueSummary<SymbolicInteger> PTypeGetHashCode()
-    {
-        return Item1.InvokeMethod((_) => _.PTypeGetHashCode()).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l ^ r, Item2.InvokeMethod((_) => _.PTypeGetHashCode()));
-    }
-
     public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PTuple<T1, T2>> other)
     {
         ValueSummary<SymbolicBool> vs_lgc_tmp_0;
         return (new Func<ValueSummary<SymbolicBool>>(() =>
         {
-            var vs_cond_58 = ((vs_lgc_tmp_0 = ValueSummary<SymbolicBool>.InitializeFrom(Item1.InvokeMethod<T1, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T1>(_ => _.Item1))))).Cond();
-            var vs_cond_ret_58 = new ValueSummary<SymbolicBool>();
-            if (vs_cond_58.CondTrue())
-                vs_cond_ret_58.Merge(vs_lgc_tmp_0.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item2.InvokeMethod<T2, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T2>(_ => _.Item2))));
-            if (vs_cond_58.CondFalse())
-                vs_cond_ret_58.Merge(vs_lgc_tmp_0);
-            vs_cond_58.MergeBranch();
-            return vs_cond_ret_58;
+            var vs_cond_40 = ((vs_lgc_tmp_0 = ValueSummary<SymbolicBool>.InitializeFrom(Item1.InvokeMethod<T1, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T1>(_ => _.Item1))))).Cond();
+            var vs_cond_ret_40 = new ValueSummary<SymbolicBool>();
+            if (vs_cond_40.CondTrue())
+                vs_cond_ret_40.Merge(vs_lgc_tmp_0.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item2.InvokeMethod<T2, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T2>(_ => _.Item2))));
+            if (vs_cond_40.CondFalse())
+                vs_cond_ret_40.Merge(vs_lgc_tmp_0);
+            vs_cond_40.MergeBranch();
+            return vs_cond_ret_40;
         }
 
         )());
@@ -80,37 +70,32 @@ public class PTuple<T1, T2, T3> : IPType<PTuple<T1, T2, T3>> where T1 : IPType<T
         return new ValueSummary<PTuple<T1, T2, T3>>(new PTuple<T1, T2, T3>(Item1.InvokeMethod((_) => _.DeepCopy()), Item2.InvokeMethod((_) => _.DeepCopy()), Item3.InvokeMethod((_) => _.DeepCopy())));
     }
 
-    public ValueSummary<SymbolicInteger> PTypeGetHashCode()
-    {
-        return Item1.InvokeMethod((_) => _.PTypeGetHashCode()).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l ^ r, Item2.InvokeMethod((_) => _.PTypeGetHashCode())).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l ^ r, Item3.InvokeMethod((_) => _.PTypeGetHashCode()));
-    }
-
     public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PTuple<T1, T2, T3>> other)
     {
         ValueSummary<SymbolicBool> vs_lgc_tmp_2;
         ValueSummary<SymbolicBool> vs_lgc_tmp_1;
         return (new Func<ValueSummary<SymbolicBool>>(() =>
         {
-            var vs_cond_59 = ((vs_lgc_tmp_1 = ValueSummary<SymbolicBool>.InitializeFrom((new Func<ValueSummary<SymbolicBool>>(() =>
+            var vs_cond_41 = ((vs_lgc_tmp_1 = ValueSummary<SymbolicBool>.InitializeFrom((new Func<ValueSummary<SymbolicBool>>(() =>
             {
-                var vs_cond_60 = ((vs_lgc_tmp_2 = ValueSummary<SymbolicBool>.InitializeFrom(Item1.InvokeMethod<T1, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T1>(_ => _.Item1))))).Cond();
-                var vs_cond_ret_60 = new ValueSummary<SymbolicBool>();
-                if (vs_cond_60.CondTrue())
-                    vs_cond_ret_60.Merge(vs_lgc_tmp_2.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item2.InvokeMethod<T2, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T2>(_ => _.Item2))));
-                if (vs_cond_60.CondFalse())
-                    vs_cond_ret_60.Merge(vs_lgc_tmp_2);
-                vs_cond_60.MergeBranch();
-                return vs_cond_ret_60;
+                var vs_cond_42 = ((vs_lgc_tmp_2 = ValueSummary<SymbolicBool>.InitializeFrom(Item1.InvokeMethod<T1, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T1>(_ => _.Item1))))).Cond();
+                var vs_cond_ret_42 = new ValueSummary<SymbolicBool>();
+                if (vs_cond_42.CondTrue())
+                    vs_cond_ret_42.Merge(vs_lgc_tmp_2.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item2.InvokeMethod<T2, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T2>(_ => _.Item2))));
+                if (vs_cond_42.CondFalse())
+                    vs_cond_ret_42.Merge(vs_lgc_tmp_2);
+                vs_cond_42.MergeBranch();
+                return vs_cond_ret_42;
             }
 
             )())))).Cond();
-            var vs_cond_ret_59 = new ValueSummary<SymbolicBool>();
-            if (vs_cond_59.CondTrue())
-                vs_cond_ret_59.Merge(vs_lgc_tmp_1.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item3.InvokeMethod<T3, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T3>(_ => _.Item3))));
-            if (vs_cond_59.CondFalse())
-                vs_cond_ret_59.Merge(vs_lgc_tmp_1);
-            vs_cond_59.MergeBranch();
-            return vs_cond_ret_59;
+            var vs_cond_ret_41 = new ValueSummary<SymbolicBool>();
+            if (vs_cond_41.CondTrue())
+                vs_cond_ret_41.Merge(vs_lgc_tmp_1.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item3.InvokeMethod<T3, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T3>(_ => _.Item3))));
+            if (vs_cond_41.CondFalse())
+                vs_cond_ret_41.Merge(vs_lgc_tmp_1);
+            vs_cond_41.MergeBranch();
+            return vs_cond_ret_41;
         }
 
         )());
@@ -136,11 +121,6 @@ public class PTuple<T1, T2, T3, T4> : IPType<PTuple<T1, T2, T3, T4>> where T1 : 
         return new ValueSummary<PTuple<T1, T2, T3, T4>>(new PTuple<T1, T2, T3, T4>(Item1.InvokeMethod((_) => _.DeepCopy()), Item2.InvokeMethod((_) => _.DeepCopy()), Item3.InvokeMethod((_) => _.DeepCopy()), Item4.InvokeMethod((_) => _.DeepCopy())));
     }
 
-    public ValueSummary<SymbolicInteger> PTypeGetHashCode()
-    {
-        return Item1.InvokeMethod((_) => _.PTypeGetHashCode()).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l ^ r, Item2.InvokeMethod((_) => _.PTypeGetHashCode())).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l ^ r, Item3.InvokeMethod((_) => _.PTypeGetHashCode())).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l ^ r, Item4.InvokeMethod((_) => _.PTypeGetHashCode()));
-    }
-
     public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PTuple<T1, T2, T3, T4>> other)
     {
         ValueSummary<SymbolicBool> vs_lgc_tmp_5;
@@ -148,38 +128,38 @@ public class PTuple<T1, T2, T3, T4> : IPType<PTuple<T1, T2, T3, T4>> where T1 : 
         ValueSummary<SymbolicBool> vs_lgc_tmp_3;
         return (new Func<ValueSummary<SymbolicBool>>(() =>
         {
-            var vs_cond_61 = ((vs_lgc_tmp_3 = ValueSummary<SymbolicBool>.InitializeFrom((new Func<ValueSummary<SymbolicBool>>(() =>
+            var vs_cond_43 = ((vs_lgc_tmp_3 = ValueSummary<SymbolicBool>.InitializeFrom((new Func<ValueSummary<SymbolicBool>>(() =>
             {
-                var vs_cond_62 = ((vs_lgc_tmp_4 = ValueSummary<SymbolicBool>.InitializeFrom((new Func<ValueSummary<SymbolicBool>>(() =>
+                var vs_cond_44 = ((vs_lgc_tmp_4 = ValueSummary<SymbolicBool>.InitializeFrom((new Func<ValueSummary<SymbolicBool>>(() =>
                 {
-                    var vs_cond_63 = ((vs_lgc_tmp_5 = ValueSummary<SymbolicBool>.InitializeFrom(Item1.InvokeMethod<T1, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T1>(_ => _.Item1))))).Cond();
-                    var vs_cond_ret_63 = new ValueSummary<SymbolicBool>();
-                    if (vs_cond_63.CondTrue())
-                        vs_cond_ret_63.Merge(vs_lgc_tmp_5.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item2.InvokeMethod<T2, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T2>(_ => _.Item2))));
-                    if (vs_cond_63.CondFalse())
-                        vs_cond_ret_63.Merge(vs_lgc_tmp_5);
-                    vs_cond_63.MergeBranch();
-                    return vs_cond_ret_63;
+                    var vs_cond_45 = ((vs_lgc_tmp_5 = ValueSummary<SymbolicBool>.InitializeFrom(Item1.InvokeMethod<T1, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T1>(_ => _.Item1))))).Cond();
+                    var vs_cond_ret_45 = new ValueSummary<SymbolicBool>();
+                    if (vs_cond_45.CondTrue())
+                        vs_cond_ret_45.Merge(vs_lgc_tmp_5.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item2.InvokeMethod<T2, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T2>(_ => _.Item2))));
+                    if (vs_cond_45.CondFalse())
+                        vs_cond_ret_45.Merge(vs_lgc_tmp_5);
+                    vs_cond_45.MergeBranch();
+                    return vs_cond_ret_45;
                 }
 
                 )())))).Cond();
-                var vs_cond_ret_62 = new ValueSummary<SymbolicBool>();
-                if (vs_cond_62.CondTrue())
-                    vs_cond_ret_62.Merge(vs_lgc_tmp_4.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item3.InvokeMethod<T3, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T3>(_ => _.Item3))));
-                if (vs_cond_62.CondFalse())
-                    vs_cond_ret_62.Merge(vs_lgc_tmp_4);
-                vs_cond_62.MergeBranch();
-                return vs_cond_ret_62;
+                var vs_cond_ret_44 = new ValueSummary<SymbolicBool>();
+                if (vs_cond_44.CondTrue())
+                    vs_cond_ret_44.Merge(vs_lgc_tmp_4.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item3.InvokeMethod<T3, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T3>(_ => _.Item3))));
+                if (vs_cond_44.CondFalse())
+                    vs_cond_ret_44.Merge(vs_lgc_tmp_4);
+                vs_cond_44.MergeBranch();
+                return vs_cond_ret_44;
             }
 
             )())))).Cond();
-            var vs_cond_ret_61 = new ValueSummary<SymbolicBool>();
-            if (vs_cond_61.CondTrue())
-                vs_cond_ret_61.Merge(vs_lgc_tmp_3.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item4.InvokeMethod<T4, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T4>(_ => _.Item4))));
-            if (vs_cond_61.CondFalse())
-                vs_cond_ret_61.Merge(vs_lgc_tmp_3);
-            vs_cond_61.MergeBranch();
-            return vs_cond_ret_61;
+            var vs_cond_ret_43 = new ValueSummary<SymbolicBool>();
+            if (vs_cond_43.CondTrue())
+                vs_cond_ret_43.Merge(vs_lgc_tmp_3.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item4.InvokeMethod<T4, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T4>(_ => _.Item4))));
+            if (vs_cond_43.CondFalse())
+                vs_cond_ret_43.Merge(vs_lgc_tmp_3);
+            vs_cond_43.MergeBranch();
+            return vs_cond_ret_43;
         }
 
         )());
@@ -207,11 +187,6 @@ public class PTuple<T1, T2, T3, T4, T5> : IPType<PTuple<T1, T2, T3, T4, T5>> whe
         return new ValueSummary<PTuple<T1, T2, T3, T4, T5>>(new PTuple<T1, T2, T3, T4, T5>(Item1.InvokeMethod((_) => _.DeepCopy()), Item2.InvokeMethod((_) => _.DeepCopy()), Item3.InvokeMethod((_) => _.DeepCopy()), Item4.InvokeMethod((_) => _.DeepCopy()), Item5.InvokeMethod((_) => _.DeepCopy())));
     }
 
-    public ValueSummary<SymbolicInteger> PTypeGetHashCode()
-    {
-        return Item1.InvokeMethod((_) => _.PTypeGetHashCode()).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l ^ r, Item2.InvokeMethod((_) => _.PTypeGetHashCode())).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l ^ r, Item3.InvokeMethod((_) => _.PTypeGetHashCode())).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l ^ r, Item4.InvokeMethod((_) => _.PTypeGetHashCode())).InvokeBinary<SymbolicInteger, SymbolicInteger>((l, r) => l ^ r, Item5.InvokeMethod((_) => _.PTypeGetHashCode()));
-    }
-
     public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PTuple<T1, T2, T3, T4, T5>> other)
     {
         ValueSummary<SymbolicBool> vs_lgc_tmp_9;
@@ -220,50 +195,50 @@ public class PTuple<T1, T2, T3, T4, T5> : IPType<PTuple<T1, T2, T3, T4, T5>> whe
         ValueSummary<SymbolicBool> vs_lgc_tmp_6;
         return (new Func<ValueSummary<SymbolicBool>>(() =>
         {
-            var vs_cond_64 = ((vs_lgc_tmp_6 = ValueSummary<SymbolicBool>.InitializeFrom((new Func<ValueSummary<SymbolicBool>>(() =>
+            var vs_cond_46 = ((vs_lgc_tmp_6 = ValueSummary<SymbolicBool>.InitializeFrom((new Func<ValueSummary<SymbolicBool>>(() =>
             {
-                var vs_cond_65 = ((vs_lgc_tmp_7 = ValueSummary<SymbolicBool>.InitializeFrom((new Func<ValueSummary<SymbolicBool>>(() =>
+                var vs_cond_47 = ((vs_lgc_tmp_7 = ValueSummary<SymbolicBool>.InitializeFrom((new Func<ValueSummary<SymbolicBool>>(() =>
                 {
-                    var vs_cond_66 = ((vs_lgc_tmp_8 = ValueSummary<SymbolicBool>.InitializeFrom((new Func<ValueSummary<SymbolicBool>>(() =>
+                    var vs_cond_48 = ((vs_lgc_tmp_8 = ValueSummary<SymbolicBool>.InitializeFrom((new Func<ValueSummary<SymbolicBool>>(() =>
                     {
-                        var vs_cond_67 = ((vs_lgc_tmp_9 = ValueSummary<SymbolicBool>.InitializeFrom(Item1.InvokeMethod<T1, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T1>(_ => _.Item1))))).Cond();
-                        var vs_cond_ret_67 = new ValueSummary<SymbolicBool>();
-                        if (vs_cond_67.CondTrue())
-                            vs_cond_ret_67.Merge(vs_lgc_tmp_9.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item2.InvokeMethod<T2, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T2>(_ => _.Item2))));
-                        if (vs_cond_67.CondFalse())
-                            vs_cond_ret_67.Merge(vs_lgc_tmp_9);
-                        vs_cond_67.MergeBranch();
-                        return vs_cond_ret_67;
+                        var vs_cond_49 = ((vs_lgc_tmp_9 = ValueSummary<SymbolicBool>.InitializeFrom(Item1.InvokeMethod<T1, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T1>(_ => _.Item1))))).Cond();
+                        var vs_cond_ret_49 = new ValueSummary<SymbolicBool>();
+                        if (vs_cond_49.CondTrue())
+                            vs_cond_ret_49.Merge(vs_lgc_tmp_9.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item2.InvokeMethod<T2, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T2>(_ => _.Item2))));
+                        if (vs_cond_49.CondFalse())
+                            vs_cond_ret_49.Merge(vs_lgc_tmp_9);
+                        vs_cond_49.MergeBranch();
+                        return vs_cond_ret_49;
                     }
 
                     )())))).Cond();
-                    var vs_cond_ret_66 = new ValueSummary<SymbolicBool>();
-                    if (vs_cond_66.CondTrue())
-                        vs_cond_ret_66.Merge(vs_lgc_tmp_8.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item3.InvokeMethod<T3, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T3>(_ => _.Item3))));
-                    if (vs_cond_66.CondFalse())
-                        vs_cond_ret_66.Merge(vs_lgc_tmp_8);
-                    vs_cond_66.MergeBranch();
-                    return vs_cond_ret_66;
+                    var vs_cond_ret_48 = new ValueSummary<SymbolicBool>();
+                    if (vs_cond_48.CondTrue())
+                        vs_cond_ret_48.Merge(vs_lgc_tmp_8.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item3.InvokeMethod<T3, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T3>(_ => _.Item3))));
+                    if (vs_cond_48.CondFalse())
+                        vs_cond_ret_48.Merge(vs_lgc_tmp_8);
+                    vs_cond_48.MergeBranch();
+                    return vs_cond_ret_48;
                 }
 
                 )())))).Cond();
-                var vs_cond_ret_65 = new ValueSummary<SymbolicBool>();
-                if (vs_cond_65.CondTrue())
-                    vs_cond_ret_65.Merge(vs_lgc_tmp_7.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item4.InvokeMethod<T4, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T4>(_ => _.Item4))));
-                if (vs_cond_65.CondFalse())
-                    vs_cond_ret_65.Merge(vs_lgc_tmp_7);
-                vs_cond_65.MergeBranch();
-                return vs_cond_ret_65;
+                var vs_cond_ret_47 = new ValueSummary<SymbolicBool>();
+                if (vs_cond_47.CondTrue())
+                    vs_cond_ret_47.Merge(vs_lgc_tmp_7.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item4.InvokeMethod<T4, SymbolicBool>((_, a0) => _.PTypeEquals(a0), other.GetField<T4>(_ => _.Item4))));
+                if (vs_cond_47.CondFalse())
+                    vs_cond_ret_47.Merge(vs_lgc_tmp_7);
+                vs_cond_47.MergeBranch();
+                return vs_cond_ret_47;
             }
 
             )())))).Cond();
-            var vs_cond_ret_64 = new ValueSummary<SymbolicBool>();
-            if (vs_cond_64.CondTrue())
-                vs_cond_ret_64.Merge(vs_lgc_tmp_6.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item5.InvokeMethod<T5, SymbolicBool>((_, a0) => _.PTypeEquals(a0), this.Item5)));
-            if (vs_cond_64.CondFalse())
-                vs_cond_ret_64.Merge(vs_lgc_tmp_6);
-            vs_cond_64.MergeBranch();
-            return vs_cond_ret_64;
+            var vs_cond_ret_46 = new ValueSummary<SymbolicBool>();
+            if (vs_cond_46.CondTrue())
+                vs_cond_ret_46.Merge(vs_lgc_tmp_6.InvokeBinary<SymbolicBool, SymbolicBool>((l, r) => l & r, Item5.InvokeMethod<T5, SymbolicBool>((_, a0) => _.PTypeEquals(a0), this.Item5)));
+            if (vs_cond_46.CondFalse())
+                vs_cond_ret_46.Merge(vs_lgc_tmp_6);
+            vs_cond_46.MergeBranch();
+            return vs_cond_ret_46;
         }
 
         )());
