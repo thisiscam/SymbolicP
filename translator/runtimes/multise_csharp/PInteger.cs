@@ -97,7 +97,7 @@ public struct PInteger : IPType<PInteger> {
 	}
 
     public ValueSummary<PInteger> DeepCopy() {
-    	return this;
+    	return ValueSummary<PInteger>.InitializeFrom(this);
     }
 
 	public override string ToString ()

@@ -80,4 +80,42 @@ class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
                 create_cssln
             ]
 
+    # Visit a parse tree produced by pParser#exp_new.
+    def visitExp_new(self, ctx, **kwargs):
+        return "NewMachine(Machine{0}.Allocate(), null)".format(ctx.getChild(1).getText())
+
+    # Visit a parse tree produced by pParser#exp_new_with_arguments.
+    def visitExp_new_with_arguments(self, ctx, **_kwargs):
+        kwargs = _kwargs.copy()
+        kwargs["do_copy"] = True
+        c3 = ctx.getChild(3).accept(self, **kwargs)
+        return "NewMachine(Machine{0}.Allocate(), {1})".format(ctx.getChild(1).getText(), c3)
+
+    # Visit a parse tree produced by pParser#stmt_new.
+    def visitStmt_new(self, ctx, **kwargs):
+        self.out("NewMachine(Machine{0}.Allocate(), null);\n".format(ctx.getChild(1).getText()))
+
+    # Visit a parse tree produced by pParser#stmt_new_with_arguments.
+    def visitStmt_new_with_arguments(self, ctx, **kwargs):
+        c3 = ctx.getChild(3).accept(self, **kwargs)
+        self.out("NewMachine(Machine{0}.Allocate(),{1});\n".format(ctx.getChild(1).getText(), c3))
+
+    def out_machine_body(self):
+        super(PProgramToSymbolicCSharpTranslator, self).out_machine_body()
+        if not self.current_visited_machine.is_spec:
+            machine_name = self.get_machine_csclassname(self.current_visited_machine)
+            self.out(
+                """
+                #region multisenorewrite
+                private static System.Collections.Generic.List<PMachine> _allAllocs = new System.Collections.Generic.List<PMachine>();
+                private static ValueSummary<int> _allAllocsCounter = 0;
+                #endregion
+                public static PMachine Allocate()
+                {{
+                #region multisenorewrite
+                    return PathConstraint.Allocate<PMachine>(_ => new {0}(), _allAllocs, _allAllocsCounter);
+                #endregion
+                }}
+                """.format(machine_name))
+
 Translator = PProgramToMultSECSharpTranslator

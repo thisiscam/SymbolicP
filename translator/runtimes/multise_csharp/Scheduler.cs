@@ -12,9 +12,9 @@ class Scheduler
         public ValueSummary<int> targetMachineStateIndex = new ValueSummary<int>(default (int));
         public SchedulerChoice(ValueSummary<PMachine> sourceMachine, ValueSummary<int> sourceMachineSendQueueIndex, ValueSummary<int> targetMachineStateIndex)
         {
-            this.sourceMachine = ValueSummary<PMachine>.InitializeFrom(sourceMachine);
-            this.sourceMachineSendQueueIndex = ValueSummary<int>.InitializeFrom(sourceMachineSendQueueIndex);
-            this.targetMachineStateIndex = ValueSummary<int>.InitializeFrom(targetMachineStateIndex);
+            this.sourceMachine.Assign(ValueSummary<PMachine>.InitializeFrom(sourceMachine));
+            this.sourceMachineSendQueueIndex.Assign(ValueSummary<int>.InitializeFrom(sourceMachineSendQueueIndex));
+            this.targetMachineStateIndex.Assign(ValueSummary<int>.InitializeFrom(targetMachineStateIndex));
         }
     }
 
@@ -166,6 +166,6 @@ class Scheduler
     public void StartMachine(ValueSummary<PMachine> machine, ValueSummary<IPType> payload)
     {
         this.machines.InvokeMethod<PMachine>((_, a0) => _.Add(a0), machine);
-        machine.InvokeMethod<Scheduler, IPType>((_, a0, a1) => _.StartMachine(a0, a1), this, payload);
+        machine.InvokeMethod<Scheduler, IPType>((_, a0, a1) => _.StartMachine(a0, a1), this, ValueSummary<IPType>.InitializeFrom(payload));
     }
 }

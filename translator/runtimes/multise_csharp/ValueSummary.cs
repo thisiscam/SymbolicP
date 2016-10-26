@@ -6,6 +6,7 @@ using System.Diagnostics;
 using BDDToZ3Wrap;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 internal class GuardedValue<T>
 {
@@ -104,23 +105,23 @@ public class ValueSummary<T>
 	{
 		foreach (var v2 in other.values) {
 			var bddForm = v2.bddForm.And(pred);
-			if (bddForm.FormulaBDDSAT()) {
-				AddValue(bddForm, v2.value);
-			}
+			AddValue(bddForm, v2.value);
 		}
 	}
-
+	
 	public void AddValue(bdd pred, T val)
 	{
+		if(pred.FormulaBDDSAT()) {
 #if !NO_MERGE_VS
-		foreach (var guardedValue in this.values) {
-			if (EqualityComparer<T>.Default.Equals(guardedValue.value, val)) {
-				guardedValue.bddForm = guardedValue.bddForm.Or(pred);
-				return;
+			foreach (var guardedValue in this.values) {
+				if (EqualityComparer<T>.Default.Equals(guardedValue.value, val)) {
+					guardedValue.bddForm = guardedValue.bddForm.Or(pred);
+					return;
+				}
 			}
-		}
 #endif
-		this.values.Add(new GuardedValue<T>(pred, val));
+			this.values.Add(new GuardedValue<T>(pred, val));
+		}
 #if DEBUG
 		this.AssertPredExclusion();
 #endif
@@ -130,18 +131,89 @@ public class ValueSummary<T>
 	{
 		AddValue(PathConstraint.GetPC(), val);
 	}
-
+	
+		
+	public ValueSummary<T> LimitCombine(bdd limit0, ValueSummary<T> a1, bdd limit1)
+	{
+		var ret = new ValueSummary<T>();
+		foreach(var v in this.values)
+		{
+			var bddForm = v.bddForm.And(limit0);
+			if(bddForm.FormulaBDDSAT()) {
+				ret.values.Add(new GuardedValue<T>(bddForm, v.value));
+			}
+		}
+		foreach(var v in a1.values)
+		{
+			var bddForm = v.bddForm.And(limit1);
+			if(bddForm.FormulaBDDSAT()) {
+				ret.values.Add(new GuardedValue<T>(bddForm, v.value));
+			}
+		}
+		if(ret.values.Count == 0) {
+			Debugger.Break();
+		}
+		ret.MergeMax();
+		return ret;
+	}
+	
+	private static void DeepMerge(GuardedValue<T> into, GuardedValue<T> from)
+	{
+		var newVal = (T) into.value.GetType().GetMethod("MemberwiseClone", BindingFlags.NonPublic|BindingFlags.Instance).Invoke(into.value, null);
+		foreach(FieldInfo prop in from.value.GetType().GetFields(BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Instance))
+		{
+			var intoFieldVal = prop.GetValue(into.value);
+		    var fromFieldVal = prop.GetValue(from.value);
+		    var limitCombine = intoFieldVal.GetType().GetMethod("LimitCombine");
+	    	var combined = limitCombine.Invoke(intoFieldVal, new object[]{into.bddForm, fromFieldVal, from.bddForm} );
+	    	prop.SetValue(newVal, combined);
+		}
+		into.bddForm = into.bddForm.Or(from.bddForm);
+		into.value = newVal;
+	}
+	
+	public void MergeMax()
+	{
+		if(typeof(IPType).IsAssignableFrom(typeof(T))) {
+			var newVals = new SCG.List<GuardedValue<T>>();
+			foreach(var sameTypeGroup in this.values.GroupBy((arg) => arg.value == null ? null : arg.value.GetType()))
+			{
+				if(sameTypeGroup.Key != null && (sameTypeGroup.Key.Name.StartsWith("PList") || sameTypeGroup.Key.Name.StartsWith("PTuple") || sameTypeGroup.Key.Name.StartsWith("PMap")))
+				{
+					var enumerator = sameTypeGroup.GetEnumerator();
+					enumerator.MoveNext();
+					var merged = enumerator.Current;
+					while(enumerator.MoveNext()) 
+					{
+						var curr = enumerator.Current;
+						DeepMerge(merged, curr);
+					}
+					newVals.Add(merged);
+				} else {
+					newVals.AddRange(sameTypeGroup);
+				}
+			}
+			this.values = newVals;
+		}
+	}
+	
 	public void Update<T2>(ValueSummary<T2> val, bdd pred) where T2 : T
 	{
 		foreach (var guardedVal in val.values) {
 			var p = guardedVal.bddForm.And(pred);
 			Update(guardedVal.value, p);
 		}
+#if NO_MERGE_VAL
+		MergeMax();
+#endif
+#if DEBUG
+		this.AssertPredExclusion();
+#endif
 	}
 
 	public void Update<T2>(T2 val, bdd pred) where T2 : T
 	{
-		if (!pred.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+		if (pred.FormulaBDDSAT()) {
 			var newVals = new SCG.List<GuardedValue<T>>();
 			var not_pred = pred.Not();
 			foreach (var guardedThisVal in this.values) {
@@ -163,6 +235,7 @@ public class ValueSummary<T>
 		}
 		else {
 			if (pred.FormulaBDDSolverSAT()) {
+				BDDToZ3Wrap.PInvoke.debug_print_used_bdd_vars();
 				throw new Exception("Null target");
 			}
 		}
@@ -372,19 +445,17 @@ public class ValueSummary<T>
 		var pc = PathConstraint.GetPC();
 		foreach (var guardedVal in this.values) {
 			var bddForm = guardedVal.bddForm.And(pc);
-			if (bddForm.FormulaBDDSAT()) {
-				NullTargetCheck((c, v) =>
-				{
-					try {
-						ret.AddValue(c, f.Invoke(v));
-					}
-					catch (InvalidCastException e) {
-						if (bddForm.FormulaBDDSolverSAT()) {
-							throw e;
-						}
-					}
-				}, 
-				guardedVal.value, bddForm);
+			try {
+				ret.AddValue(bddForm, f.Invoke(guardedVal.value));
+			}
+			catch (InvalidCastException e) {
+				if (bddForm.FormulaBDDSolverSAT()) {
+					throw e;
+				}
+			} catch(NullReferenceException e) {
+				if (bddForm.FormulaBDDSolverSAT()) {
+					throw e;
+				}
 			}
 		}
 		return ret;

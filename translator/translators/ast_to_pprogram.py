@@ -66,6 +66,8 @@ class PTypeEvent(object):
         if event_name not in PTypeEvent.events:
             PTypeEvent.events[event_name] = PTypeEvent(event_name)
         return PTypeEvent.events[event_name]
+    def __eq__(self, other):
+        return isinstance(other, PTypeEvent)
 PTypeEventUnknown = PTypeEvent("*unknown")
 PTypeEventHalt = PTypeEvent("*halt")
 
@@ -76,23 +78,27 @@ class PTypeSeq(object):
     clonable = True
     def __init__(self, T):
         self.T = T
+    def __eq__(self, other):
+        return isinstance(other, PTypeSeq) and self.T == other.T
 class PTypeMap(object):
     clonable = True
     def __init__(self, T1, T2):
         self.T1 = T1
         self.T2 = T2
+    def __eq__(self, other):
+        return isinstance(other, PTypeMap) and self.T1 == other.T1 and self.T2 == other.T2
 class PTypeTuple(object):
     clonable = True
     def __init__(self, Ts):
         self.Ts = Ts
     def __eq__(self, other):
-        return self.Ts == other.Ts
+        return isinstance(other, PTypeTuple) and self.Ts == other.Ts
 class PTypeNamedTuple(object):
     clonable = True
     def __init__(self, NTs):
         self.NTs = OrderedDict(NTs)
     def __eq__(self, other):
-        return self.NTs == other.NTs
+        return isinstance(other, PTypeNamedTuple) and self.NTs == other.NTs
 
 class PTypeTranslatorVisitor(pVisitor):
     # Visit a parse tree produced by pParser#ptype_null.

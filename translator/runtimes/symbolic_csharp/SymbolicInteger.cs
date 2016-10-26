@@ -366,7 +366,7 @@ public struct SymbolicInteger {
     public static SymbolicInteger operator -(SymbolicInteger a) 
     { 
         if(a.IsAbstract()) {
-            return new SymbolicInteger(PathConstraint.ctx.MkBVNeg(a.abstractValue));
+            return new SymbolicInteger(SymbolicEngine.ctx.MkBVNeg(a.abstractValue));
         } else {
             return new SymbolicInteger(-a.concreteValue); 
         }

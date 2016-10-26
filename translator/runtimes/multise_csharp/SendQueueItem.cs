@@ -6,8 +6,8 @@ class SendQueueItem
     public ValueSummary<IPType> payload = new ValueSummary<IPType>(default (IPType));
     public SendQueueItem(ValueSummary<PMachine> target, ValueSummary<PInteger> e, ValueSummary<IPType> payload)
     {
-        this.target = target;
-        this.e = e;
-        this.payload = payload;
+        this.target.Assign<PMachine>(target);
+        this.e.Assign<PInteger>(e);
+        this.payload.Assign<IPType>(payload);
     }
 }

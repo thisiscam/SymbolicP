@@ -8,7 +8,7 @@ class Program {
         Scheduler scheduler = new Scheduler();
 
         ValueSummary<PMachine> mainMachine = MachineController.CreateMainMachine();
-        scheduler.StartMachine(mainMachine, null);
+        scheduler.StartMachine(mainMachine, new ValueSummary<IPType>(null));
 	
 		Stopwatch Watch = new Stopwatch();
 		var loop = PathConstraint.BeginLoop();

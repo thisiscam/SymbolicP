@@ -44,15 +44,12 @@ public static partial class PathConstraint
 
 	static SCG.List<SymbolicBool> sym_bool_vars;
 	static ValueSummary<int> solver_bool_var_cnt;
-	static SCG.List<SymbolicInteger> sym_int_vars;
-	static ValueSummary<int> solver_int_var_cnt;
+
 
 	private static void InitSymVar()
 	{
 		sym_bool_vars = new SCG.List<SymbolicBool>();
 		solver_bool_var_cnt = 0;
-		sym_int_vars = new SCG.List<SymbolicInteger>();
-		solver_int_var_cnt = 0;
 	}
 
 	public static bdd GetPC()
@@ -194,54 +191,33 @@ public static partial class PathConstraint
 		return BuDDySharp.BuDDySharp.bddtrue.FormulaBDDSolverSAT();
 	}
 
-	public static ValueSummary<SymbolicInteger> NewSymbolicIntVar(string prefix, int ge, ValueSummary<int> lt)
-	{
-		var ret = new ValueSummary<SymbolicInteger>();
-		var pc = GetPC();
-		foreach (var guardedCnt in solver_int_var_cnt.values) {
-			var bddForm = pc.And(guardedCnt.bddForm);
-			if (bddForm.FormulaBDDSolverSAT()) {
-				var idx = guardedCnt.value;
-				if (idx < sym_int_vars.Count) {
-					ret.AddValue(bddForm, sym_int_vars[idx]);
-				}
-				else {
-					var fresh_const = new SymbolicInteger((BitVecExpr)ctx.MkBVConst(String.Format("{0}_{1}", prefix, idx), SymbolicInteger.INT_SIZE));
-					sym_int_vars.Add(fresh_const);
-					solver.Assert((ge <= fresh_const).AbstractValue);
-					var cnt_pred = BuDDySharp.BuDDySharp.bddfalse;
-					foreach (var guardedVal in lt.values) {
-						solver.Assert(ctx.MkImplies(guardedVal.bddForm.And(bddForm).ToZ3Expr(), (fresh_const < guardedVal.value).AbstractValue));
-						cnt_pred = cnt_pred.Or(guardedVal.bddForm);
-					}
-					ret.AddValue(bddForm.And(cnt_pred), fresh_const);
-				}
-			}
-		}
-		solver_int_var_cnt.Increment();
-		return ret;
-	}
-
 	public static ValueSummary<SymbolicBool> NewSymbolicBoolVar(string prefix)
 	{
-		var ret = new ValueSummary<SymbolicBool>();
-		var pc = GetPC();
-		foreach (var guardedCnt in solver_bool_var_cnt.values) {
-			var bddForm = pc.And(guardedCnt.bddForm);
-			if (!bddForm.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
-				var idx = guardedCnt.value;
-				if (idx < sym_bool_vars.Count) {
-					ret.AddValue(bddForm, sym_bool_vars[idx]);
+		return Allocate<SymbolicBool>((idx) => 
+			{
+				var sym_var_name = String.Format("{0}_{1}", prefix, idx);
+				var fresh_const = new SymbolicBool((BoolExpr)ctx.MkBoolConst(sym_var_name));
+				return fresh_const;
+			}, sym_bool_vars, solver_bool_var_cnt);
+	}
+	
+	public static ValueSummary<T> Allocate<T>(Func<int, T> f, SCG.List<T> allAllocated, ValueSummary<int> counter)
+    {
+    	var ret = new ValueSummary<T>();
+    	var pc = PathConstraint.GetPC();
+    	foreach(var allocCnt in counter.values)
+    	{
+    		var bddForm = allocCnt.bddForm.And(pc);
+    		if(bddForm.FormulaBDDSAT())
+    		{
+    			if(allocCnt.value >= allAllocated.Count)
+    			{
+    				allAllocated.Add(f.Invoke(allocCnt.value));
 				}
-				else {
-					var sym_var_name = String.Format("{0}_{1}", prefix, idx);
-					var fresh_const = new SymbolicBool((BoolExpr)ctx.MkBoolConst(sym_var_name));
-					sym_bool_vars.Add(fresh_const);
-					ret.AddValue(bddForm, fresh_const);
-				}
+				ret.AddValue(bddForm, allAllocated[allocCnt.value]);
 			}
 		}
-		solver_bool_var_cnt.Increment();
+		counter.Increment();
 		return ret;
 	}
 	
