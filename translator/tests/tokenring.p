@@ -13,7 +13,7 @@ machine Node assume 100 {
   var MyRing       : machine;
 
     start state Init_Main_Node {
-			entry (payload: machine) { MyRing = payload; }
+      entry (payload: machine) { MyRing = payload; }
       on Next goto SetNext_Main_Node;
     }
 
@@ -26,7 +26,7 @@ machine Node assume 100 {
 
     state SetNext_Main_Node {
       entry (payload: machine) {
-	NextMachine = payload;
+        NextMachine = payload;
         send MyRing, Ready;
         raise Unit;
       }
@@ -80,15 +80,15 @@ machine Node assume 100 {
 
 main machine Ring4 assume 100 {
 
-		    var N1 : machine;
-		    var N2 : machine;
-		    var N3 : machine;
-		    var N4 : machine;
-		    var ReadyCount : int;
-		    var Rand1 : bool;
-		    var Rand2 : bool;
-		    var RandSrc : machine;
-		    var RandDst : machine;
+        var N1 : machine;
+        var N2 : machine;
+        var N3 : machine;
+        var N4 : machine;
+        var ReadyCount : int;
+        var Rand1 : bool;
+        var Rand2 : bool;
+        var RandSrc : machine;
+        var RandDst : machine;
 
     start state Boot_Main_Ring4 {
       entry {
@@ -121,44 +121,36 @@ main machine Ring4 assume 100 {
 
     state RandomComm_Main_Ring4 {
       entry {
-                if ($)
-                  Rand1 = true;
-                else
-                  Rand1 = false;                                   
-                if ($)
-                  Rand2 = true;
-                else
-                  Rand2 = false;
-                                  
-                if (!Rand1 && !Rand2)
-                   RandSrc = N1;
-                if (!Rand1 && Rand2)
-                   RandSrc = N2;
-                if (Rand1 && !Rand2)
-                   RandSrc = N3;
-                else
-                   RandSrc = N4;
-                if ($)
-                  Rand1 = true;
-                else
-                  Rand1 = false;                                   
-                if ($)
-                  Rand2 = true;
-                else
-                  Rand2 = false;
-                if (!Rand1 && !Rand2)
-                   RandDst = N1;
-                if (!Rand1 && Rand2)
-                   RandDst = N2;
-                if (Rand1 && !Rand2)
-                   RandDst = N3;
-                else
-                   RandDst = N4;
-                   
-                send RandSrc, Send, RandDst;
-                send this,  Unit;
-      }
+        var i:int;
+        while(i < 0) {
+          Rand1 = $;                                
+          Rand2 = $;
+                            
+          if (!Rand1 && !Rand2)
+             RandSrc = N1;
+          if (!Rand1 && Rand2)
+             RandSrc = N2;
+          if (Rand1 && !Rand2)
+             RandSrc = N3;
+          else
+             RandSrc = N4;
 
-      on Unit goto RandomComm_Main_Ring4;
+          Rand1 = $;
+          Rand2 = $;
+
+          if (!Rand1 && !Rand2)
+             RandDst = N1;
+          if (!Rand1 && Rand2)
+             RandDst = N2;
+          if (Rand1 && !Rand2)
+             RandDst = N3;
+          else
+             RandDst = N4;
+             
+          send RandSrc, Send, RandDst;
+          i = i + 1;
+        }
+        send N1, Send, N2;
+      }
     }
 }

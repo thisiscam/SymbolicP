@@ -840,16 +840,17 @@ public static class ValueSummaryExt
 		PathConstraint.PushScope();
 		return ret;
  	}
-
-	public static PathConstraint.BranchPoint _Cond(this ValueSummary<SymbolicBool> b)
+		
+	private static PathConstraint.BranchPoint _CondHelper<T>(ValueSummary<T> b, Func<T, SymbolicBool> extract)
 	{
 		var pc = PathConstraint.GetPC();
 		bdd predTrue = BuDDySharp.BuDDySharp.bddfalse, predFalse = BuDDySharp.BuDDySharp.bddfalse;
 		foreach (var guardedBooleanVal in b.values) {
 			var guardedValuePcPred = guardedBooleanVal.bddForm.And(pc);
-			if (!guardedValuePcPred.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
-				if (guardedBooleanVal.value.IsAbstract()) {
-					var c = guardedBooleanVal.value.AbstractValue.ToBDD();
+			var symbVal = extract.Invoke(guardedBooleanVal.value);
+			if (guardedValuePcPred.FormulaBDDSAT()) {
+				if (symbVal.IsAbstract()) {
+					var c = symbVal.AbstractValue.ToBDD();
 					if (c.EqualEqual(BuDDySharp.BuDDySharp.bddtrue)) {
 						if (guardedValuePcPred.FormulaBDDSolverSAT()) {
 							predTrue = predTrue.Or(guardedValuePcPred);
@@ -875,7 +876,7 @@ public static class ValueSummaryExt
 				}
 				else {
 					if (guardedValuePcPred.FormulaBDDSolverSAT()) {
-						if (guardedBooleanVal.value.ConcreteValue) {
+						if (symbVal.ConcreteValue) {
 							predTrue = predTrue.Or(guardedValuePcPred);
 						}
 						else {
@@ -908,6 +909,11 @@ public static class ValueSummaryExt
 				}
 			}
 		}
+	} 
+	
+	public static PathConstraint.BranchPoint _Cond(this ValueSummary<SymbolicBool> b)
+	{
+		return _CondHelper(b, (arg) => arg);
 	}
 	
 	public static PathConstraint.BranchPoint Cond(this ValueSummary<SymbolicBool> b) 
@@ -919,12 +925,7 @@ public static class ValueSummaryExt
 	
 	public static PathConstraint.BranchPoint _Cond(this ValueSummary<PBool> b)
 	{
-		//TODO make this more efficient
-		var tmp = new ValueSummary<SymbolicBool>();
-		foreach (var v in b.values) {
-			tmp.values.Add(new GuardedValue<SymbolicBool>(v.bddForm, (SymbolicBool)v.value));
-		}
-		return _Cond(tmp);
+		return _CondHelper(b, (arg) => (SymbolicBool)arg);
 	}
 	
 	public static PathConstraint.BranchPoint Cond(this ValueSummary<PBool> b) 

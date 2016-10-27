@@ -18,7 +18,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
-    <Commandlineparameters>../../../../../runtimes/symbolic_csharp ../../../../../runtimes/multise_csharp ../../../../../runtimes/symbolic_csharp/Constants.cs,../../../../../runtimes/symbolic_csharp/IPType.cs,../../../../../runtimes/symbolic_csharp/List.cs,../../../../../runtimes/symbolic_csharp/MonitorPMachine.cs,../../../../../runtimes/symbolic_csharp/PList.cs,../../../../../runtimes/symbolic_csharp/PMachine.cs,../../../../../runtimes/symbolic_csharp/PMap.cs,../../../../../runtimes/symbolic_csharp/SendQueueItem.cs,../../../../../runtimes/symbolic_csharp/Tuples.cs ../../../../../runtimes/symbolic_csharp/PathConstraint.cs,../../../../../runtimes/symbolic_csharp/PBool.cs,../../../../../runtimes/symbolic_csharp/PInteger.cs,../../../../../runtimes/symbolic_csharp/Program.cs,../../../../../runtimes/symbolic_csharp/SymbolicBool.cs,../../../../../runtimes/symbolic_csharp/SymbolicEngine.cs,../../../../../runtimes/symbolic_csharp/SymbolicInteger.cs,../../../../../runtimes/symbolic_csharp/DefaultArray.cs</Commandlineparameters>
+    <Commandlineparameters>../../../../../runtimes/symbolic_csharp ../../../../../runtimes/multise_csharp ../../../../../runtimes/symbolic_csharp/Constants.cs,../../../../../runtimes/symbolic_csharp/IPType.cs,../../../../../runtimes/symbolic_csharp/List.cs,../../../../../runtimes/symbolic_csharp/MonitorPMachine.cs,../../../../../runtimes/symbolic_csharp/PList.cs,../../../../../runtimes/symbolic_csharp/PMachine.cs,../../../../../runtimes/symbolic_csharp/PMap.cs,../../../../../runtimes/symbolic_csharp/SendQueueItem.cs,../../../../../runtimes/symbolic_csharp/Tuples.cs,../../../../../runtimes/symbolic_csharp/RandomScheduler.cs,../../../../../runtimes/symbolic_csharp/RoundRobinScheduler.cs ../../../../../runtimes/symbolic_csharp/PathConstraint.cs,../../../../../runtimes/symbolic_csharp/PBool.cs,../../../../../runtimes/symbolic_csharp/PInteger.cs,../../../../../runtimes/symbolic_csharp/Program.cs,../../../../../runtimes/symbolic_csharp/SymbolicBool.cs,../../../../../runtimes/symbolic_csharp/SymbolicEngine.cs,../../../../../runtimes/symbolic_csharp/SymbolicInteger.cs,../../../../../runtimes/symbolic_csharp/DefaultArray.cs RANDOM_SCHEDULER,ROUND_ROBIN_SCHEDULER</Commandlineparameters>
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
@@ -40,6 +40,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ValueSummaryRewriter.cs" />
+    <Compile Include="..\..\..\runtimes\symbolic_csharp\RandomScheduler.cs">
+      <Link>symbolic_csharp\RandomScheduler.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\runtimes\symbolic_csharp\RoundRobinScheduler.cs">
+      <Link>symbolic_csharp\RoundRobinScheduler.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

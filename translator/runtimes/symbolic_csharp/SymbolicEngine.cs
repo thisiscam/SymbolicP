@@ -45,7 +45,7 @@ public class SymbolicEngine {
 			return constraint.CurrentBool (solver, abstractVal);
 		} else {
 			/* Forcing branch to other evaluation */
-			Debug.Assert (pathConstraints [idx].Done == false);
+			if(pathConstraints [idx].Done != false) { Debugger.Break(); }
 			bool ret = pathConstraints [idx].NextBool (solver, abstractVal);
 			idx++;
 			return ret;
@@ -76,7 +76,7 @@ public class SymbolicEngine {
 	public SymbolicInteger NewSymbolicIntVar(string prefix, SymbolicInteger ge, SymbolicInteger lt) {
 		var fresh_const = new SymbolicInteger((BitVecExpr)SymbolicEngine.ctx.MkBVConst (
 							string.Format("i{0}", intVarRecoveredIdx), SymbolicInteger.INT_SIZE));
-		if(idx >= pathConstraints.Count - 1) {
+		if(idx >= pathConstraints.Count) {
 			solver.Assert((ge <= fresh_const).AbstractValue, (fresh_const < lt).AbstractValue);
 		}
 		intVarRecoveredIdx++;

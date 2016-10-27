@@ -18,11 +18,12 @@ def main():
                     "PBool.cs",
                     "DefaultArray.cs"
                 }
+    define_macros = {"RANDOM_SCHEDULER", "ROUND_ROBIN_SCHEDULER"}
     transform_srcs = filter(lambda s: os.path.basename(s) not in ignore_srcs, all_srcs)
     nocopy_srcs = ignore_srcs
     nocopy_srcs = filter(lambda s: os.path.basename(s) in nocopy_srcs, all_srcs)
     print "Transforming runtime..."
-    valuesummary_transform(symbolic_runtime_dir, multise_runtime_dir, transform_srcs, nocopy_srcs)
+    valuesummary_transform(symbolic_runtime_dir, multise_runtime_dir, transform_srcs, nocopy_srcs, define_macros)
 
 if __name__ == '__main__':
     main()

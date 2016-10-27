@@ -357,20 +357,6 @@ namespace MultiSETransformer
             }
         }
                 
-        private static Dictionary<string, string> binOperatorMap = new Dictionary<string, string> {
-            {"+", "Add"},
-            {"-", "Sub"},
-            {"*", "Mul"},
-            {"/", "Div"},
-            {"%", "Mod"},
-            {"==", "EE"},
-            {"!=", "NE"},
-            {">", "GT"},
-            {"<", "LT"},
-            {">=", "GE"},
-            {"<=", "LE"},
-        };
-
         private string SymbolicTypeAvoidCastHelper(ExpressionSyntax node)
         {
             var t0 = model.GetTypeInfo(node).Type.ToDisplayString();
@@ -1080,7 +1066,7 @@ namespace MultiSETransformer
                                 }
                                 return node.WithArgumentList(node.ArgumentList.Accept(this) as ArgumentListSyntax);
                             }
-                            else if (accessSymbol.Symbol != null && accessSymbol.Symbol.Kind == SymbolKind.Field && IsSpecialKW(accessSymbol.Symbol.Name))
+                            else if (accessSymbol.Symbol != null && accessSymbol.Symbol.Kind == SymbolKind.Field && accessSymbol.Symbol.Name != "sendQueue" && IsSpecialKW(accessSymbol.Symbol.Name))
                             {
                                 return node.WithArgumentList(node.ArgumentList.Accept(this) as ArgumentListSyntax);
                             }

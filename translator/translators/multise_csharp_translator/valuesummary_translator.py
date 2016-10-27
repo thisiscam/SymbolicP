@@ -16,11 +16,13 @@ if os.name == "nt":
 else:
 	transformer_cmd = ["mono", transformer_exe]
 
-def valuesummary_transform(include_files, output_path, transform_files, no_copy_srcs=None):
+def valuesummary_transform(include_files, output_path, transform_files, no_copy_srcs=None, define_macros=None):
 	if not isinstance(include_files, str):
 		include_files = ",".join(include_files)
 	cmd = transformer_cmd + [include_files, output_path, ",".join(transform_files)]
 	if no_copy_srcs:
 		cmd += [",".join(no_copy_srcs)]
+	if define_macros:
+		cmd += [",".join(define_macros)]
 	# print " ".join(cmd)
 	subprocess.check_call(cmd)

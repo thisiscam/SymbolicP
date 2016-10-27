@@ -29,7 +29,9 @@ namespace MultiSETransformer
 
 			var noCopySrcs = args.Count() > 3 ? args [3].Split (new []{ ',' }, 1000).Select((src_path, i) => Path.GetFullPath(src_path)) : new string[0];
 
-			Compilation test = CreateTestCompilation(files.ToArray());
+            var definedSymbols = args.Count() > 4 ? args[4].Split(new []{ ',' }, 1000) : new string[0];
+            
+			Compilation test = CreateTestCompilation(files.ToArray(), definedSymbols.ToArray());
 			
 			for (int pass = 0; pass < ValueSummaryRewriter.NUM_PASSES; pass++) {
 				foreach (SyntaxTree sourceTree in test.SyntaxTrees) 
@@ -55,12 +57,13 @@ namespace MultiSETransformer
 			}
 		}
 
-		private static Compilation CreateTestCompilation(string[] files)
+		private static Compilation CreateTestCompilation(string[] files, string[] definePreprocessors)
 		{
+            var option = new CSharpParseOptions(preprocessorSymbols: definePreprocessors);
 			var sourceTrees = files.Select (
 				src_path => {
 					String programText = File.ReadAllText (src_path);
-					return CSharpSyntaxTree.ParseText (programText).WithFilePath (src_path);
+					return CSharpSyntaxTree.ParseText (programText, options: option).WithFilePath (src_path);
 			});
 
 			MetadataReference mscorlib =

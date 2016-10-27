@@ -20,32 +20,35 @@ public struct BoolPathConstraint : IPathConstraint {
 	bool done;
 	
 	public BoolPathConstraint(Solver solver, BoolExpr abstractVal) {
-		solver.Check ();
-		var solverResult = solver.Model.Evaluate(abstractVal);
+		var notAbstractVal = SymbolicEngine.ctx.MkNot(abstractVal);
 		solver.Push();
-		switch(solverResult.BoolValue) {
-			case Z3_lbool.Z3_L_TRUE: {
+		solver.Push();
+		solver.Assert(abstractVal);
+		var trueFeasible = solver.Check();
+		solver.Pop();
+		solver.Push();
+		solver.Assert(notAbstractVal);
+		var falseFeasible = solver.Check();
+		solver.Pop();
+		if(trueFeasible == Status.UNKNOWN || falseFeasible == Status.UNKNOWN) {
+			throw new Exception("Solver error");
+		}
+		if(trueFeasible == Status.SATISFIABLE) {
+			if(falseFeasible == Status.SATISFIABLE) {
+				explored = true;
+				done = false;
+			} else {
 				explored = true;
 				done = true;
-				solver.Assert(abstractVal);
-				break;
 			}
-			case Z3_lbool.Z3_L_FALSE: {
+			solver.Assert(abstractVal);
+		} else {
+			if(falseFeasible == Status.SATISFIABLE) {
 				explored = false;
 				done = true;
-				solver.Assert(SymbolicEngine.ctx.MkNot(abstractVal));
-				break;
-			}
-			case Z3_lbool.Z3_L_UNDEF: {
-				explored = true;
-				done = false;
-				solver.Assert(abstractVal);
-				break;
-			}
-			default: {
-				explored = true;
-				done = false;
-				throw new SystemException ("Unreachable");
+				solver.Assert(notAbstractVal);
+			} else {
+				throw new Exception("Error! Both branch not feasible");
 			}
 		}
 	}

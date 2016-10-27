@@ -251,10 +251,9 @@ public static partial class PathConstraint
 		return DecisionTreeFromIdx(vars, idx);
 	}
 	
-	public static ValueSummary<T> ChooseRandomFromList<T>(ValueSummary<List<T>> list)
+	public static ValueSummary<int> ChooseRandomIndex(ValueSummary<int> count)
 	{
 		var pc = GetPC();
-		var count = list.GetField<int>((arg) => arg._count);
 		var max_count = count.values.Max((GuardedValue<int> arg) => 
 			{	
 				if(!arg.bddForm.And(pc).EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
@@ -285,8 +284,7 @@ public static partial class PathConstraint
 				idx.AddValue(bddForm.And(DecisionTreeFromIdx(all_vars, i, guardedCnt.value)), i);
 			}
 		}
-		var ret = list.InvokeMethod<int, T>((List<T> arg1, ValueSummary<int> arg2) => arg1[arg2], idx);
-		return ret;
+		return idx;
 	}
 	
 	public static bool DebugProofEquivalence(BoolExpr e1, BoolExpr e2)
