@@ -529,7 +529,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
         c4 = ctx.getChild(4).accept(self, **kwargs)
         self.out("this.SendMsg({0},{1},null);\n".format(c2, c4))
         event_type = ctx.getChild(4).exp_type
-        if not event_type.is_static_event() or event_type.name in self.pprogram.observes_map:
+        if (len(self.pprogram.observes_map) != 0 and not event_type.is_static_event()) \
+            or event_type.name in self.pprogram.observes_map:
             self.out("MachineController.AnnounceEvent({0}, null);\n".format(c4))
 
 
@@ -542,7 +543,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
         c6 = ctx.getChild(6).accept(self, **kwargs)
         self.out("this.SendMsg({0},{1},{2});\n".format(c2, c4, c6))
         event_type = ctx.getChild(4).exp_type
-        if not event_type.is_static_event() or event_type.name in self.pprogram.observes_map:
+        if (len(self.pprogram.observes_map) != 0 and not event_type.is_static_event()) \
+            or event_type.name in self.pprogram.observes_map:
             self.out("MachineController.AnnounceEvent({0},{1});\n".format(c4, c6))
 
     # Visit a parse tree produced by pParser#stmt_monitor.

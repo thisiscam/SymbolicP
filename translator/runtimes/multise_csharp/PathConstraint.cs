@@ -119,6 +119,11 @@ public static partial class PathConstraint
 	{
 		ret.Merge(val);
 	}
+	
+	public static void RecordReturnPath()
+	{
+		
+	}
 #endregion
 
 	public static LoopPoint BeginLoop()
