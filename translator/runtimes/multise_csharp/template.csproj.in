@@ -99,6 +99,7 @@
     <Reference Include="Microsoft.Z3">
       <HintPath>@lib_dir/Microsoft.Z3.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
     #for @generated_src in @generated_srcs:

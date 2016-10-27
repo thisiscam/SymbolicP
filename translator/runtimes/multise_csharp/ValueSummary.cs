@@ -232,7 +232,7 @@ public class ValueSummary<T>
 			var p = guardedVal.bddForm.And(pred);
 			Update(guardedVal.value, p);
 		}
-#if true
+#if MERGE_PVAL
 		MergeMax();
 #endif
 #if DEBUG
