@@ -1331,9 +1331,17 @@ namespace MultiSETransformer
             {
                 case 2:
                     {
+                        TypeSyntax elementType = null;
+                        bool need_cast = false;
+                        var converted_type = ConvertedType(node, ref need_cast, ref elementType);
                         var exp = node.Expression.Accept(this) as ExpressionSyntax;
                         var lambdaExpression = SyntaxFactory.SimpleLambdaExpression(SyntaxFactory.Parameter(SyntaxFactory.Identifier("_")), node.WithExpression(SyntaxFactory.IdentifierName("_")));
-                        return SyntaxFactory.InvocationExpression(SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, exp, SyntaxFactory.GenericName(SyntaxFactory.Identifier("Cast"), SyntaxFactory.TypeArgumentList().AddArguments(node.Type))), SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(lambdaExpression)));
+                        var ret = SyntaxFactory.InvocationExpression(SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, exp, SyntaxFactory.GenericName(SyntaxFactory.Identifier("Cast"), SyntaxFactory.TypeArgumentList().AddArguments(node.Type))), SyntaxFactory.ArgumentList().AddArguments(SyntaxFactory.Argument(lambdaExpression)));
+                        if (need_cast)
+                        {
+                            return CastTypeNode(ret, converted_type);
+                        }
+                        return ret;
                     }
                 default:
                     {

@@ -13,7 +13,7 @@ main machine Main {
     }
   }
   
-  spec Mon1 observes x, y
+  spec Mon1 monitors x, y
   {
     var i : int;
     start state S1

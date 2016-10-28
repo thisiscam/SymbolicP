@@ -191,7 +191,7 @@ machine PaxosNode {
 			nextProposal = GetNextProposal(maxRound);
 			receivedAgree = (proposal = (round = -1, servermachine = -1), value = -1);
 			BroadCastAcceptors(prepare, (proposer = this, slot = nextSlotForProposer, proposal = (round = nextProposal.round, servermachine = myRank)));
-			announce announce_proposer_sent, proposeVal;
+			monitor announce_proposer_sent, proposeVal;
 			send timer, startTimer;
 		}
 		
@@ -233,10 +233,10 @@ machine PaxosNode {
 			}
 			if(countAccept == majority)
 			{
-				//the value is chosen, hence invoke the announce on chosen event
-				announce announce_valueChosen, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal);
+				//the value is chosen, hence invoke the monitor on chosen event
+				monitor announce_valueChosen, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal);
 				send timer, cancelTimer;
-				announce announce_proposer_chosen, proposeVal;
+				monitor announce_proposer_chosen, proposeVal;
 				//increment the nextSlotForProposer
 				nextSlotForProposer = nextSlotForProposer + 1;
 				raise chosen, receivedMess_1;
@@ -264,9 +264,9 @@ machine PaxosNode {
 		
 			countAccept = 0;
 			proposeVal = getHighestProposedValue();
-			//announce the announce on proposal event
-			announce announce_valueProposed, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal);
-			announce announce_proposer_sent, proposeVal;
+			//monitor the monitor on proposal event
+			monitor announce_valueProposed, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal);
+			monitor announce_proposer_sent, proposeVal;
 			
 			BroadCastAcceptors(accept, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal));
 			send timer, startTimer;
@@ -334,7 +334,7 @@ P2b : If a proposal is chosen with value v , then every higher numbered proposal
 event announce_valueChosen : (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int);
 event announce_valueProposed : (proposer: machine, slot:int, proposal : (round: int, servermachine : int), value : int);
 
-spec BasicPaxosInvariant_P2b observes announce_valueChosen, announce_valueProposed {
+spec BasicPaxosInvariant_P2b monitors announce_valueChosen, announce_valueProposed {
 	var lastValueChosen : map[int, (proposal : (round: int, servermachine : int), value : int)];
 	var returnVal : bool;
 	var receivedValue : (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int);
@@ -392,7 +392,7 @@ spec BasicPaxosInvariant_P2b observes announce_valueChosen, announce_valuePropos
 
 
 /*
-announce to check if 
+monitor to check if 
 the proposed value is from the set send by the client (accept)
 chosen value is the one proposed by atleast one proposer (chosen).
 */
@@ -400,7 +400,7 @@ event announce_client_sent : int;
 event announce_proposer_sent : int;
 event announce_proposer_chosen : int;
 
-spec ValmachineityCheck observes announce_client_sent, announce_proposer_sent, announce_proposer_chosen {
+spec ValmachineityCheck monitors announce_client_sent, announce_proposer_sent, announce_proposer_chosen {
 	var clientSet : map[int, int];
 	var ProposedSet : map[int, int];
 	
@@ -548,7 +548,7 @@ machine Client {
 	state PumpRequestOne {
 		entry {
 			
-			announce announce_client_sent, 1;
+			monitor announce_client_sent, 1;
 			if($)
 				send servers[0], update, (seqmachine  = 0, command = 1);
 			else
@@ -562,7 +562,7 @@ machine Client {
 	state PumpRequestTwo {
 		entry {
 			
-			announce announce_client_sent, 2;
+			monitor announce_client_sent, 2;
 			if($)
 				send servers[0], update, (seqmachine  = 0, command = 2);
 			else

@@ -10,7 +10,6 @@ class PProgramToCSharpTranslator(TranslatorBase):
         PTypeInt: "PInteger",
         PTypeMachine: "PMachine",
         PTypeEventUnknown: "PInteger",
-        PTypeAny: "IPType"
     }
 
     type_to_default_exp_map = {
@@ -18,7 +17,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
         PTypeBool: "new PBool(false)",
         PTypeInt: "new PInteger(0)",
         PTypeMachine: "null",
-        PTypeEventUnknown: "EVENT_NULL"
+        PTypeEventUnknown: "EVENT_NULL",
+        PTypeAny: "null"
     }
 
     runtime_dir = os.environ.get("RUNTIME_DIR", os.path.realpath(os.path.dirname(__file__) + "/../runtimes/basic_csharp"))
@@ -26,20 +26,25 @@ class PProgramToCSharpTranslator(TranslatorBase):
     def __init__(self, *args):
         super(PProgramToCSharpTranslator, self).__init__(*args)
 
-    def translate_type(self, T):
+    def translate_type(self, T, any_use_base=True):
         t = None
+        if T == PTypeAny:
+            if any_use_base:
+                return "IPType"
+            else:
+                raise ValueError("Container type of any not supported")
         if T in self.type_to_csharp_type_name_map:
             return self.type_to_csharp_type_name_map[T]
         elif isinstance(T, PTypeEvent):
             return self.type_to_csharp_type_name_map[PTypeEventUnknown]
         elif isinstance(T, PTypeSeq):
-            t = "PList<{0}>".format(self.translate_type(T.T))
+            t = "PList<{0}>".format(self.translate_type(T.T, any_use_base=False))
         elif isinstance(T, PTypeMap):
-            t = "PMap<{0},{1}>".format(self.translate_type(T.T1), self.translate_type(T.T2))
+            t = "PMap<{0},{1}>".format(self.translate_type(T.T1, any_use_base=False), self.translate_type(T.T2, any_use_base=False))
         elif isinstance(T, PTypeTuple):
-            t = "PTuple<{0}>".format(','.join([self.translate_type(x) for x in T.Ts]))
+            t = "PTuple<{0}>".format(','.join([self.translate_type(x, any_use_base=False) for x in T.Ts]))
         elif isinstance(T, PTypeNamedTuple):
-            t = "PTuple<{0}>".format(','.join([self.translate_type(x) for x in T.NTs.values()]))
+            t = "PTuple<{0}>".format(','.join([self.translate_type(x, any_use_base=False) for x in T.NTs.values()]))
         self.type_to_csharp_type_name_map[T] = t
         return t
 

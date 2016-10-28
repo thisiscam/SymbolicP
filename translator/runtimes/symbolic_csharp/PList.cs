@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T> {
+public class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T> {
 	public new PInteger Count {
 		get {
 			return (PInteger)this._count;

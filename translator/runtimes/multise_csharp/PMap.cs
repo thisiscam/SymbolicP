@@ -140,6 +140,19 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
         return vs_ret_5;
     }
 
+    public ValueSummary<PList<K>> Keys()
+    {
+        ValueSummary<PList<K>> ret = new ValueSummary<PList<K>>(new PList<K>());
+        var vs_cond_37 = PathConstraint.BeginLoop();
+        for (ValueSummary<int> i = 0; vs_cond_37.Loop(i.InvokeBinary<PInteger, PBool>((l, r) => l < r, data.GetField<PInteger>(_ => _.Count))); i.Increment())
+        {
+            ret.InvokeMethod<K>((_, a0) => _.Add(a0), this.data.InvokeMethod<int, PTuple<K, V>>((_, a0) => _[a0], i).GetField<K>(_ => _.Item1).InvokeMethod((_) => _.DeepCopy()));
+        }
+
+        vs_cond_37.MergeBranch();
+        return ret;
+    }
+
     public ValueSummary<V> this[ValueSummary<K> key]
     {
         get
@@ -156,13 +169,13 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
     public ValueSummary<PMap<K, V>> DeepCopy()
     {
         ValueSummary<PMap<K, V>> ret = new ValueSummary<PMap<K, V>>(new PMap<K, V>());
-        var vs_cond_37 = PathConstraint.BeginLoop();
-        for (ValueSummary<int> i = 0; vs_cond_37.Loop(i.InvokeBinary<PInteger, PBool>((l, r) => l < r, data.GetField<PInteger>(_ => _.Count))); i.Increment())
+        var vs_cond_38 = PathConstraint.BeginLoop();
+        for (ValueSummary<int> i = 0; vs_cond_38.Loop(i.InvokeBinary<PInteger, PBool>((l, r) => l < r, data.GetField<PInteger>(_ => _.Count))); i.Increment())
         {
             ret.GetField<PList<PTuple<K, V>>>(_ => _.data).InvokeMethod<PTuple<K, V>>((_, a0) => _.Add(a0), this.data.InvokeMethod<int, PTuple<K, V>>((_, a0) => _[a0], i).InvokeMethod((_) => _.DeepCopy()));
         }
 
-        vs_cond_37.MergeBranch();
+        vs_cond_38.MergeBranch();
         return ret;
     }
 

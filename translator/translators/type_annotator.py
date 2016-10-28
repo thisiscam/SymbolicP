@@ -74,7 +74,12 @@ class PProgramTypeAnnotator(PTypeTranslatorVisitor):
     def visitExp_getidx(self, ctx):
         tuple_type = ctx.getChild(0).accept(self)
         idx = int(ctx.getChild(2).getText())
-        ctx.exp_type = tuple_type.Ts[idx]
+        if isinstance(tuple_type, PTypeNamedTuple):
+            ctx.exp_type = tuple_type.NTs.values()[idx]
+        elif isinstance(tuple_type, PTypeTuple):
+            ctx.exp_type = tuple_type.Ts[idx]
+        else:
+            raise ValueError("Invalid get index operation on non-tuple type")
         return ctx.exp_type
 
     # Visit a parse tree produced by pParser#exp_sizeof.
@@ -146,7 +151,7 @@ class PProgramTypeAnnotator(PTypeTranslatorVisitor):
     # Visit a parse tree produced by pParser#exp_keys.
     def visitExp_keys(self, ctx):
         map_type = ctx.getChild(2).accept(self)
-        ctx.exp_type = map_type.T1
+        ctx.exp_type = PTypeSeq(map_type.T1)
         return ctx.exp_type
 
     # Visit a parse tree produced by pParser#exp_grouped.
@@ -209,6 +214,7 @@ class PProgramTypeAnnotator(PTypeTranslatorVisitor):
         elif isinstance(map_or_seq_type, PTypeSeq):
             ctx.exp_type =  map_or_seq_type.T
         else:
+            import pdb; pdb.set_trace()
             self.warning("Failed to infer type", ctx)
             ctx.exp_type = PTypeAny
         return ctx.exp_type

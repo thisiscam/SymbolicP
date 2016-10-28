@@ -22,7 +22,7 @@ main machine Main {
 				nodemap += (n, true);
 				i = i + 1;
 			}
-			announce M_START, nodemap;
+			monitor M_START, nodemap;
 			fd = new FailureDetector(nodeseq);
 			send fd, REGISTER_CLIENT, this;
 			i = 0;
@@ -112,7 +112,7 @@ machine FailureDetector {
 		i = 0;
 		while (i < sizeof(nodes)) {
 		    if (nodes[i] in alive && !(nodes[i] in responses)) {
-				announce M_PING, nodes[i];
+				monitor M_PING, nodes[i];
 				send nodes[i], PING, this;
 			}
 		    i = i + 1;
@@ -137,7 +137,7 @@ machine FailureDetector {
 machine Node {
 	start state WaitPing {
         on PING do (payload: machine) {
-			announce M_PONG, this;
+			monitor M_PONG, this;
 		    send payload as machine, PONG, this;
 		}
     }
@@ -145,7 +145,7 @@ machine Node {
 
 event M_PING: machine;
 event M_PONG: machine;
-spec Safety observes M_PING, M_PONG {
+spec Safety monitors M_PING, M_PONG {
 	var pending: map[machine, int];
     start state Init {
 	    on M_PING do (payload: machine) { 
@@ -163,7 +163,7 @@ spec Safety observes M_PING, M_PONG {
 }
 
 event M_START: map[machine, bool];
-spec Liveness observes M_START, NODE_DOWN {
+spec Liveness monitors M_START, NODE_DOWN {
 	var nodes: map[machine, bool];
 	start state Init {
 		on M_START goto Wait;

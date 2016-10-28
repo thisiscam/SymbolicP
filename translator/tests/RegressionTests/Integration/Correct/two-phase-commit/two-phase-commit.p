@@ -135,10 +135,10 @@ machine Coordinator {
 
 	fun DoRead(payload: (client:machine, idx:int)) {
 		if (payload.idx in data) {
-			announce announce_READ_SUCCESS, (idx=payload.idx, val=data[payload.idx]);
+			monitor announce_READ_SUCCESS, (idx=payload.idx, val=data[payload.idx]);
 			send payload.client, READ_SUCCESS, data[payload.idx];
 		} else {
-			announce announce_READ_UNAVAILABLE, payload.idx;
+			monitor announce_READ_UNAVAILABLE, payload.idx;
 			send payload.client, READ_UNAVAILABLE;
 		}
 	}
@@ -179,7 +179,7 @@ machine Coordinator {
 					i = i + 1;
 				}
 				data[pendingWriteReq.idx] = pendingWriteReq.val;
-				announce announce_WRITE, (idx=pendingWriteReq.idx, val=pendingWriteReq.val);
+				monitor announce_WRITE, (idx=pendingWriteReq.idx, val=pendingWriteReq.val);
 				send pendingWriteReq.client, WRITE_SUCCESS;
 				send timer, CancelTimer;
 				raise Unit;
@@ -271,7 +271,7 @@ machine Client {
 	}
 }
 
-spec M observes announce_WRITE, announce_READ_SUCCESS, announce_READ_UNAVAILABLE {
+spec M monitors announce_WRITE, announce_READ_SUCCESS, announce_READ_UNAVAILABLE {
 	var data: map[int,int];
 
 	start state Init {

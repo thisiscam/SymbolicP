@@ -11,7 +11,7 @@ main machine Main {
        start state WaitForUser
        {
             entry { 
-				announce Waiting;
+				monitor Waiting;
 				send this, UserEvent;
 				}
             on UserEvent goto HandleEvent;
@@ -20,7 +20,7 @@ main machine Main {
        state HandleEvent
        {
             entry { 
-				announce Computing;
+				monitor Computing;
 				if ($$) {
 					send this, Done;
 				}
@@ -34,7 +34,7 @@ main machine Main {
        }
 }
 
-spec WatchDog observes Computing, Waiting
+spec WatchDog monitors Computing, Waiting
 {
       start cold state CanGetUserInput
       {

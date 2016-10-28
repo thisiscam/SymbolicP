@@ -4,7 +4,7 @@ event F;
 event G;
 event Unit;
 
-spec M observes E, F {
+spec M monitors E, F {
 	start state Init {
 		on E goto Next with (payload: int) { assert (payload == 10);}
 	}
@@ -17,7 +17,7 @@ spec M observes E, F {
 machine A {
 	start state Init {
 		entry {
-			announce F;
+			monitor F;
 		}
 	}
 }

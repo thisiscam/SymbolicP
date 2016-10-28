@@ -63,6 +63,16 @@ public class PMap<K, V> : IPType<PMap<K, V>>
 		return false;
     }
 
+    public PList<K> Keys() 
+    {
+    	PList<K> ret = new PList<K>();
+    	for(int i=0; i < data.Count; i++)
+    	{
+    		ret.Add(data[i].Item1.DeepCopy());
+    	}
+    	return ret;
+    }
+
 	public V this [K key] {
 		get {
 			return this.Get (key);
