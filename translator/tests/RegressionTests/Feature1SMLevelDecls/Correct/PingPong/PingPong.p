@@ -56,7 +56,7 @@ machine PONG
 	
 	state End {
 		entry {
-			raise(halt);
+			// raise(halt);
 		}
 	}
 }

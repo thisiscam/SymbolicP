@@ -10,8 +10,8 @@ class TranslatorBase(PTypeTranslatorVisitor):
         super(TranslatorBase, self).__init__()
         visitor = AntlrTreeToPProgramVisitor()
         self.pprogram = ast.accept(visitor)
-        PProgramTypeAnnotator(self.pprogram).annotate_types()
         PProgramCallGraphASTAnnotator(self.pprogram).annotate_with_call_graph()
+        PProgramTypeAnnotator(self.pprogram).annotate_types()
         self.project_name = project_name
         self.out_dir = out_dir
         

@@ -11,13 +11,14 @@ class PProgram(object):
         self.events.add("EVENT_NULL")
         self.machines = OrderedSet()
         self.observes_map = defaultdict(list)
+        self.global_fn_decls = OrderedDict()
 
 class PMachine(object):
     def __init__(self):
         self.is_main = False
         self.is_spec = False
         self.var_decls = {}
-        self.fun_decls = {}
+        self.fun_decls = OrderedDict()
         self.state_decls = OrderedDict()
 
 class PFunctionWrapper(object): 
@@ -193,8 +194,6 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.current_visited_event_list = None
         self.current_state_target = None
 
-        self.global_fun_decls = []
-
         self.enable_warning = enable_warning
 
     # Visit a parse tree produced by pParser#program.
@@ -202,8 +201,6 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         new_program = PProgram()
         self.current_pprogram = new_program
         self.visitChildren(ctx)
-        for m in self.current_pprogram.machines:
-            m.fun_decls.update([(f.name, copy.deepcopy(f)) for f in self.global_fun_decls])
         self.current_pprogram = None
         return new_program
 
@@ -314,7 +311,7 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         if self.current_visited_machine:
             self.current_visited_machine.fun_decls[f.name] = f
         else:
-            self.global_fun_decls.append(f)
+            self.current_pprogram.global_fn_decls[f.name] = f
         return f
 
 

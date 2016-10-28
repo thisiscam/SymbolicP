@@ -46,7 +46,7 @@ main machine Main {
 		  // if (false && (s[1] == 1)) {;};  
 		  // if (true || (s[1] == 1)) {;};   
 
-		  raise halt;
+		  // raise halt;
        }    
     }
     

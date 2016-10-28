@@ -171,7 +171,7 @@ main machine Main {
 		  assert(s4[0].0 + s8[1].1 - s8[2].0 == 0);   //holds
 		  assert(s4[1].0 * s8[1].1 / s8[2].0 == 1);   //holds
 		  
-		  raise halt;
+		  // raise halt;
        }    
     }
     

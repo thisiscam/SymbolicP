@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiSETransformer", "MultiSETransformer.csproj", "{F301EBF0-59ED-4533-8153-C8110F5DE017}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "two-phase-commit", "..\..\..\two-phase-commit\two-phase-commit.csproj", "{FB72230C-8D1D-11E6-B204-80E6501B5D50}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -12,8 +10,6 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{F301EBF0-59ED-4533-8153-C8110F5DE017}.Debug|x86.ActiveCfg = Debug|x86
 		{F301EBF0-59ED-4533-8153-C8110F5DE017}.Debug|x86.Build.0 = Debug|x86
-		{FB72230C-8D1D-11E6-B204-80E6501B5D50}.Debug|x86.ActiveCfg = Debug|x86
-		{FB72230C-8D1D-11E6-B204-80E6501B5D50}.Debug|x86.Build.0 = Debug|x86
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0

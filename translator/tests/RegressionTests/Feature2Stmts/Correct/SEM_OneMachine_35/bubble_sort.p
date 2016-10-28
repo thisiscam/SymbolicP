@@ -4,42 +4,42 @@ main machine Main {
     var i, t, s:int;
     var swapped, b:bool;
 
-    model fun reverse(l:seq[int]):seq[int] {
+    model fun reverse(list:seq[int]):seq[int] {
         i = 0;
-        s = sizeof(l);
+        s = sizeof(list);
         while (i < s) {
-            t = l[i];
-            l -= (i);
-            l += (0, t);
+            t = list[i];
+            list -= (i);
+            list += (0, t);
             i = i + 1;
         }
 
-        return l;
+        return list;
     }
 
-    model fun BubbleSort(l:seq[int]):seq[int] {
+    model fun BubbleSort(list:seq[int]):seq[int] {
         swapped = true;
         while (swapped) {
             i = 0;
             swapped = false;
-            while (i < sizeof(l) - 1) {
-                if (l[i] > l[i+1]) {
-                    t = l[i];
-                    l[i] = l[i+1];
-                    l[i+1] = t;
+            while (i < sizeof(list) - 1) {
+                if (list[i] > list[i+1]) {
+                    t = list[i];
+                    list[i] = list[i+1];
+                    list[i+1] = t;
                     swapped = true;
                 }
                 i = i + 1;
             }
         }
 
-        return l;
+        return list;
     }
 
-    model fun IsSorted(l:seq[int]):bool {
+    model fun IsSorted(list:seq[int]):bool {
         i = 0;
-        while (i < sizeof(l) - 1) {
-            if (l[i] > l[i+1])
+        while (i < sizeof(list) - 1) {
+            if (list[i] > list[i+1])
                 return false;
             i = i + 1;
         }

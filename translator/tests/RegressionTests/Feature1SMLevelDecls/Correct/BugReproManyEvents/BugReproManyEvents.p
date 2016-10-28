@@ -105,7 +105,7 @@ machine DownloadManagerMachine {
     {
         entry
         {
-            raise halt;
+            // raise halt;
         }
     }
 }

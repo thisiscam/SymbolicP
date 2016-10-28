@@ -59,6 +59,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
     def translate_event(self, event, full_qualified=True):
         if event == "null":
             event = "EVENT_NULL"
+        elif event == "halt":
+            raise ValueError("Halt event not supported")
         if full_qualified:
             return "Constants.{0}".format(event)
         else:
