@@ -1,4 +1,5 @@
 using System;
+using BDDToZ3Wrap;
 using Microsoft.Z3;
 
 public struct PBool : IPType<PBool> {
@@ -57,7 +58,7 @@ public struct PBool : IPType<PBool> {
 	public ValueSummary<SymbolicInteger> PTypeGetHashCode()
 	{
 		if (this.value.IsAbstract()) {
-			return new SymbolicInteger((BitVecExpr)PathConstraint.ctx.MkITE(this.value.AbstractValue, PathConstraint.ctx.MkBV(1, SymbolicInteger.INT_SIZE), PathConstraint.ctx.MkBV(0, SymbolicInteger.INT_SIZE)));
+			return new SymbolicInteger((BitVecExpr)PathConstraint.ctx.MkITE(this.value.AbstractValue.ToZ3Expr(), PathConstraint.ctx.MkBV(1, SymbolicInteger.INT_SIZE), PathConstraint.ctx.MkBV(0, SymbolicInteger.INT_SIZE)));
 		} else {
 			return new SymbolicInteger(this.value.ConcreteValue ? 1 : 0);
 		}

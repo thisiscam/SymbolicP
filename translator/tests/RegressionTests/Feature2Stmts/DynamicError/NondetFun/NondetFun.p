@@ -1,4 +1,4 @@
-machine Main {
+main machine Main {
   var x: int;
   var y: int;
 

@@ -1,4 +1,4 @@
-machine Main {
+main machine Main {
 	fun F() : int {
 	    if ($) {
 		    return 0;

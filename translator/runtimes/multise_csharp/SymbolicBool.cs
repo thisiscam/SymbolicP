@@ -1,19 +1,25 @@
 using System;
+using BDDToZ3Wrap;
+using BuDDySharp;
 using Microsoft.Z3;
 
+/* This class uses concreteValue as a cache for abstract BDD val, since BDD value involves PInvoke for every evaluation */
 public struct SymbolicBool {
 	bool concreteValue;
-	BoolExpr abstractValue;
+	bdd abstractValue;
 
 	public SymbolicBool(bool value) {
 		this.concreteValue = value;
 		this.abstractValue = null;
 	}
 
-	public SymbolicBool(BoolExpr value) {
+	public SymbolicBool(bdd value) {
 		this.concreteValue = false;
 		this.abstractValue = value;
 	}
+
+	public SymbolicBool(BoolExpr value):this(value.ToBDD()) { }
+
 
 	public bool IsAbstract() {
         return abstractValue != null;
@@ -25,7 +31,7 @@ public struct SymbolicBool {
 		}
 	}
 
-	public BoolExpr AbstractValue { 
+	public bdd AbstractValue { 
 		get { 
 			return abstractValue;
 		} 
@@ -36,17 +42,22 @@ public struct SymbolicBool {
         return new SymbolicBool(value); 
     }
 
+    private static bdd BDDFromBool(bool b)
+    {
+    	return b ? BuDDySharp.BuDDySharp.bddtrue : BuDDySharp.BuDDySharp.bddfalse;
+    }
+
 	public static SymbolicBool operator ==(SymbolicBool a, SymbolicBool b) 
     { 
     	if(a.IsAbstract()) {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(PathConstraint.ctx.MkEq(a.abstractValue, b.abstractValue));
+    			return new SymbolicBool(BuDDySharp.BuDDySharp.biimp(a.abstractValue, b.abstractValue));
     		} else {
-    			return new SymbolicBool(PathConstraint.ctx.MkEq(a.abstractValue, PathConstraint.ctx.MkBool(b.concreteValue)));
+    			return new SymbolicBool(BuDDySharp.BuDDySharp.biimp(a.abstractValue, BDDFromBool(b.concreteValue)));
     		}
     	} else {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(PathConstraint.ctx.MkEq(PathConstraint.ctx.MkBool(a.concreteValue), b.abstractValue));
+    			return new SymbolicBool(BuDDySharp.BuDDySharp.biimp(BDDFromBool(a.concreteValue), b.abstractValue));
 			} else {
 				return new SymbolicBool(a.concreteValue == b.concreteValue);
 			}
@@ -57,13 +68,13 @@ public struct SymbolicBool {
     { 
 		if(a.IsAbstract()) {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(PathConstraint.ctx.MkNot(PathConstraint.ctx.MkEq(a.abstractValue, b.abstractValue)));
+    			return new SymbolicBool(BuDDySharp.BuDDySharp.biimp(a.abstractValue, b.abstractValue.Not()));
     		} else {
-    			return new SymbolicBool(PathConstraint.ctx.MkEq(a.abstractValue, PathConstraint.ctx.MkBool(!b.concreteValue)));
+    			return new SymbolicBool(BuDDySharp.BuDDySharp.biimp(a.abstractValue, BDDFromBool(!b.concreteValue)));
     		}
     	} else {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(PathConstraint.ctx.MkEq(PathConstraint.ctx.MkBool(!a.concreteValue), b.abstractValue));
+    			return new SymbolicBool(BuDDySharp.BuDDySharp.biimp(BDDFromBool(!a.concreteValue), b.abstractValue));
 			} else {
 				return new SymbolicBool(a.concreteValue != b.concreteValue);
 			}
@@ -74,13 +85,13 @@ public struct SymbolicBool {
 	{ 
 		if(a.IsAbstract()) {
 			if(b.IsAbstract()) {
-				return new SymbolicBool(PathConstraint.ctx.MkAnd(a.abstractValue, b.abstractValue));
+				return new SymbolicBool(a.abstractValue.And(b.abstractValue));
 			} else {
-				return new SymbolicBool(PathConstraint.ctx.MkAnd(a.abstractValue, PathConstraint.ctx.MkBool(b.concreteValue)));
+				return new SymbolicBool(a.abstractValue.And(BDDFromBool(b.concreteValue)));
 			}
 		} else {
 			if(b.IsAbstract()) {
-				return new SymbolicBool(PathConstraint.ctx.MkAnd(PathConstraint.ctx.MkBool(a.concreteValue), b.abstractValue));
+				return new SymbolicBool(BDDFromBool(a.concreteValue).And(b.abstractValue));
 			} else {
 				return new SymbolicBool(a.concreteValue & b.concreteValue);
 			}
@@ -91,13 +102,13 @@ public struct SymbolicBool {
 	{ 
 		if(a.IsAbstract()) {
 			if(b.IsAbstract()) {
-				return new SymbolicBool(PathConstraint.ctx.MkAnd(a.abstractValue, b.abstractValue));
+				return new SymbolicBool(a.abstractValue.Or(b.abstractValue));
 			} else {
-				return new SymbolicBool(PathConstraint.ctx.MkAnd(a.abstractValue, PathConstraint.ctx.MkBool(b.concreteValue)));
+				return new SymbolicBool(a.abstractValue.Or(BDDFromBool(b.concreteValue)));
 			}
 		} else {
 			if(b.IsAbstract()) {
-				return new SymbolicBool(PathConstraint.ctx.MkAnd(PathConstraint.ctx.MkBool(a.concreteValue), b.abstractValue));
+				return new SymbolicBool(BDDFromBool(a.concreteValue).Or(b.abstractValue));
 			} else {
 				return new SymbolicBool(a.concreteValue | b.concreteValue);
 			}
@@ -107,7 +118,7 @@ public struct SymbolicBool {
 	public static SymbolicBool operator !(SymbolicBool a) 
 	{ 
 		if(a.IsAbstract()) {
-			return new SymbolicBool(PathConstraint.ctx.MkNot(a.abstractValue));
+			return new SymbolicBool(a.abstractValue.Not());
 		} else {
 			return new SymbolicBool(!a.concreteValue);
 		}    

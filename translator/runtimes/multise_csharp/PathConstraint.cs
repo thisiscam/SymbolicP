@@ -202,7 +202,7 @@ public static partial class PathConstraint
 		return Allocate<SymbolicBool>((idx) => 
 			{
 				var sym_var_name = String.Format("{0}_{1}", prefix, idx);
-				var fresh_const = new SymbolicBool((BoolExpr)ctx.MkBoolConst(sym_var_name));
+				var fresh_const = new SymbolicBool(ctx.MkBoolConst(sym_var_name).ToBDD());
 				return fresh_const;
 			}, sym_bool_vars, solver_bool_var_cnt);
 	}
@@ -277,8 +277,8 @@ public static partial class PathConstraint
 		for(int i=0; i < num_decision_vars; i++)
 		{
 			var sym_var_name = String.Format("decision_{0}_{1}", decision_cnt, i);
-			var fresh_const = new SymbolicBool((BoolExpr)ctx.MkBoolConst(sym_var_name));
-			all_vars[i] = fresh_const.AbstractValue.ToBDD();
+			var fresh_const = new SymbolicBool(ctx.MkBoolConst(sym_var_name).ToBDD());
+			all_vars[i] = fresh_const.AbstractValue;
 		}
 		decision_cnt++;
 		ValueSummary<int> idx = new ValueSummary<int>();

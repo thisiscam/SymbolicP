@@ -57,6 +57,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
             return "Machine{0}_S_{1}".format(machine.name, state.name)
 
     def translate_event(self, event, full_qualified=True):
+        if event == "null":
+            event = "EVENT_NULL"
         if full_qualified:
             return "Constants.{0}".format(event)
         else:
@@ -82,7 +84,6 @@ class PProgramToCSharpTranslator(TranslatorBase):
         assert(len(machine.fun_decls[fn_name].params) <= 1)
         possible_payload_type = list(machine.fun_decls[fn_name].params.values())
         if possible_payload_type:
-            # import pdb; pdb.set_trace()
             if not possible_payload_type[0] == self.current_payload_type:
                 self.out("(")
                 self.out(self.translate_type(possible_payload_type[0]))
@@ -142,7 +143,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
             self.out_arg_cast_for_function(machine, fn_name)
         else:
             self.out("private {0} {1} ({2}) {{\n".format(self.translate_type(ret_type), fn_name, 
-                    ",".join(("{} {}".format(self.translate_type(t), i)) for i,t in fn_node.params.items())))
+                    ",".join(("{0} {1}".format(self.translate_type(t), i)) for i,t in fn_node.params.items())))
             self.current_payload_type = None
         if fn_node.from_to_state:
             from_state, to_state = fn_node.from_to_state
@@ -361,8 +362,9 @@ class PProgramToCSharpTranslator(TranslatorBase):
         if ctx.getChildCount() == 1:
             return [ctx.getChild(0).getText()]
         else:
-            return self.ctx.getChild(2).accept(self, **kwargs).append(ctx.getChild(0).getText())
-
+            ret = ctx.getChild(0).accept(self, **kwargs)
+            ret.append(ctx.getChild(2).getText())
+            return ret
 
     # Visit a parse tree produced by pParser#stmt_block.
     def visitStmt_block(self, ctx, **kwargs):
@@ -561,11 +563,6 @@ class PProgramToCSharpTranslator(TranslatorBase):
         c3 = ctx.getChild(3).accept(self, **kwargs)
         self.out("MachineController.AnnounceEvent({0},{1});\n".format(c1, c3))
 
-
-    # Visit a parse tree produced by pParser#stmt_recieve.
-    def visitStmt_recieve(self, ctx, **kwargs):
-        raise ValueError("Recieve not supported")
-
     def visitBinary_Exp(self, ctx, **kwargs):
         if ctx.getChildCount() > 1:
             c0 = ctx.getChild(0).accept(self, **kwargs)
@@ -609,7 +606,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
             ret_type = self.translate_type(ctx.exp_type)
             c0 = ctx.getChild(0).accept(self, **kwargs)
             if ctx.getChild(0).exp_type == PTypeAny:
-                c0 = exp_emit_do_copy(ctx, c0)
+                c0 = self.exp_emit_do_copy(ctx, c0)
             return "(({0}) {1})".format(ret_type, c0)
         else:
             return ctx.getChild(0).accept(self, **kwargs)
@@ -762,10 +759,6 @@ class PProgramToCSharpTranslator(TranslatorBase):
     # Visit a parse tree produced by pParser#exp_false.
     def visitExp_false(self, ctx, **kwargs):
         return "false"
-
-    # Visit a parse tree produced by pParser#exp_halt.
-    def visitExp_halt(self, ctx, **kwargs):
-        return "this.Halt()"
 
     # Visit a parse tree produced by pParser#exp_getitem.
     def visitExp_getitem(self, ctx, **_kwargs):

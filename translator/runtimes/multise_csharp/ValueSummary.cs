@@ -850,7 +850,7 @@ public static class ValueSummaryExt
 			var symbVal = extract.Invoke(guardedBooleanVal.value);
 			if (guardedValuePcPred.FormulaBDDSAT()) {
 				if (symbVal.IsAbstract()) {
-					var c = symbVal.AbstractValue.ToBDD();
+					var c = symbVal.AbstractValue;
 					if (c.EqualEqual(BuDDySharp.BuDDySharp.bddtrue)) {
 						if (guardedValuePcPred.FormulaBDDSolverSAT()) {
 							predTrue = predTrue.Or(guardedValuePcPred);

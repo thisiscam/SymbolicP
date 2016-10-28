@@ -45,15 +45,22 @@ class PMachineState(object):
 TransitionAttributes = namedtuple('TransitionAttributes', 
                                   ['fn_name', 'to_state', 'is_named', 'is_push'])
 
-class PTypeMachine(object):
-    clonable = False
-PTypeMachine = PTypeMachine()
-class PTypeBool(object):
-    clonable = False
-PTypeBool = PTypeBool()
-class PTypeInt(object):
-    clonable = False
-PTypeInt = PTypeInt()
+class PTypeSingleton(object):
+    def __init__(self, typename, clonable):
+        self.typename = typename
+        self.clonable = clonable
+    def __hash__(self):
+        return hash(self.typename)
+    def __eq__(self, other):
+        return isinstance(other, PTypeSingleton) and other.typename == self.typename
+    def __repr__(self):
+        return self.typename
+
+PTypeMachine = PTypeSingleton("PTypeMachine", False)
+PTypeBool = PTypeSingleton("PTypeBool", False)
+PTypeInt = PTypeSingleton("PTypeInt", False)
+PTypeAny = PTypeSingleton("PTypeAny", False)
+
 class PTypeEvent(object):
     clonable = False
     events = {}
@@ -71,9 +78,6 @@ class PTypeEvent(object):
 PTypeEventUnknown = PTypeEvent("*unknown")
 PTypeEventHalt = PTypeEvent("*halt")
 
-class PTypeAny(object):
-    clonable = False
-PTypeAny = PTypeAny()
 class PTypeSeq(object):
     clonable = True
     def __init__(self, T):
@@ -101,10 +105,20 @@ class PTypeNamedTuple(object):
         return isinstance(other, PTypeNamedTuple) and self.NTs == other.NTs
 
 class PTypeTranslatorVisitor(pVisitor):
+    def warning(self, msg, ctx):
+        print("Warning: {}".format(msg), file=sys.stderr)
+
     # Visit a parse tree produced by pParser#ptype_null.
     def visitPtype_null(self, ctx):
         raise ValueError("Null type not supported")
 
+    # Visit a parse tree produced by pParser#stmt_recieve.
+    def visitStmt_recieve(self, ctx, **kwargs):
+        raise ValueError("Recieve not supported")
+
+    # Visit a parse tree produced by pParser#exp_halt.
+    def visitExp_halt(self, ctx, **kwargs):
+        raise ValueError("Halt not supported")
 
     # Visit a parse tree produced by pParser#ptype_bool.
     def visitPtype_bool(self, ctx):
@@ -182,9 +196,6 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.global_fun_decls = []
 
         self.enable_warning = enable_warning
-
-    def warning(self, msg, ctx):
-        print("Warning: {}".format(msg), file=sys.stderr)
 
     # Visit a parse tree produced by pParser#program.
     def visitProgram(self, ctx):

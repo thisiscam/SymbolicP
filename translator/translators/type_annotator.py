@@ -28,8 +28,9 @@ class PProgramTypeAnnotator(PTypeTranslatorVisitor):
         if ctx.getChildCount() == 1:
             return [ctx.getChild(0).getText()]
         else:
-            return self.ctx.getChild(2).accept(self, **kwargs).append(ctx.getChild(0).getText())
-
+            ret = ctx.getChild(0).accept(self, **kwargs)
+            ret.append(ctx.getChild(2).getText())
+            return ret
 
     def visitBinary_Exp(ret_type):
         def wrapped(self, ctx):
@@ -122,7 +123,7 @@ class PProgramTypeAnnotator(PTypeTranslatorVisitor):
         elif identifier in self.pprogram.events:
             ctx.exp_type = PTypeEvent.get_or_create(identifier)
         else:
-            self.warning("Cannot find identifier {0}".format(identifier), ctx)
+            self.warning("Cannot find identifier \"{0}\"".format(identifier), ctx)
             ctx.exp_type = PTypeAny
         return ctx.exp_type
 

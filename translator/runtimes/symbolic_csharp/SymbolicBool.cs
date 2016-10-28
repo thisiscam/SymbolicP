@@ -100,13 +100,13 @@ public struct SymbolicBool {
 	{ 
 		if(a.IsAbstract()) {
 			if(b.IsAbstract()) {
-				return new SymbolicBool(SymbolicEngine.ctx.MkAnd(a.abstractValue, b.abstractValue));
+				return new SymbolicBool(SymbolicEngine.ctx.MkOr(a.abstractValue, b.abstractValue));
 			} else {
-				return new SymbolicBool(SymbolicEngine.ctx.MkAnd(a.abstractValue, SymbolicEngine.ctx.MkBool(b.concreteValue)));
+				return new SymbolicBool(SymbolicEngine.ctx.MkOr(a.abstractValue, SymbolicEngine.ctx.MkBool(b.concreteValue)));
 			}
 		} else {
 			if(b.IsAbstract()) {
-				return new SymbolicBool(SymbolicEngine.ctx.MkAnd(SymbolicEngine.ctx.MkBool(a.concreteValue), b.abstractValue));
+				return new SymbolicBool(SymbolicEngine.ctx.MkOr(SymbolicEngine.ctx.MkBool(a.concreteValue), b.abstractValue));
 			} else {
 				return new SymbolicBool(a.concreteValue | b.concreteValue);
 			}
