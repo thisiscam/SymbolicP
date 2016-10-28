@@ -125,6 +125,7 @@ public class ValueSummary<T>
 #if DEBUG
 		this.AssertPredExclusion();
 #endif
+		MergeMax();
 	}
 
 	public void AddValue(T val)
@@ -174,12 +175,15 @@ public class ValueSummary<T>
 	
 	public void MergeMax()
 	{
-		if(typeof(IPType).IsAssignableFrom(typeof(T)) || typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition().IsEquivalentTo(typeof(DefaultArray<>))) {
+		if(typeof(IPType).IsAssignableFrom(typeof(T)) 
+			|| typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition().IsEquivalentTo(typeof(DefaultArray<>))
+			|| typeof(T).IsEquivalentTo(typeof(SendQueueItem))
+			|| typeof(T).IsEquivalentTo(typeof(Scheduler.SchedulerChoice))) {
 			var newVals = new SCG.List<GuardedValue<T>>();
 			foreach(var sameTypeGroup in this.values.GroupBy((arg) => arg.value == null ? null : arg.value.GetType()))
 			{
 				if(sameTypeGroup.Key != null) {
-					if((sameTypeGroup.Key.Name.StartsWith("PList") || sameTypeGroup.Key.Name.StartsWith("PTuple") || sameTypeGroup.Key.Name.StartsWith("PMap")))
+					if((sameTypeGroup.Key.Name.StartsWith("PList") || sameTypeGroup.Key.Name.StartsWith("PTuple") || sameTypeGroup.Key.Name.StartsWith("PMap") || sameTypeGroup.Key.Name.StartsWith("SendQueueItem") || sameTypeGroup.Key.Name.StartsWith("SchedulerChoice")))
 					{
 						var enumerator = sameTypeGroup.GetEnumerator();
 						enumerator.MoveNext();
@@ -207,9 +211,24 @@ public class ValueSummary<T>
 						}
 						newVals.Add(new GuardedValue<T>(limit, newArray));
 						continue;
+					} else {
+						newVals.AddRange(sameTypeGroup.GroupBy((arg) => arg.value).Select((arg) => {
+							var pred = BuDDySharp.BuDDySharp.bddfalse;
+							foreach(var guardedVal in arg)
+							{
+								pred = pred.Or(guardedVal.bddForm);
+							}
+							return new GuardedValue<T>(pred, arg.Key);
+						}));
 					}
+				} else {
+					var pred = BuDDySharp.BuDDySharp.bddfalse;
+					foreach(var guardedVal in sameTypeGroup)
+					{
+						pred = pred.Or(guardedVal.bddForm);
+					}
+					newVals.Add(new GuardedValue<T>(pred, sameTypeGroup.First().value));
 				}
-				newVals.AddRange(sameTypeGroup);
 			}
 			this.values = newVals;
 		} else {
@@ -233,7 +252,7 @@ public class ValueSummary<T>
 			Update(guardedVal.value, p);
 		}
 #if MERGE_PVAL
-		MergeMax();
+		//MergeMax();
 #endif
 #if DEBUG
 		this.AssertPredExclusion();
