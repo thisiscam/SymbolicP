@@ -333,12 +333,26 @@ public class ValueSummary<T>
 
 	public void Invoke(params object[] args)
 	{
-		InvokeMethodHelper(t => (t as Delegate).DynamicInvoke(args));
+		InvokeMethodHelper(t => {
+				try {
+					(t as Delegate).DynamicInvoke(args);
+				} catch (TargetInvocationException ex) {
+					throw ex.InnerException;
+				}
+			}
+		);
 	}
 
 	public ValueSummary<R> Invoke<R>(params object[] args)
 	{
-		return InvokeMethodHelper<R>(t => (R)((t as Delegate).DynamicInvoke(args)));
+		return InvokeMethodHelper<R>(t => {
+				try {
+					return (R)((t as Delegate).DynamicInvoke(args));
+				} catch (TargetInvocationException ex) {
+					throw ex.InnerException;
+				}
+			}
+		);
 	}
 
 	#region invokemethod
