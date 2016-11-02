@@ -5,7 +5,7 @@ using Microsoft.Z3;
 
 partial class Scheduler
 {
-    private class SchedulerChoice
+    public class SchedulerChoice
     {
         public ValueSummary<PMachine> sourceMachine = new ValueSummary<PMachine>(default (PMachine));
         public ValueSummary<int> sourceMachineSendQueueIndex = new ValueSummary<int>(default (int));

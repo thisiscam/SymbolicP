@@ -1,29 +1,10 @@
-import fnmatch
 import os
-from .build import translate_and_execute
+from .build import translate_and_execute, find_all_p_files
 
 regression_tests_dir = "tests/RegressionTests"
 
-all_regressions = []
-for root, dirnames, filenames in os.walk(regression_tests_dir):
-    dirnames[:] = [d for d in dirnames if d != "Integration"]
-    p_srcs = fnmatch.filter(filenames, '*.p')
-    if len(p_srcs) == 1:
-        all_regressions.append(os.path.join(root, p_srcs[0]))
-    elif len(p_srcs) > 1:
-        main_test_file_name = os.path.basename(root) + ".p"
-        if main_test_file_name in p_srcs:
-            all_regressions.append(os.path.join(root, main_test_file_name))
-        else:
-            found_main = False
-            for p_src in p_srcs:
-                p_src_path = os.path.join(root, p_src)
-                if 'main machine ' in open(p_src_path).read():
-                    all_regressions.append(p_src_path)
-                    found_main = True
-                    break
-            if not found_main:
-                print "Cannot determine main p file to compile, ignored sources under {0}".format(root)
+all_regressions = find_all_p_files(regression_tests_dir)
+all_regressions = filter(lambda r: "Integration" not in r, all_regressions)
 
 correct_regressions = filter(lambda path: "Correct" in path, all_regressions)
 dynamic_error_regressions = filter(lambda path: "DynamicError" in path, all_regressions)

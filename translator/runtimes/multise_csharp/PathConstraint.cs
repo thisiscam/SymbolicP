@@ -12,33 +12,22 @@ public static partial class PathConstraint
 	public static Context ctx;
 	public static Solver solver;
 
-	public class Frame
-	{
-		public int pcs_idx;
-
-		public Frame(int pcs_idx)
-		{
-			this.pcs_idx = pcs_idx;
-		}
-	}
-
-	static Stack<Frame> frames = new Stack<Frame>();
 	static SCG.List<bdd> pcs = new SCG.List<bdd>();
 
 	static PathConstraint()
 	{
 		ctx = new Context();
 		solver = ctx.MkSolver();
-
-		BuDDySharp.BuDDySharp.cpp_init(50000000, 50000000);
-		BuDDySharp.BuDDySharp.setcacheratio(64);
-		BuDDySharp.BuDDySharp.setvarnum(10000);
-		BuDDySharp.BuDDySharp.setmaxincrease(10000000);
+		var options = Program.options;
+		
+		BuDDySharp.BuDDySharp.cpp_init(options.BDDNumInitialNodes, options.BDDNumInitialNodes);
+		BuDDySharp.BuDDySharp.setcacheratio(options.BDDCacheRatio);
+		BuDDySharp.BuDDySharp.setvarnum(options.BDDNumVars);
+		BuDDySharp.BuDDySharp.setmaxincrease(options.BDDMaxIncrease);
 		
 		BDDToZ3Wrap.Converter.Init(ctx);
 
 		pcs.Add(BuDDySharp.BuDDySharp.bddtrue);
-		frames.Push(new Frame(0));
 
 		InitSymVar();
 	}
@@ -71,7 +60,6 @@ public static partial class PathConstraint
 	public static void PushFrame()
 	{
 		PushScope();
-		frames.Push(new Frame(pcs.Count - 1));
 	}
 
 	public static void AddAxiom(bdd bddForm)
@@ -81,13 +69,7 @@ public static partial class PathConstraint
 
 	public static void PopFrame()
 	{
-		frames.Pop();
 		PopScope();
-	}
-
-	public static Frame GetCurrentFrame()
-	{
-		return frames.Peek();
 	}
 
 #region record_return_paths

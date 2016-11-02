@@ -125,7 +125,7 @@ public class ValueSummary<T>
 #if DEBUG
 		this.AssertPredExclusion();
 #endif
-		MergeMax();
+		//MergeMax();
 	}
 
 	public void AddValue(T val)
@@ -252,7 +252,7 @@ public class ValueSummary<T>
 			Update(guardedVal.value, p);
 		}
 #if MERGE_PVAL
-		//MergeMax();
+		MergeMax();
 #endif
 #if DEBUG
 		this.AssertPredExclusion();

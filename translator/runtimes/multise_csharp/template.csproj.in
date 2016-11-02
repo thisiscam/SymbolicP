@@ -100,6 +100,9 @@
       <HintPath>@lib_dir/Microsoft.Z3.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="CommandLine">
+      <HintPath>packages\CommandLineParser.1.9.71\lib\net45\CommandLine.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     #for @generated_src in @generated_srcs:
@@ -119,5 +122,8 @@
     <Name>@project.name</Name>
   </ProjectReference>
 #end
+</ItemGroup>
+<ItemGroup>
+  <None Include="packages.config" />
 </ItemGroup>
 </Project>

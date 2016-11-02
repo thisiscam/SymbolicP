@@ -5,6 +5,7 @@ from .valuesummary_translator import valuesummary_transform
 from quik import FileLoader
 from lxml import etree as ET
 import uuid
+import shutil
 
 class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
     buddysharp_dir = os.environ.get("BUDDYSHARP_DIR", os.path.realpath(os.path.join(os.path.dirname(__file__), "../../libraries/BuDDySharp")))
@@ -72,6 +73,10 @@ class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
                 }
             ))
 
+    def copy_package_config(self):
+        pkgs_config_name =  "packages.config"
+        shutil.copy(os.path.join(self.runtime_dir, pkgs_config_name), self.out_dir)
+
     pipeline = [
                 PProgramToSymbolicCSharpTranslator.make_output_dir, 
                 PProgramToSymbolicCSharpTranslator.create_proj_macros, 
@@ -79,7 +84,8 @@ class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
                 multise_transform,
                 find_referenced_projects,
                 PProgramToSymbolicCSharpTranslator.create_csproj,
-                create_cssln
+                create_cssln,
+                copy_package_config
             ]
 
     # Visit a parse tree produced by pParser#exp_new.

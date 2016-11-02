@@ -1,9 +1,13 @@
 using System;
 using System.Diagnostics;
 
-class Program {
+public class Program {
+	public static CommandLineOptions options = new CommandLineOptions();
+	
     static int Main(string[] args) {
-        int maxExplorationSteps = 200;
+		CommandLine.Parser.Default.ParseArguments(args, options);
+    	
+        int maxExplorationSteps = options.MaxNumSchedulerIterations;
 
         Scheduler scheduler = new Scheduler();
 
