@@ -34,7 +34,15 @@ public static partial class PathConstraint
 
 	static SCG.List<SymbolicBool> sym_bool_vars;
 	static ValueSummary<int> solver_bool_var_cnt;
-
+	
+	public static void Reset()
+	{
+		solver.Reset();
+		pcs.Clear();
+		pcs.Add(BuDDySharp.BuDDySharp.bddtrue);
+		decision_cnt = 0;
+		solver_bool_var_cnt = 0;
+	}
 
 	private static void InitSymVar()
 	{
@@ -272,6 +280,30 @@ public static partial class PathConstraint
 			}
 		}
 		return idx;
+	}
+	
+	public static bdd ExtractOneCounterExampleFromAggregatePC(bdd aggregatePC)
+	{
+		solver.Push();
+		solver.Assert(aggregatePC.ToZ3Expr());
+		var ret = BuDDySharp.BuDDySharp.bddtrue;
+		int i = 0;
+		foreach(var b in BDDToZ3Wrap.Converter.GetAllUsedFormulas())
+		{
+			solver.Check();
+			var v = (BoolExpr)solver.Model.Evaluate(b, true);
+			solver.Assert(ctx.MkEq(v, b));
+			if(v.BoolValue == Z3_lbool.Z3_L_TRUE) {
+				ret = ret.And(BuDDySharp.BuDDySharp.ithvar(i));
+			} else if(v.BoolValue == Z3_lbool.Z3_L_FALSE) {
+				ret = ret.And(BuDDySharp.BuDDySharp.nithvar(i));
+			} else {
+				throw new Exception("Not reachable");
+			}
+			i++;
+		}
+		solver.Pop();
+		return ret;
 	}
 	
 	public static bool DebugProofEquivalence(BoolExpr e1, BoolExpr e2)

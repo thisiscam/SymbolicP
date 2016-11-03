@@ -159,6 +159,9 @@ abstract class PMachine : IPType<PMachine>
         vs_cond_26.MergeBranch();
         this.retcode.Assign<int>(Constants.EXECUTE_FINISHED);
         ValueSummary<TransitionFunction> transition_fn = this.Transitions.GetIndex(state, e);
+ #if LOG_TRANSITIONS
+ 		Console.WriteLine("{0} takes {1}", this, transition_fn);
+ #endif
         transition_fn.Invoke(payload);
     }
 
@@ -176,4 +179,9 @@ abstract class PMachine : IPType<PMachine>
     {
         return other.InvokeBinary<object, SymbolicBool>((l, r) => l == r, this);
     }
+    
+    public override string ToString()
+	{
+		return string.Format("{0}@{1}", this.GetType().Name, this.GetHashCode());
+	}
 }

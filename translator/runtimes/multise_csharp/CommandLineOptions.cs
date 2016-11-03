@@ -16,4 +16,9 @@ public class CommandLineOptions
     
     [Option('i', "num-iter", DefaultValue=200, HelpText = "Max number of scheduler steps to explore")]
     public int MaxNumSchedulerIterations { get; set; }
+
+#if ROUND_ROBIN_SCHEDULER
+	[Option('d', "delay-budget", DefaultValue=1, HelpText = "Delay budget for scheduler")]
+    public int DelayBudget { get; set; }
+#endif
 }

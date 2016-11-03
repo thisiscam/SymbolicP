@@ -2,3 +2,6 @@
 	path = translator/libraries/BuDDySharp
 	url = https://github.com/thisiscam/BuDDySharp.git
 	branch = swig_cpp
+[submodule "translator/tests/Benchmarks"]
+	path = translator/tests/Benchmarks
+	url = https://github.com/thisiscam/SymbolicP-Benchmarks.git

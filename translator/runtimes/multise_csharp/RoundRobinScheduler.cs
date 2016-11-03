@@ -4,8 +4,8 @@ using System.Diagnostics;
 
 partial class Scheduler
 {
-    public ValueSummary<int> current_schedule_machine_idx = 0;
-    public ValueSummary<int> delayBudget = 1;
+    private ValueSummary<int> CurrentMachineIndex = 0;
+    public ValueSummary<int> DelayBudget;
     private ValueSummary<SchedulerChoice> ChooseMachine()
     {
         PathConstraint.PushFrame();
@@ -19,7 +19,7 @@ partial class Scheduler
             var vs_cond_57 = ((vs_lgc_tmp_0 = ValueSummary<bool>.InitializeFrom(i.InvokeBinary<int, bool>((l, r) => l < r, this.machines.GetField<int>(_ => _.Count))))).Cond();
             var vs_cond_ret_57 = new ValueSummary<bool>();
             if (vs_cond_57.CondTrue())
-                vs_cond_ret_57.Merge(vs_lgc_tmp_0.InvokeBinary<bool, bool>((l, r) => l & r, choices.GetField<int>(_ => _.Count).InvokeBinary<int, bool>((l, r) => l <= r, this.delayBudget)));
+                vs_cond_ret_57.Merge(vs_lgc_tmp_0.InvokeBinary<bool, bool>((l, r) => l & r, choices.GetField<int>(_ => _.Count).InvokeBinary<int, bool>((l, r) => l <= r, this.DelayBudget)));
             if (vs_cond_57.CondFalse())
                 vs_cond_ret_57.Merge(vs_lgc_tmp_0);
             vs_cond_57.MergeBranch();
@@ -29,7 +29,7 @@ partial class Scheduler
         )())); i.Increment())
         {
             ValueSummary<bool> vs_lgc_tmp_1;
-            ValueSummary<int> machine_idx = (i.InvokeBinary<int, int>((l, r) => l + r, this.current_schedule_machine_idx)).InvokeBinary<int, int>((l, r) => l % r, this.machines.GetField<int>(_ => _.Count));
+            ValueSummary<int> machine_idx = (i.InvokeBinary<int, int>((l, r) => l + r, this.CurrentMachineIndex)).InvokeBinary<int, int>((l, r) => l % r, this.machines.GetField<int>(_ => _.Count));
             ValueSummary<PMachine> machine = this.machines.InvokeMethod<int, PMachine>((_, a0) => _[a0], machine_idx);
             ValueSummary<// Collect from send queue
             List<SendQueueItem>> sendQueue = machine.GetConstField<List<SendQueueItem>>(_ => _.sendQueue);
@@ -78,7 +78,7 @@ partial class Scheduler
             }
 
             vs_cond_47.MergeBranch();
-            var vs_cond_48 = (choices.GetField<int>(_ => _.Count).InvokeBinary<int, bool>((l, r) => l <= r, this.delayBudget)).Cond();
+            var vs_cond_48 = (choices.GetField<int>(_ => _.Count).InvokeBinary<int, bool>((l, r) => l <= r, this.DelayBudget)).Cond();
             {
                 if (vs_cond_48.CondTrue())
                 {
@@ -111,8 +111,8 @@ partial class Scheduler
         if (vs_cond_50.MergeBranch())
         {
             ValueSummary<int> idx = PathConstraint.ChooseRandomIndex(choices.GetField<int>((_) => _.Count));
-            this.delayBudget.Assign<int>(this.delayBudget.InvokeBinary<int, int>((l, r) => l - r, idx));
-            this.current_schedule_machine_idx.Assign<int>((i.InvokeBinary<int, int>((l, r) => l + r, this.current_schedule_machine_idx)).InvokeBinary<int, int>((l, r) => l % r, this.machines.GetField<int>(_ => _.Count)));
+            this.DelayBudget.Assign<int>(this.DelayBudget.InvokeBinary<int, int>((l, r) => l - r, idx));
+            this.CurrentMachineIndex.Assign<int>((i.InvokeBinary<int, int>((l, r) => l + r, this.CurrentMachineIndex)).InvokeBinary<int, int>((l, r) => l % r, this.machines.GetField<int>(_ => _.Count)));
             PathConstraint.RecordReturnPath(vs_ret_0, choices.InvokeMethod<int, Scheduler.SchedulerChoice>((_, a0) => _[a0], idx));
         }
 

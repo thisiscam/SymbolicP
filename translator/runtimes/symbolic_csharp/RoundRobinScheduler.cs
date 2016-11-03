@@ -3,14 +3,14 @@ using System;
 using System.Diagnostics;
 
 partial class Scheduler {
-	public int current_schedule_machine_idx = 0;
-	public int delayBudget = 0;
+	public int CurrentMachineIndex = 0;
+	public int DelayBudget = 0;
 	private SchedulerChoice ChooseMachine() {
 		List<SchedulerChoice> choices = new List<SchedulerChoice>();
 		int i = 0;
-		for(; i < this.machines.Count && choices.Count <= this.delayBudget; i++)
+		for(; i < this.machines.Count && choices.Count <= this.DelayBudget; i++)
 		{
-			int machine_idx = (i + current_schedule_machine_idx) % this.machines.Count;
+			int machine_idx = (i + CurrentMachineIndex) % this.machines.Count;
 	        PMachine machine = machines[machine_idx];
 	        // Collect from send queue
 	        List<SendQueueItem> sendQueue = machine.sendQueue;
@@ -28,7 +28,7 @@ partial class Scheduler {
 	                }
 	            }
 	        }
-	        if(choices.Count <= this.delayBudget)
+	        if(choices.Count <= this.DelayBudget)
 	        {
 		        // Machine is state that can serve null event?
 				int null_state_idx = machine.CanServeEvent(Constants.EVENT_NULL);
@@ -40,8 +40,8 @@ partial class Scheduler {
 	    if(choices.Count == 0) { return null; }
 	    // Choose one and remove from send queue
         SymbolicInteger idx = SymbolicEngine.SE.NewSymbolicIntVar("SI", 0, choices.Count);
-	    this.delayBudget = this.delayBudget - idx;
-	    this.current_schedule_machine_idx = (i + current_schedule_machine_idx) % this.machines.Count;
+	    this.DelayBudget = this.DelayBudget - idx;
+	    this.CurrentMachineIndex = (i + CurrentMachineIndex) % this.machines.Count;
 	    return choices[idx];
 	}
 }

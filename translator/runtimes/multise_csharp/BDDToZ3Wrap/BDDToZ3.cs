@@ -4,6 +4,7 @@ using BuDDySharp;
 using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace BDDToZ3Wrap
 {
@@ -30,6 +31,25 @@ namespace BDDToZ3Wrap
 		public static bdd ToBDD(this BoolExpr expr) {
 			return new bdd(PInvoke.Z3_formula_to_bdd(ctx.UnwrapAST (expr)), true);
 		}
+		
+		public static BoolExpr GetithZ3Expr(int i)
+		{
+			return (BoolExpr)ctx.WrapAST(PInvoke.get_ith_Z3_formula(i));
+		}
+		
+		public static int get_num_used_formulas()
+		{
+			return PInvoke.get_num_formulas();
+		}
+		
+		public static IEnumerable<BoolExpr> GetAllUsedFormulas()
+		{
+			var n = get_num_used_formulas();
+			for(int i=0; i < n; i++)
+			{
+				yield return GetithZ3Expr(i);
+			}
+		}
 	}
 
 	public static class PInvoke
@@ -44,7 +64,13 @@ namespace BDDToZ3Wrap
 
 		[DllImport(Z3_DLL_NAME)]
 		public extern static IntPtr Z3_formula_to_bdd (IntPtr ast);
-
+		
+		[DllImport(Z3_DLL_NAME)]
+		public extern static IntPtr get_ith_Z3_formula (int i);
+		
+		[DllImport(Z3_DLL_NAME)]
+		public extern static int get_num_formulas ();
+	
 		[DllImport(Z3_DLL_NAME)]
 		public extern static void debug_print_used_bdd_vars();
 	}

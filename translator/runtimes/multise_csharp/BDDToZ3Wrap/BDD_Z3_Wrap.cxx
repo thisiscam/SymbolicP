@@ -126,6 +126,16 @@ bdd* Z3_formula_to_bdd(Z3_ast bool_exp)
 	}
 }
 
+Z3_ast get_ith_Z3_formula(int i)
+{
+	return bdd_vars_to_z3_formula[i];
+}
+
+int get_num_formulas()
+{
+	return bdd_vars_to_z3_formula.size();
+}
+
 void debug_print_used_bdd_vars()
 {
 	for(int i=0; i < bdd_vars_to_z3_formula.size(); i++)
@@ -133,5 +143,4 @@ void debug_print_used_bdd_vars()
 		printf("%d: %s\n", i, Z3_ast_to_string(ctx, bdd_vars_to_z3_formula[i]));
 	}
 }
-
 }
