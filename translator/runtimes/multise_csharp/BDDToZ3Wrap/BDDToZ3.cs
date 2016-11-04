@@ -17,6 +17,21 @@ namespace BDDToZ3Wrap
 			var nCtx = (IntPtr)ctx.GetType().GetProperty("nCtx", bindFlags).GetValue(ctx, null);
 			PInvoke.init_bdd_z3_wrap (nCtx);
 			Converter.ctx = ctx;
+			
+			BuDDySharp.BuDDySharp.bdd_gbc_hook((int arg0, IntPtr arg1) => {
+				bddGbcStat instantiatedType =
+					   (bddGbcStat) Activator.CreateInstance(typeof(bddGbcStat),
+					   System.Reflection.BindingFlags.NonPublic |
+					     System.Reflection.BindingFlags.Instance,
+					   null, new object[] {arg1, false}, null);
+				if(arg0 == 1) {
+					GC.Collect();
+					GC.WaitForPendingFinalizers();
+					BuDDySharp.BuDDySharp.bdd_default_gbchandler(0, instantiatedType);
+				} else if (arg0 == 0) {
+					BuDDySharp.BuDDySharp.bdd_default_gbchandler(0, instantiatedType);
+				}
+			});
 		}
 		
 		public static Stopwatch Watch = new Stopwatch();

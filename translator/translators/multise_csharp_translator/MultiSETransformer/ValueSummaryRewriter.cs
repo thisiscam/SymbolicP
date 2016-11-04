@@ -1196,12 +1196,13 @@ namespace MultiSETransformer
         {
             if (noRewrite(node))
                 return node;
-            if (node.Left.ChildNodes().Any(
-                n =>
-                {
-                    var s = model.GetSymbolInfo(n);
-                    return s.Symbol != null && s.Symbol.Kind == SymbolKind.Field && IsSpecialKW(s.Symbol.Name);
-                }
+            if ((node.Left.IsKind(SyntaxKind.IdentifierName) && IsSpecialKW(node.Left.ToFullString())) 
+                || node.Left.ChildNodes().Any(
+                    n =>
+                    {
+                        var s = model.GetSymbolInfo(n);
+                        return s.Symbol != null && s.Symbol.Kind == SymbolKind.Field && IsSpecialKW(s.Symbol.Name);
+                    }
             ))
             {
                 return node;

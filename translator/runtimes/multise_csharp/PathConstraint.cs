@@ -20,11 +20,12 @@ public static partial class PathConstraint
 		solver = ctx.MkSolver();
 		var options = Program.options;
 		
-		BuDDySharp.BuDDySharp.cpp_init(options.BDDNumInitialNodes, options.BDDNumInitialNodes);
+		BuDDySharp.BuDDySharp.cpp_init(options.BDDNumInitialNodes, options.BDDNumInitialNodes / options.BDDCacheRatio);
 		BuDDySharp.BuDDySharp.setcacheratio(options.BDDCacheRatio);
 		BuDDySharp.BuDDySharp.setvarnum(options.BDDNumVars);
 		BuDDySharp.BuDDySharp.setmaxincrease(options.BDDMaxIncrease);
-		
+		BuDDySharp.BuDDySharp.reorder_verbose(2);
+		BuDDySharp.BuDDySharp.autoreorder(BuDDySharp.BuDDySharp.BDD_REORDER_NONE);
 		BDDToZ3Wrap.Converter.Init(ctx);
 
 		pcs.Add(BuDDySharp.BuDDySharp.bddtrue);
@@ -35,13 +36,16 @@ public static partial class PathConstraint
 	static SCG.List<SymbolicBool> sym_bool_vars;
 	static ValueSummary<int> solver_bool_var_cnt;
 	
-	public static void Reset()
+	private static bool recovering = false;
+	public static void BeginRecover()
 	{
 		solver.Reset();
 		pcs.Clear();
 		pcs.Add(BuDDySharp.BuDDySharp.bddtrue);
 		decision_cnt = 0;
 		solver_bool_var_cnt = 0;
+		sym_bool_vars = new SCG.List<SymbolicBool>();
+		recovering = true;
 	}
 
 	private static void InitSymVar()
@@ -246,29 +250,38 @@ public static partial class PathConstraint
 		return DecisionTreeFromIdx(vars, idx);
 	}
 	
+	private static SCG.List<int> num_decision_vars_history = new SCG.List<int>();
 	public static ValueSummary<int> ChooseRandomIndex(ValueSummary<int> count)
 	{
 		var pc = GetPC();
-		var max_count = count.values.Max((GuardedValue<int> arg) => 
-			{	
-				if(!arg.bddForm.And(pc).EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
-					return arg.value;
-				} else {
-					return 0;
+		int num_decision_vars = -1;
+		if(recovering) {
+			num_decision_vars = num_decision_vars_history[decision_cnt];
+		} else {
+			var max_count = count.values.Max((GuardedValue<int> arg) => 
+				{	
+					if(!arg.bddForm.And(pc).EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+						return arg.value;
+					} else {
+						return 0;
+					}
 				}
-			}
-		);
-		if(max_count < 1) {
-			Debugger.Break();
+			);
+			Debug.Assert(max_count >= 1);
+			// Create BDD vars
+			num_decision_vars = (int) Math.Ceiling(Math.Log(max_count, 2));
+			num_decision_vars_history.Add(num_decision_vars);
 		}
-		// Create BDD vars
-		var num_decision_vars = (int) Math.Ceiling(Math.Log(max_count, 2));
 		var all_vars = new bdd[num_decision_vars];
 		for(int i=0; i < num_decision_vars; i++)
 		{
 			var sym_var_name = String.Format("decision_{0}_{1}", decision_cnt, i);
 			var fresh_const = new SymbolicBool(ctx.MkBoolConst(sym_var_name).ToBDD());
 			all_vars[i] = fresh_const.AbstractValue;
+		}
+		if(all_vars.Length > 1) {
+			bdd s = BuDDySharp.BuDDySharp.makeset(all_vars.Select((arg) => BuDDySharp.BuDDySharp.var(arg)).ToArray(), all_vars.Length);
+			BuDDySharp.BuDDySharp.addvarblock(s, BuDDySharp.BuDDySharp.BDD_REORDER_FREE);
 		}
 		decision_cnt++;
 		ValueSummary<int> idx = new ValueSummary<int>();

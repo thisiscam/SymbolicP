@@ -18,8 +18,8 @@ public class Program {
 		var loop = PathConstraint.BeginLoop();
         for(int i=0; i < options.MaxNumSchedulerIterations; i++) {
         	Watch.Start();
-			if (!loop.Loop(scheduler.ChooseAndRunMachine())) { 
-				break; 
+			if (!loop.Loop(scheduler.ChooseAndRunMachine())) {
+				break;
 			}
 			Watch.Stop();
 			Console.WriteLine("==== Iter {0}========", i);
@@ -54,7 +54,7 @@ public class Program {
 	    	var counterExampleBDD = PathConstraint.GetPC();
 			Console.WriteLine("Program encountered exception at PC = {0}(in BDD form), exception trace follows", counterExampleBDD);
 			counterExampleBDD = PathConstraint.ExtractOneCounterExampleFromAggregatePC(counterExampleBDD);
-			PathConstraint.Reset();
+			PathConstraint.BeginRecover();
 			ResetMachines();
 			PathConstraint.AddAxiom(counterExampleBDD);
 			try {

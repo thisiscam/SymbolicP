@@ -250,16 +250,10 @@ class PProgramToCSharpTranslator(TranslatorBase):
         rtransitions_map = self.build_transition_map(machine)
         for (state, to_state, fn_name, is_named, is_push), on_es in rtransitions_map.items():
             transition_fn_name = None
-            if to_state:
-                if is_named or not fn_name:
-                    transition_fn_name = "{0}_on_{1}".format(state.name, "_".join(on_es))
-                else:
-                    transition_fn_name = fn_name
+            if is_named or not fn_name:
+                transition_fn_name = "{0}_on_{1}".format(state.name, "_".join(on_es))
             else:
-                if is_named and len(machine.fun_decls[fn_name].params) == 1:
-                    transition_fn_name = fn_name
-                else:
-                    transition_fn_name = "{0}_on_{1}".format(state.name, "_".join(on_es))
+                transition_fn_name = fn_name
             for on_e in on_es:
                 self.out("this.Transitions[{0},{1}] = {2};\n".format(self.translate_state(machine, state), self.translate_event(on_e), transition_fn_name))
         for state in machine.state_decls.values():
@@ -283,23 +277,22 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
         # Transition functions
         for (from_state, to_state, with_fn_name, is_named, is_push), on_es in rtransitions_map.items():
-            if to_state or len(machine.fun_decls[with_fn_name].params) != 1:
-                if is_named or not with_fn_name:
-                    transition_fn_name = "{0}_on_{1}".format(from_state.name, "_".join(on_es))
-                    self.out("private void {0} ({1} payload) {{\n".format(transition_fn_name, self.translate_type(PTypeAny)))
-                    self.current_payload_type = PTypeAny
-                    if is_push:
-                        if with_fn_name:
-                            self.out_fn_call(machine, with_fn_name, last_stmt=False)
-                        self.out_enter_state(machine, to_state, last_stmt=True, is_push=True)
-                    else:
-                        if to_state:
-                            self.out_exit_state(machine, from_state, last_stmt=with_fn_name and to_state)
-                        if with_fn_name:
-                            self.out_fn_call(machine, with_fn_name, last_stmt=to_state)
-                        if to_state:
-                            self.out_enter_state(machine, to_state, last_stmt=True)
-                    self.out("}\n")
+            if is_named or not with_fn_name:
+                transition_fn_name = "{0}_on_{1}".format(from_state.name, "_".join(on_es))
+                self.out("private void {0} ({1} payload) {{\n".format(transition_fn_name, self.translate_type(PTypeAny)))
+                self.current_payload_type = PTypeAny
+                if is_push:
+                    if with_fn_name:
+                        self.out_fn_call(machine, with_fn_name, last_stmt=False)
+                    self.out_enter_state(machine, to_state, last_stmt=True, is_push=True)
+                else:
+                    if to_state:
+                        self.out_exit_state(machine, from_state, last_stmt=with_fn_name and to_state)
+                    if with_fn_name:
+                        self.out_fn_call(machine, with_fn_name, last_stmt=to_state)
+                    if to_state:
+                        self.out_enter_state(machine, to_state, last_stmt=True)
+                self.out("}\n")
         # Named and unnamed user defined functions
         for fn_name in machine.fun_decls:
             self.out_fn_decl(machine, fn_name)
@@ -322,12 +315,17 @@ class PProgramToCSharpTranslator(TranslatorBase):
             self.out("class MachineController {\n\n")
             spec_machines = filter(lambda m: m.is_spec, self.pprogram.machines)
             for spec_machine in spec_machines:
-                self.out("static MonitorPMachine {m_name} = new Machine{m_type}();\n".format(
+                self.out("static MonitorPMachine {m_name};\n".format(
+                    m_name="monitor_" + spec_machine.name.lower())
+                )
+            self.out("\n")
+            self.out("public static PMachine CreateMainMachine() {\n")
+            for spec_machine in spec_machines:
+                self.out("{m_name} = new Machine{m_type}();\n".format(
                     m_name="monitor_" + spec_machine.name.lower(), 
                     m_type=spec_machine.name)
                 )
-            self.out("\n")
-            self.out("public static PMachine CreateMainMachine() {{\nreturn new {0}();\n}}\n\n".format(classname))
+            self.out("return new {0}();\n}}\n\n".format(classname))
             if len(self.pprogram.observes_map) > 0:
                 self.out("/* Observers */\n")
                 self.out("public static void AnnounceEvent({0} e, {1} payload) {{\n".format(self.translate_type(PTypeEventUnknown), self.translate_type(PTypeAny)))
