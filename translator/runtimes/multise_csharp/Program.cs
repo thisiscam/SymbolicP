@@ -66,6 +66,9 @@ public class Program {
 				Console.WriteLine(ex);
 			}
 		}
+#if USE_SYLVAN
+		//SylvanSharp.SylvanSharp.exit_lace();
+#endif
         return 0;
     }
 }

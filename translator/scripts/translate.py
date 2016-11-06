@@ -32,7 +32,7 @@ def main(argv):
     parser.add_argument('-o', '--out-dir', type=str, dest="out_dir",
                         help="ouput directory, defaults to input file's name")
     parser.add_argument('-t', '--translator', type=str, dest="translator",
-                        default="basic_csharp_translator",
+                        default="basic_csharp",
                         choices=viable_translators,
                         help="which translator to use")
     parser.add_argument('-I', '--include', dest="search_dirs", 

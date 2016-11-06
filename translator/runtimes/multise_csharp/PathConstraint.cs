@@ -2,10 +2,17 @@ using Microsoft.Z3;
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
-using BuDDySharp;
 using SCG = System.Collections.Generic;
 using BDDToZ3Wrap;
 using System.Linq;
+
+#if USE_SYLVAN
+using bdd = SylvanSharp.bdd;
+using BDDLIB = SylvanSharp.SylvanSharp;
+#else
+using bdd = BuDDySharp.bdd;
+using BDDLIB = BuDDySharp.BuDDySharp;
+#endif
 
 public static partial class PathConstraint
 {
@@ -19,19 +26,23 @@ public static partial class PathConstraint
 		ctx = new Context();
 		solver = ctx.MkSolver();
 		var options = Program.options;
-		
-		BuDDySharp.BuDDySharp.init(options.BDDNumInitialNodes, options.BDDNumInitialNodes / options.BDDCacheRatio);
-		var x = BuDDySharp.BuDDySharp.setcacheratio(options.BDDCacheRatio);
-		x = BuDDySharp.BuDDySharp.setvarnum(options.BDDNumVars);
-		Console.WriteLine(BuDDySharp.BuDDySharp.varnum());
-		x = BuDDySharp.BuDDySharp.setmaxincrease(options.BDDMaxIncrease);
-		BuDDySharp.BuDDySharp.reorder_verbose(2);
-		BuDDySharp.BuDDySharp.autoreorder(BuDDySharp.BuDDySharp.BDD_REORDER_NONE);
+
+#if USE_SYLVAN
+		BDDLIB.init(options.SylvanLaceNWorkers, options.SylvanLaceStack, 
+					options.SylvanNumInitialNodesLg2, options.SylvanNumMaxNodesLg2, 
+					options.SylvanNumInitialCachesizeLg2, options.SylvanNumMaxCachesizeLg2,
+					options.SylvanGranularity
+		);
+#else
+		BDDLIB.init(options.BDDNumInitialNodes, options.BDDNumInitialNodes / options.BDDCacheRatio);
+		var x = BDDLIB.setcacheratio(options.BDDCacheRatio);
+		x = BDDLIB.setvarnum(options.BDDNumVars);
+		Console.WriteLine(BDDLIB.varnum());
+		x = BDDLIB.setmaxincrease(options.BDDMaxIncrease);
+		BDDLIB.reorder_verbose(2);
+		BDDLIB.autoreorder(BDDLIB.BDD_REORDER_NONE);
+#endif
 		BDDToZ3Wrap.Converter.Init(ctx);
-		BuDDySharp.BuDDySharp.error_hook((arg0) => { 
-			Console.WriteLine(BuDDySharp.BuDDySharp.varnum());
-			Debugger.Break();
-		});
 		pcs.Add(bdd.bddtrue);
 
 		InitSymVar();
@@ -282,10 +293,6 @@ public static partial class PathConstraint
 			var sym_var_name = String.Format("decision_{0}_{1}", decision_cnt, i);
 			var fresh_const = new SymbolicBool(ctx.MkBoolConst(sym_var_name).ToBDD());
 			all_vars[i] = fresh_const.AbstractValue;
-		}
-		if(all_vars.Length > 1) {
-			bdd s = bdd.makeset(all_vars.Select((arg) => arg.Var()).ToArray(), all_vars.Length);
-			BuDDySharp.BuDDySharp.addvarblock(s.Id, BuDDySharp.BuDDySharp.BDD_REORDER_FREE);
 		}
 		decision_cnt++;
 		ValueSummary<int> idx = new ValueSummary<int>();

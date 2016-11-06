@@ -1,5 +1,12 @@
 using System;
-using BuDDySharp;
+
+#if USE_SYLVAN
+using bdd = SylvanSharp.bdd;
+using BDDLIB = SylvanSharp.SylvanSharp;
+#else
+using bdd = BuDDySharp.bdd;
+using BDDLIB = BuDDySharp.BuDDySharp;
+#endif
 
 public static partial class PathConstraint
 {

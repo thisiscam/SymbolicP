@@ -1,14 +1,22 @@
 ﻿using System;
 using Microsoft.Z3;
-using BuDDySharp;
 using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Diagnostics;
 using System.Collections.Generic;
 
+#if USE_SYLVAN
+using bdd = SylvanSharp.bdd;
+using BDDLIB = SylvanSharp.SylvanSharp;
+using BDD = System.Int64;
+#else
+using bdd = BuDDySharp.bdd;
+using BDDLIB = BuDDySharp.BuDDySharp;
+using BDD = System.Int32;
+#endif
+
 namespace BDDToZ3Wrap
 {
-	using BDD = System.Int32;
 	public static class Converter
 	{
 		private static Context ctx;
@@ -18,18 +26,29 @@ namespace BDDToZ3Wrap
 			var nCtx = (IntPtr)ctx.GetType().GetProperty("nCtx", bindFlags).GetValue(ctx, null);
 			PInvoke.init_bdd_z3_wrap (nCtx);
 			Converter.ctx = ctx;
-			
+
+#if USE_SYLVAN
+			BDDLIB.sylvan_gc_hook_pregc(() => {
+				GC.Collect();
+				GC.WaitForPendingFinalizers();
+				Console.WriteLine("Pre GC");
+			});
+			BDDLIB.sylvan_gc_hook_postgc(() => {
+				Console.WriteLine("Post GC");
+			});
+#else
 			unsafe {
-				BuDDySharp.BuDDySharp.gbc_hook((arg0, arg1) => {
+				BDDLIB.gbc_hook((arg0, arg1) => {
 					if(arg0 == 1) {
 						GC.Collect();
 						GC.WaitForPendingFinalizers();
-						BuDDySharp.BuDDySharp.default_gbchandler(0, arg1);
+						BDDLIB.default_gbchandler(0, arg1);
 					} else if (arg0 == 0) {
-						BuDDySharp.BuDDySharp.default_gbchandler(0, arg1);
+						BDDLIB.default_gbchandler(0, arg1);
 					}
 				});
 			}
+#endif
 		}
 		
 		public static Stopwatch Watch = new Stopwatch();

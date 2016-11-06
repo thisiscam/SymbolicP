@@ -1,12 +1,19 @@
 using System;
 using Microsoft.Z3;
-using BuDDySharp;
 using SCG = System.Collections.Generic;
 using System.Diagnostics;
 using BDDToZ3Wrap;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+
+#if USE_SYLVAN
+using bdd = SylvanSharp.bdd;
+using BDDLIB = SylvanSharp.SylvanSharp;
+#else
+using bdd = BuDDySharp.bdd;
+using BDDLIB = BuDDySharp.BuDDySharp;
+#endif
 
 internal class GuardedValue<T>
 {
@@ -414,7 +421,14 @@ public class ValueSummary<T>
 	public void InvokeMethodHelper(Action<T> f)
 	{
 		var pc = PathConstraint.GetPC();
+
+#if false
+		SylvanSharp.Lace.ParallelFor((i) => 
+		{
+			var guardedTarget = this.values[i];
+#else
 		foreach (var guardedTarget in this.values) {
+#endif 
 			bdd newPC = pc.And(guardedTarget.bddForm);
 			if (newPC.FormulaBDDSolverSAT()) {
 				NullTargetCheck((c, v) => 
@@ -427,6 +441,9 @@ public class ValueSummary<T>
 				guardedTarget.value, guardedTarget.bddForm);
 			}			
 		}
+#if false
+	    , this.values.Count);
+#endif
 	}
 
 	public void InvokeMethod(Action<T> f)
