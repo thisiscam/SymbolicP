@@ -8,6 +8,7 @@ using System.Collections.Generic;
 
 namespace BDDToZ3Wrap
 {
+	using BDD = System.Int32;
 	public static class Converter
 	{
 		private static Context ctx;
@@ -18,33 +19,30 @@ namespace BDDToZ3Wrap
 			PInvoke.init_bdd_z3_wrap (nCtx);
 			Converter.ctx = ctx;
 			
-			BuDDySharp.BuDDySharp.bdd_gbc_hook((int arg0, IntPtr arg1) => {
-				bddGbcStat instantiatedType =
-					   (bddGbcStat) Activator.CreateInstance(typeof(bddGbcStat),
-					   System.Reflection.BindingFlags.NonPublic |
-					     System.Reflection.BindingFlags.Instance,
-					   null, new object[] {arg1, false}, null);
-				if(arg0 == 1) {
-					GC.Collect();
-					GC.WaitForPendingFinalizers();
-					BuDDySharp.BuDDySharp.bdd_default_gbchandler(0, instantiatedType);
-				} else if (arg0 == 0) {
-					BuDDySharp.BuDDySharp.bdd_default_gbchandler(0, instantiatedType);
-				}
-			});
+			unsafe {
+				BuDDySharp.BuDDySharp.gbc_hook((arg0, arg1) => {
+					if(arg0 == 1) {
+						GC.Collect();
+						GC.WaitForPendingFinalizers();
+						BuDDySharp.BuDDySharp.default_gbchandler(0, arg1);
+					} else if (arg0 == 0) {
+						BuDDySharp.BuDDySharp.default_gbchandler(0, arg1);
+					}
+				});
+			}
 		}
 		
 		public static Stopwatch Watch = new Stopwatch();
 		public static BoolExpr ToZ3Expr(this bdd x) {
 			Watch.Start();
-			var y = PInvoke.bdd_to_Z3_formula(bdd.getCPtr(x));
+			var y = PInvoke.bdd_to_Z3_formula(x.Id);
 			Watch.Stop();
 			var ret = (BoolExpr)ctx.WrapAST (y);
 			return ret;
 		}
 
 		public static bdd ToBDD(this BoolExpr expr) {
-			return new bdd(PInvoke.Z3_formula_to_bdd(ctx.UnwrapAST (expr)), true);
+			return new bdd(PInvoke.Z3_formula_to_bdd(ctx.UnwrapAST (expr)));
 		}
 		
 		public static BoolExpr GetithZ3Expr(int i)
@@ -66,25 +64,26 @@ namespace BDDToZ3Wrap
 			}
 		}
 	}
-
+	
 	public static class PInvoke
 	{
+		
 		const string Z3_DLL_NAME = "BDD_Z3_Wrap";
 
 		[DllImport(Z3_DLL_NAME)]
 		public extern static void init_bdd_z3_wrap(IntPtr ctx); 
 
 		[DllImport(Z3_DLL_NAME)]
-		public extern static IntPtr bdd_to_Z3_formula(HandleRef a0);
+		public extern static IntPtr bdd_to_Z3_formula(BDD a0);
 
 		[DllImport(Z3_DLL_NAME)]
-		public extern static IntPtr Z3_formula_to_bdd (IntPtr ast);
+		public extern static BDD Z3_formula_to_bdd(IntPtr ast);
 		
 		[DllImport(Z3_DLL_NAME)]
-		public extern static IntPtr get_ith_Z3_formula (int i);
+		public extern static IntPtr get_ith_Z3_formula(int i);
 		
 		[DllImport(Z3_DLL_NAME)]
-		public extern static int get_num_formulas ();
+		public extern static int get_num_formulas();
 	
 		[DllImport(Z3_DLL_NAME)]
 		public extern static void debug_print_used_bdd_vars();

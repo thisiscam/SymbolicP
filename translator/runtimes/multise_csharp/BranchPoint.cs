@@ -28,7 +28,7 @@ public static partial class PathConstraint
 			this.state = state;
 			this.trueBDD = trueBDD;
 			this.falseBDD = falseBDD;
-			this.returnPaths = BuDDySharp.BuDDySharp.bddfalse;
+			this.returnPaths = bdd.bddfalse;
 			this.trueBranchAllEscaped = false;
 			this.falseBranchAllEscaped = false;
 		}
@@ -118,7 +118,7 @@ public static partial class PathConstraint
 		{
 			var ret = new LoopPoint();
 			ret.AllEscaped = true;
-			ret.returnPaths = BuDDySharp.BuDDySharp.bddfalse;
+			ret.returnPaths = bdd.bddfalse;
 			return ret;
 		}
 		

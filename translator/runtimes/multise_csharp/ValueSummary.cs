@@ -45,7 +45,7 @@ public class ValueSummary<T>
 
 	public ValueSummary(T t) : this()
 	{
-		this.values.Add(new GuardedValue<T>(BuDDySharp.BuDDySharp.bddtrue, t));
+		this.values.Add(new GuardedValue<T>(bdd.bddtrue, t));
 	}
 
 	public static implicit operator T(ValueSummary<T> vs)
@@ -197,7 +197,7 @@ public class ValueSummary<T>
 						continue;
 					} else if(sameTypeGroup.Key.Name.StartsWith("DefaultArray")) {
 	 					dynamic newArray = sameTypeGroup.First().value.GetType().GetMethod("NewEmpty", BindingFlags.Public|BindingFlags.Instance).Invoke(sameTypeGroup.First().value, null);
-						bdd limit = BuDDySharp.BuDDySharp.bddfalse;
+						bdd limit = bdd.bddfalse;
 						foreach(GuardedValue<T> guardedVal in sameTypeGroup)
 	 					{
 	 						dynamic innerdata = guardedVal.value.GetType().GetField("data", BindingFlags.NonPublic|BindingFlags.Instance).GetValue(guardedVal.value);
@@ -213,7 +213,7 @@ public class ValueSummary<T>
 						continue;
 					} else {
 						newVals.AddRange(sameTypeGroup.GroupBy((arg) => arg.value).Select((arg) => {
-							var pred = BuDDySharp.BuDDySharp.bddfalse;
+							var pred = bdd.bddfalse;
 							foreach(var guardedVal in arg)
 							{
 								pred = pred.Or(guardedVal.bddForm);
@@ -222,7 +222,7 @@ public class ValueSummary<T>
 						}));
 					}
 				} else {
-					var pred = BuDDySharp.BuDDySharp.bddfalse;
+					var pred = bdd.bddfalse;
 					foreach(var guardedVal in sameTypeGroup)
 					{
 						pred = pred.Or(guardedVal.bddForm);
@@ -234,7 +234,7 @@ public class ValueSummary<T>
 		} else {
 			this.values = new SCG.List<GuardedValue<T>>(
 				this.values.GroupBy((arg) => arg.value).Select((arg) => {
-					var pred = BuDDySharp.BuDDySharp.bddfalse;
+					var pred = bdd.bddfalse;
 					foreach(var guardedVal in arg)
 					{
 						pred = pred.Or(guardedVal.bddForm);
@@ -545,7 +545,7 @@ public static class ValueSummaryExt
 		}
 		else {
 			if (bddForm.FormulaBDDSolverSAT()) {
-				BuDDySharp.BuDDySharp.printdot(bddForm);
+				bddForm.PrintDot();
 				BDDToZ3Wrap.PInvoke.debug_print_used_bdd_vars();
 				throw new Exception("Array index out of bound!");
 			}
@@ -784,8 +784,8 @@ public static class ValueSummaryExt
 			var s = PathConstraint.solver.Check();
 			PathConstraint.solver.Pop();
 			if (s != Status.UNSATISFIABLE) {
-				BuDDySharp.BuDDySharp.printdot(trueBDD);
-				BuDDySharp.BuDDySharp.printdot(falseBDD);
+				trueBDD.PrintDot();
+				falseBDD.PrintDot();
 				BDDToZ3Wrap.PInvoke.debug_print_used_bdd_vars();
 				Console.WriteLine(a0);
 				Debugger.Break();
@@ -877,19 +877,19 @@ public static class ValueSummaryExt
 	private static PathConstraint.BranchPoint _CondHelper<T>(ValueSummary<T> b, Func<T, SymbolicBool> extract)
 	{
 		var pc = PathConstraint.GetPC();
-		bdd predTrue = BuDDySharp.BuDDySharp.bddfalse, predFalse = BuDDySharp.BuDDySharp.bddfalse;
+		bdd predTrue = bdd.bddfalse, predFalse = bdd.bddfalse;
 		foreach (var guardedBooleanVal in b.values) {
 			var guardedValuePcPred = guardedBooleanVal.bddForm.And(pc);
 			var symbVal = extract.Invoke(guardedBooleanVal.value);
 			if (guardedValuePcPred.FormulaBDDSAT()) {
 				if (symbVal.IsAbstract()) {
 					var c = symbVal.AbstractValue;
-					if (c.EqualEqual(BuDDySharp.BuDDySharp.bddtrue)) {
+					if (c.EqualEqual(bdd.bddtrue)) {
 						if (guardedValuePcPred.FormulaBDDSolverSAT()) {
 							predTrue = predTrue.Or(guardedValuePcPred);
 						}
 					}
-					else if (c.EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+					else if (c.EqualEqual(bdd.bddfalse)) {
 						if (guardedValuePcPred.FormulaBDDSolverSAT()) {
 							predFalse = predFalse.Or(guardedValuePcPred);
 						}
@@ -919,8 +919,8 @@ public static class ValueSummaryExt
 				}
 			}
 		}
-		if (predTrue != BuDDySharp.BuDDySharp.bddfalse) {
-			if (predFalse != BuDDySharp.BuDDySharp.bddfalse) {
+		if (predTrue != bdd.bddfalse) {
+			if (predFalse != bdd.bddfalse) {
 				return new PathConstraint.BranchPoint(predTrue, predFalse, PathConstraint.BranchPoint.State.Both);
 			}
 			else {
@@ -928,7 +928,7 @@ public static class ValueSummaryExt
 			}
 		}
 		else {
-			if (predFalse != BuDDySharp.BuDDySharp.bddfalse) {
+			if (predFalse != bdd.bddfalse) {
 				return new PathConstraint.BranchPoint(null, predFalse, PathConstraint.BranchPoint.State.False);
 			}
 			else {

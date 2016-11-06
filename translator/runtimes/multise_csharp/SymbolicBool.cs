@@ -44,20 +44,20 @@ public struct SymbolicBool {
 
     private static bdd BDDFromBool(bool b)
     {
-    	return b ? BuDDySharp.BuDDySharp.bddtrue : BuDDySharp.BuDDySharp.bddfalse;
+    	return b ? bdd.bddtrue : bdd.bddfalse;
     }
 
 	public static SymbolicBool operator ==(SymbolicBool a, SymbolicBool b) 
     { 
     	if(a.IsAbstract()) {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(BuDDySharp.BuDDySharp.biimp(a.abstractValue, b.abstractValue));
+    			return new SymbolicBool(a.abstractValue.Biimp(b.abstractValue));
     		} else {
-    			return new SymbolicBool(BuDDySharp.BuDDySharp.biimp(a.abstractValue, BDDFromBool(b.concreteValue)));
+    			return new SymbolicBool(a.abstractValue.Biimp(BDDFromBool(b.concreteValue)));
     		}
     	} else {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(BuDDySharp.BuDDySharp.biimp(BDDFromBool(a.concreteValue), b.abstractValue));
+    			return new SymbolicBool(BDDFromBool(a.concreteValue).Biimp(b.abstractValue));
 			} else {
 				return new SymbolicBool(a.concreteValue == b.concreteValue);
 			}
@@ -68,13 +68,13 @@ public struct SymbolicBool {
     { 
 		if(a.IsAbstract()) {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(BuDDySharp.BuDDySharp.biimp(a.abstractValue, b.abstractValue.Not()));
+    			return new SymbolicBool(a.abstractValue.Biimp(b.abstractValue.Not()));
     		} else {
-    			return new SymbolicBool(BuDDySharp.BuDDySharp.biimp(a.abstractValue, BDDFromBool(!b.concreteValue)));
+    			return new SymbolicBool(a.abstractValue.Biimp(BDDFromBool(!b.concreteValue)));
     		}
     	} else {
     		if(b.IsAbstract()) {
-    			return new SymbolicBool(BuDDySharp.BuDDySharp.biimp(BDDFromBool(!a.concreteValue), b.abstractValue));
+    			return new SymbolicBool(BDDFromBool(!a.concreteValue).Biimp(b.abstractValue));
 			} else {
 				return new SymbolicBool(a.concreteValue != b.concreteValue);
 			}

@@ -20,15 +20,19 @@ public static partial class PathConstraint
 		solver = ctx.MkSolver();
 		var options = Program.options;
 		
-		BuDDySharp.BuDDySharp.cpp_init(options.BDDNumInitialNodes, options.BDDNumInitialNodes / options.BDDCacheRatio);
-		BuDDySharp.BuDDySharp.setcacheratio(options.BDDCacheRatio);
-		BuDDySharp.BuDDySharp.setvarnum(options.BDDNumVars);
-		BuDDySharp.BuDDySharp.setmaxincrease(options.BDDMaxIncrease);
+		BuDDySharp.BuDDySharp.init(options.BDDNumInitialNodes, options.BDDNumInitialNodes / options.BDDCacheRatio);
+		var x = BuDDySharp.BuDDySharp.setcacheratio(options.BDDCacheRatio);
+		x = BuDDySharp.BuDDySharp.setvarnum(options.BDDNumVars);
+		Console.WriteLine(BuDDySharp.BuDDySharp.varnum());
+		x = BuDDySharp.BuDDySharp.setmaxincrease(options.BDDMaxIncrease);
 		BuDDySharp.BuDDySharp.reorder_verbose(2);
 		BuDDySharp.BuDDySharp.autoreorder(BuDDySharp.BuDDySharp.BDD_REORDER_NONE);
 		BDDToZ3Wrap.Converter.Init(ctx);
-
-		pcs.Add(BuDDySharp.BuDDySharp.bddtrue);
+		BuDDySharp.BuDDySharp.error_hook((arg0) => { 
+			Console.WriteLine(BuDDySharp.BuDDySharp.varnum());
+			Debugger.Break();
+		});
+		pcs.Add(bdd.bddtrue);
 
 		InitSymVar();
 	}
@@ -41,7 +45,7 @@ public static partial class PathConstraint
 	{
 		solver.Reset();
 		pcs.Clear();
-		pcs.Add(BuDDySharp.BuDDySharp.bddtrue);
+		pcs.Add(bdd.bddtrue);
 		decision_cnt = 0;
 		solver_bool_var_cnt = 0;
 		sym_bool_vars = new SCG.List<SymbolicBool>();
@@ -188,7 +192,7 @@ public static partial class PathConstraint
 
 	public static bool EvalPc()
 	{
-		return BuDDySharp.BuDDySharp.bddtrue.FormulaBDDSolverSAT();
+		return bdd.bddtrue.FormulaBDDSolverSAT();
 	}
 
 	public static ValueSummary<SymbolicBool> NewSymbolicBoolVar(string prefix)
@@ -224,7 +228,7 @@ public static partial class PathConstraint
 	private static int decision_cnt = 0;
 	private static bdd DecisionTreeFromIdx(bdd[] vars, int idx)
 	{
-		var ret = BuDDySharp.BuDDySharp.bddtrue;
+		var ret = bdd.bddtrue;
 		for(int i=0; i < vars.Length; i++) {
 			if(idx % 2 == 0) {
 				ret = ret.And(vars[i].Not());
@@ -240,7 +244,7 @@ public static partial class PathConstraint
 	{
 		if(idx == max_decisions - 1)
 		{
-			var ret = BuDDySharp.BuDDySharp.bddfalse;
+			var ret = bdd.bddfalse;
 			for(int i=idx; i < Math.Pow(2, vars.Length); i++)
 			{
 				ret = ret.Or(DecisionTreeFromIdx(vars, i));
@@ -260,7 +264,7 @@ public static partial class PathConstraint
 		} else {
 			var max_count = count.values.Max((GuardedValue<int> arg) => 
 				{	
-					if(!arg.bddForm.And(pc).EqualEqual(BuDDySharp.BuDDySharp.bddfalse)) {
+					if(!arg.bddForm.And(pc).EqualEqual(bdd.bddfalse)) {
 						return arg.value;
 					} else {
 						return 0;
@@ -280,8 +284,8 @@ public static partial class PathConstraint
 			all_vars[i] = fresh_const.AbstractValue;
 		}
 		if(all_vars.Length > 1) {
-			bdd s = BuDDySharp.BuDDySharp.makeset(all_vars.Select((arg) => BuDDySharp.BuDDySharp.var(arg)).ToArray(), all_vars.Length);
-			BuDDySharp.BuDDySharp.addvarblock(s, BuDDySharp.BuDDySharp.BDD_REORDER_FREE);
+			bdd s = bdd.makeset(all_vars.Select((arg) => arg.Var()).ToArray(), all_vars.Length);
+			BuDDySharp.BuDDySharp.addvarblock(s.Id, BuDDySharp.BuDDySharp.BDD_REORDER_FREE);
 		}
 		decision_cnt++;
 		ValueSummary<int> idx = new ValueSummary<int>();
@@ -299,7 +303,7 @@ public static partial class PathConstraint
 	{
 		solver.Push();
 		solver.Assert(aggregatePC.ToZ3Expr());
-		var ret = BuDDySharp.BuDDySharp.bddtrue;
+		var ret = bdd.bddtrue;
 		int i = 0;
 		foreach(var b in BDDToZ3Wrap.Converter.GetAllUsedFormulas())
 		{
@@ -307,9 +311,9 @@ public static partial class PathConstraint
 			var v = (BoolExpr)solver.Model.Evaluate(b, true);
 			solver.Assert(ctx.MkEq(v, b));
 			if(v.BoolValue == Z3_lbool.Z3_L_TRUE) {
-				ret = ret.And(BuDDySharp.BuDDySharp.ithvar(i));
+				ret = ret.And(bdd.ithvar(i));
 			} else if(v.BoolValue == Z3_lbool.Z3_L_FALSE) {
-				ret = ret.And(BuDDySharp.BuDDySharp.nithvar(i));
+				ret = ret.And(bdd.nithvar(i));
 			} else {
 				throw new Exception("Not reachable");
 			}
@@ -341,12 +345,12 @@ public static partial class PathConstraint
 #region BDD_Z3_Ext
 	public static bool FormulaBDDSAT(this bdd x)
 	{
-		return !x.EqualEqual(BuDDySharp.BuDDySharp.bddfalse);
+		return !x.EqualEqual(bdd.bddfalse);
 	}
 	public static bool FormulaBDDSolverSAT(this bdd x)
 	{
-		return !x.EqualEqual(BuDDySharp.BuDDySharp.bddfalse) 
-			&& (!BuDDySharp.BuDDySharp.not_pure_bool(x) || SolveBooleanExpr(x.ToZ3Expr()));
+		return !x.EqualEqual(bdd.bddfalse) 
+			&& (!x.not_pure_bool() || SolveBooleanExpr(x.ToZ3Expr()));
 	}
 	public static bool FormulaSolverSAT(this bdd x)
 	{

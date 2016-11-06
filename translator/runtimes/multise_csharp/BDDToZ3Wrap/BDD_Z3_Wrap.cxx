@@ -1,7 +1,15 @@
 #include <unordered_map>
 #include <vector>
 #include <functional>
+
+/* Use the C version of bdd.h*/
+#undef __cplusplus
+extern "C" 
+{ 
 #include "bdd.h"
+}
+#define __cplusplus
+
 #include "z3.h"
 
 using namespace std;
@@ -31,10 +39,7 @@ namespace std {
 
 static unordered_map<Z3_ast, bdd> Z3_formula_to_bdd_map;
 
-#ifdef __cplusplus
 extern "C" 
-#endif
-
 {
 
 void init_bdd_z3_wrap(void* c)
@@ -42,14 +47,14 @@ void init_bdd_z3_wrap(void* c)
 	ctx = (Z3_context)c;
 }
 
-static Z3_ast _bdd_to_Z3_formula(bdd root, unordered_map<int, Z3_ast> &visited, int* count)
+static Z3_ast _bdd_to_Z3_formula(BDD root, unordered_map<int, Z3_ast> &visited, int* count)
 {
 	// TODO, optimize to make smt form more compact? e.g. using ITE, 
 	// or switch over shape of root for possible simplier forms
 	*count += 1;
 	Z3_ast ret;
-	if(visited.count(root.id()) > 0) {
-		ret = visited[root.id()];
+	if(visited.count(root) > 0) {
+		ret = visited[root];
 		Z3_inc_ref(ctx, ret);
 		return ret;
 	}
@@ -86,15 +91,15 @@ static Z3_ast _bdd_to_Z3_formula(bdd root, unordered_map<int, Z3_ast> &visited, 
 		Z3_dec_ref(ctx, t_and_right);
 	}
 	Z3_inc_ref(ctx, ret);
-	visited[root.id()] = ret;
+	visited[root] = ret;
 	return ret;
 }
 
-Z3_ast bdd_to_Z3_formula(bdd* r)
+Z3_ast bdd_to_Z3_formula(BDD r)
 {
 	int i = 0;
 	unordered_map<int, Z3_ast> visited;
-	Z3_ast ret = _bdd_to_Z3_formula(*r, visited, &i);
+	Z3_ast ret = _bdd_to_Z3_formula(r, visited, &i);
 	for (unordered_map<int, Z3_ast>::iterator it = visited.begin(); it != visited.end(); ++it) {
 		Z3_dec_ref(ctx, it->second);
 	}
@@ -102,25 +107,25 @@ Z3_ast bdd_to_Z3_formula(bdd* r)
 	return ret;
 }
 
-bdd* Z3_formula_to_bdd(Z3_ast bool_exp)
+BDD Z3_formula_to_bdd(Z3_ast bool_exp)
 {
 	// TODO, decompose bool_exp into more atomic forms?
 	switch(Z3_get_bool_value(ctx, bool_exp)) {
 		case Z3_L_TRUE: {
-			return new bdd(bddtrue);
+			return bddtrue;
 		}
 		case Z3_L_FALSE: {
-			return new bdd(bddfalse);
+			return bddfalse;
 		}
 		default: {
 			if(Z3_formula_to_bdd_map.count(bool_exp) > 0) {
-				return new bdd(Z3_formula_to_bdd_map.at(bool_exp));
+				return Z3_formula_to_bdd_map.at(bool_exp);
 			} else {
-				bdd new_var = bdd_ithvar(bdd_vars_to_z3_formula.size());
+				BDD new_var = bdd_ithvar(bdd_vars_to_z3_formula.size());
 				Z3_inc_ref(ctx, bool_exp); // This will probably leak memory!
 				bdd_vars_to_z3_formula.push_back(bool_exp);
 				Z3_formula_to_bdd_map[bool_exp] = new_var;
-				return new bdd(new_var);
+				return new_var;
 			}
 		}
 	}

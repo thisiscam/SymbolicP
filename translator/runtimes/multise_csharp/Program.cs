@@ -50,7 +50,7 @@ public class Program {
 		CommandLine.Parser.Default.ParseArguments(args, options);
 		try {
 	        Run();
-	    } catch (Exception) {
+	    } catch (Exception e) {
 	    	var counterExampleBDD = PathConstraint.GetPC();
 			Console.WriteLine("Program encountered exception at PC = {0}(in BDD form), exception trace follows", counterExampleBDD);
 			counterExampleBDD = PathConstraint.ExtractOneCounterExampleFromAggregatePC(counterExampleBDD);
