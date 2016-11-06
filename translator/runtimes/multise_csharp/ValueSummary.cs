@@ -425,7 +425,7 @@ public class ValueSummary<T>
 		SylvanSharp.Lace.ParallelFor((i) => 
 		{
 			// Set new task's pc to the current one
-			PathConstraint.RestorePC(pc);
+			PathConstraint.ForceSetPC(pc);
 			var guardedTarget = this.values[i];
 #else
 		foreach (var guardedTarget in this.values) {
@@ -443,6 +443,7 @@ public class ValueSummary<T>
 		}
 #if USE_SYLVAN
 	    , this.values.Count);
+	    PathConstraint.ForceSetPC(pc);
 #endif
 	}
 

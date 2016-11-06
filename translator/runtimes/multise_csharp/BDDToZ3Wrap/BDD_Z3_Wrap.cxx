@@ -160,19 +160,41 @@ void debug_print_used_bdd_vars()
 }
 
 #ifdef USE_SYLVAN
-void set_task_pc(void* pc)
+void force_set_task_pc(BDD pc)
 {
 	LACE_ME;
-	void** task_buf = (void**)__lace_dq_head->d;
-	printf("xxx worker %d: set from %p to %p\n", __lace_worker->worker, task_buf[2], pc);
-	task_buf[2] = pc;
+	void** task_buf = (void**)__lace_worker->current_task->d;
+	// printf("xxx worker %d: force set from %p to %lu\n", __lace_worker->worker, task_buf[5], pc);
+	sylvan_ref(pc);
+	task_buf[5] = (void*)pc;
 }
-void* get_task_pc()
+void set_task_pc(BDD pc)
 {
 	LACE_ME;
-	void** task_buf = (void**)__lace_dq_head->d;
-	printf("xxx worker %d: get %p\n", __lace_worker->worker, task_buf[2]);
-	return task_buf[2];
+	void** task_buf = (void**)__lace_worker->current_task->d;
+	BDD old_pc = (BDD)task_buf[5];
+	// printf("xxx worker %d: set from %lu to %lu\n", __lace_worker->worker, old_pc, pc);
+	sylvan_ref(pc);
+	sylvan_deref(old_pc);
+	task_buf[5] = (void*)pc;
+}
+BDD get_task_pc()
+{
+	LACE_ME;
+	void** task_buf = (void**)__lace_worker->current_task->d;
+	BDD pc = (BDD)task_buf[5];
+	// printf("xxx worker %d: get %lu\n", __lace_worker->worker, pc);
+	return sylvan_ref(pc);
+}
+void task_pc_addaxiom(BDD bdd)
+{
+	LACE_ME;
+	void** task_buf = (void**)__lace_worker->current_task->d;
+	BDD old_pc = (BDD)task_buf[5];
+	BDD new_pc = sylvan_ref(sylvan_and(old_pc, bdd));
+	sylvan_deref(old_pc);
+	// printf("xxx worker %d: and old %lu with %lu -> %lu\n", __lace_worker->worker, old_pc, bdd, new_pc);
+	task_buf[5] = (void*)new_pc;
 }
 #endif
 }

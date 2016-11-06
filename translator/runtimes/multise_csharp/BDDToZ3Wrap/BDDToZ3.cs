@@ -108,10 +108,16 @@ namespace BDDToZ3Wrap
 		public extern static void debug_print_used_bdd_vars();
 		
 		[DllImport(Z3_DLL_NAME)]
-		public unsafe extern static void set_task_pc(IntPtr bddPtr);
+		public unsafe extern static void force_set_task_pc(BDD bdd);
+
+		[DllImport(Z3_DLL_NAME)]
+		public unsafe extern static void set_task_pc(BDD bdd);
 		
 		[DllImport(Z3_DLL_NAME)]
-		public unsafe extern static IntPtr get_task_pc();
+		public unsafe extern static BDD get_task_pc();
+
+		[DllImport(Z3_DLL_NAME)]
+		public unsafe extern static void task_pc_addaxiom(BDD bdd);
 	}
 }
 

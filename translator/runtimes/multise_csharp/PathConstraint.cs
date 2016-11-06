@@ -51,18 +51,17 @@ public static partial class PathConstraint
 #endif
 		BDDToZ3Wrap.Converter.Init(ctx);
 		
-		SetPCTrue();
+		ForceSetPC(bdd.bddtrue);
 
 		InitSymVar();
 	}
 	
-	private static void SetPCTrue()
+	public static void ForceSetPC(bdd forcedPC)
 	{
 #if USE_SYLVAN
-		var handle = GCHandle.Alloc(bdd.bddtrue);
-		BDDToZ3Wrap.PInvoke.set_task_pc(GCHandle.ToIntPtr(handle));
+		BDDToZ3Wrap.PInvoke.force_set_task_pc(forcedPC.Id);
 #else
-		pc = bdd.bddtrue;
+		pc = forcedPC;
 #endif
 	}
 	
@@ -73,7 +72,7 @@ public static partial class PathConstraint
 	public static void BeginRecover()
 	{
 		solver.Reset();
-		SetPCTrue();
+		ForceSetPC(bdd.bddtrue);
 		decision_cnt = 0;
 		solver_bool_var_cnt = 0;
 		sym_bool_vars = new SCG.List<SymbolicBool>();
@@ -89,7 +88,7 @@ public static partial class PathConstraint
 	public static bdd GetPC()
 	{
 #if USE_SYLVAN
-	 	return (bdd)GCHandle.FromIntPtr(BDDToZ3Wrap.PInvoke.get_task_pc()).Target;
+	 	return new bdd(BDDToZ3Wrap.PInvoke.get_task_pc(), false);
 #else
 		return pc;
 #endif
@@ -98,11 +97,7 @@ public static partial class PathConstraint
 	public static void AddAxiom(bdd bddForm)
 	{
 #if USE_SYLVAN
-		var handle = GCHandle.FromIntPtr(BDDToZ3Wrap.PInvoke.get_task_pc());
-		var newPC = ((bdd)handle.Target).And(bddForm);
-		handle.Free();
-		var newPCHandle = GCHandle.Alloc(newPC);
-		BDDToZ3Wrap.PInvoke.set_task_pc(GCHandle.ToIntPtr(newPCHandle));
+		BDDToZ3Wrap.PInvoke.task_pc_addaxiom(bddForm.Id);
 #else
 		pc = bddForm.And(pc);
 #endif
@@ -111,10 +106,7 @@ public static partial class PathConstraint
 	public static void RestorePC(bdd oldPC)
 	{
 #if USE_SYLVAN
-		var handle = GCHandle.FromIntPtr(BDDToZ3Wrap.PInvoke.get_task_pc());
-		handle.Free();
-		var oldPCHandle = GCHandle.Alloc(oldPC, GCHandleType.Pinned);
-		BDDToZ3Wrap.PInvoke.set_task_pc(oldPCHandle.AddrOfPinnedObject());
+		BDDToZ3Wrap.PInvoke.set_task_pc(oldPC.Id);
 #else
 		pc = oldPC;
 #endif
