@@ -33,6 +33,8 @@ find_library(Z3_LIBRARY
 
 target_link_libraries(BDD_Z3_Wrap ${Z3_LIBRARY} ${BDDLIB})
 
+target_compile_features(BDD_Z3_Wrap PRIVATE cxx_extern_templates)
+
 if(USE_SYLVAN)
 	target_compile_definitions(BDD_Z3_Wrap PRIVATE USE_SYLVAN)
 endif()
