@@ -38,3 +38,5 @@ target_compile_features(BDD_Z3_Wrap PRIVATE cxx_extern_templates)
 if(USE_SYLVAN)
 	target_compile_definitions(BDD_Z3_Wrap PRIVATE USE_SYLVAN)
 endif()
+
+set(CMAKE_SKIP_RPATH TRUE)
