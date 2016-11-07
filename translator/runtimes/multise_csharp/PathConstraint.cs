@@ -59,7 +59,8 @@ public static partial class PathConstraint
 	private static void SetPCTrue()
 	{
 #if USE_SYLVAN
-		BDDToZ3Wrap.PInvoke.set_task_pc(GCHandle.Alloc(bdd.bddtrue, GCHandleType.Pinned).AddrOfPinnedObject());
+		var handle = GCHandle.Alloc(bdd.bddtrue);
+		BDDToZ3Wrap.PInvoke.set_task_pc(GCHandle.ToIntPtr(handle));
 #else
 		pc = bdd.bddtrue;
 #endif
@@ -100,8 +101,8 @@ public static partial class PathConstraint
 		var handle = GCHandle.FromIntPtr(BDDToZ3Wrap.PInvoke.get_task_pc());
 		var newPC = ((bdd)handle.Target).And(bddForm);
 		handle.Free();
-		var newPCHandle = GCHandle.Alloc(newPC, GCHandleType.Pinned);
-		BDDToZ3Wrap.PInvoke.set_task_pc(newPCHandle.AddrOfPinnedObject());
+		var newPCHandle = GCHandle.Alloc(newPC);
+		BDDToZ3Wrap.PInvoke.set_task_pc(GCHandle.ToIntPtr(newPCHandle));
 #else
 		pc = bddForm.And(pc);
 #endif

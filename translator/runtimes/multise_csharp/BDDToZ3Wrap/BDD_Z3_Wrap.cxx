@@ -164,12 +164,14 @@ void set_task_pc(void* pc)
 {
 	LACE_ME;
 	void** task_buf = (void**)__lace_dq_head->d;
+	printf("xxx worker %d: set from %p to %p\n", __lace_worker->worker, task_buf[2], pc);
 	task_buf[2] = pc;
 }
 void* get_task_pc()
 {
 	LACE_ME;
 	void** task_buf = (void**)__lace_dq_head->d;
+	printf("xxx worker %d: get %p\n", __lace_worker->worker, task_buf[2]);
 	return task_buf[2];
 }
 #endif
