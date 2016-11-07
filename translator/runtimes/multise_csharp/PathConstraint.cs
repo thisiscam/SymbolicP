@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using SCG = System.Collections.Generic;
 using BDDToZ3Wrap;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 #if USE_SYLVAN
 using bdd = SylvanSharp.bdd;
@@ -19,7 +20,9 @@ public static partial class PathConstraint
 	public static Context ctx;
 	public static Solver solver;
 
+#if !USE_SYLVAN
 	static bdd pc;
+#endif
 
 	static PathConstraint()
 	{
@@ -33,6 +36,10 @@ public static partial class PathConstraint
 					options.SylvanNumInitialCachesizeLg2, options.SylvanNumMaxCachesizeLg2,
 					options.SylvanGranularity
 		);
+		AppDomain.CurrentDomain.ProcessExit += (sender, e) => {
+			BDDLIB.quit();
+			SylvanSharp.Lace.Exit();
+		};
 #else
 		BDDLIB.init(options.BDDNumInitialNodes, options.BDDNumInitialNodes / options.BDDCacheRatio);
 		var x = BDDLIB.setcacheratio(options.BDDCacheRatio);
@@ -43,11 +50,21 @@ public static partial class PathConstraint
 		BDDLIB.autoreorder(BDDLIB.BDD_REORDER_NONE);
 #endif
 		BDDToZ3Wrap.Converter.Init(ctx);
-		pc = bdd.bddtrue;
+		
+		SetPCTrue();
 
 		InitSymVar();
 	}
-
+	
+	private static void SetPCTrue()
+	{
+#if USE_SYLVAN
+		BDDToZ3Wrap.PInvoke.set_task_pc(GCHandle.Alloc(bdd.bddtrue, GCHandleType.Pinned).AddrOfPinnedObject());
+#else
+		pc = bdd.bddtrue;
+#endif
+	}
+	
 	static SCG.List<SymbolicBool> sym_bool_vars;
 	static ValueSummary<int> solver_bool_var_cnt;
 	
@@ -55,7 +72,7 @@ public static partial class PathConstraint
 	public static void BeginRecover()
 	{
 		solver.Reset();
-		pc = bdd.bddtrue;
+		SetPCTrue();
 		decision_cnt = 0;
 		solver_bool_var_cnt = 0;
 		sym_bool_vars = new SCG.List<SymbolicBool>();
@@ -67,20 +84,39 @@ public static partial class PathConstraint
 		sym_bool_vars = new SCG.List<SymbolicBool>();
 		solver_bool_var_cnt = 0;
 	}
-
+	
 	public static bdd GetPC()
 	{
+#if USE_SYLVAN
+	 	return (bdd)GCHandle.FromIntPtr(BDDToZ3Wrap.PInvoke.get_task_pc()).Target;
+#else
 		return pc;
+#endif
 	}
 
 	public static void AddAxiom(bdd bddForm)
 	{
+#if USE_SYLVAN
+		var handle = GCHandle.FromIntPtr(BDDToZ3Wrap.PInvoke.get_task_pc());
+		var newPC = ((bdd)handle.Target).And(bddForm);
+		handle.Free();
+		var newPCHandle = GCHandle.Alloc(newPC, GCHandleType.Pinned);
+		BDDToZ3Wrap.PInvoke.set_task_pc(newPCHandle.AddrOfPinnedObject());
+#else
 		pc = bddForm.And(pc);
+#endif
 	}
 	
 	public static void RestorePC(bdd oldPC)
 	{
+#if USE_SYLVAN
+		var handle = GCHandle.FromIntPtr(BDDToZ3Wrap.PInvoke.get_task_pc());
+		handle.Free();
+		var oldPCHandle = GCHandle.Alloc(oldPC, GCHandleType.Pinned);
+		BDDToZ3Wrap.PInvoke.set_task_pc(oldPCHandle.AddrOfPinnedObject());
+#else
 		pc = oldPC;
+#endif
 	}
 	
 #region record_return_paths

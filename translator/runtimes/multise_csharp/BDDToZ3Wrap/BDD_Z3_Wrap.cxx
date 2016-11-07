@@ -158,4 +158,19 @@ void debug_print_used_bdd_vars()
 		printf("%d: %s\n", i, Z3_ast_to_string(ctx, bdd_vars_to_z3_formula[i]));
 	}
 }
+
+#ifdef USE_SYLVAN
+void set_task_pc(void* pc)
+{
+	LACE_ME;
+	void** task_buf = (void**)__lace_dq_head->d;
+	task_buf[2] = pc;
+}
+void* get_task_pc()
+{
+	LACE_ME;
+	void** task_buf = (void**)__lace_dq_head->d;
+	return task_buf[2];
+}
+#endif
 }

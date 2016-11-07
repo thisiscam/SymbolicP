@@ -416,14 +416,16 @@ public class ValueSummary<T>
 	{
 		return InvokeMethodHelper((v) => f.Invoke(v, arg1, arg2, arg3, arg4));
 	}
-
+	
 	public void InvokeMethodHelper(Action<T> f)
 	{
 		var pc = PathConstraint.GetPC();
 
-#if false
+#if USE_SYLVAN
 		SylvanSharp.Lace.ParallelFor((i) => 
 		{
+			// Set new task's pc to the current one
+			PathConstraint.RestorePC(pc);
 			var guardedTarget = this.values[i];
 #else
 		foreach (var guardedTarget in this.values) {
@@ -439,7 +441,7 @@ public class ValueSummary<T>
 				guardedTarget.value, guardedTarget.bddForm);
 			}			
 		}
-#if false
+#if USE_SYLVAN
 	    , this.values.Count);
 #endif
 	}
