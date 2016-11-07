@@ -372,10 +372,9 @@ public class ValueSummary<T>
 			if (newPC.FormulaBDDSolverSAT()) {
 				NullTargetCheck((c, v) => 
 				{
-					PathConstraint.PushScope();
 					PathConstraint.AddAxiom(c);
 					ret.Merge(f.Invoke(v));
-					PathConstraint.PopScope(); 
+					PathConstraint.RestorePC(pc); 
 				},
 				guardedTarget.value, guardedTarget.bddForm);
 			}			
@@ -433,10 +432,9 @@ public class ValueSummary<T>
 			if (newPC.FormulaBDDSolverSAT()) {
 				NullTargetCheck((c, v) => 
 				{
-					PathConstraint.PushScope();
 					PathConstraint.AddAxiom(c);
 					f.Invoke(v);
-					PathConstraint.PopScope(); 
+					PathConstraint.RestorePC(pc); 
 				},
 				guardedTarget.value, guardedTarget.bddForm);
 			}			
@@ -789,7 +787,8 @@ public static class ValueSummaryExt
 	}
 
 	private static PathConstraint.BranchPoint CondConcreteHelper(bdd trueBDD, bdd falseBDD)
-	{		
+	{	
+		var pc = PathConstraint.GetPC();
 		var trueFeasible = trueBDD.FormulaBDDSolverSAT();
 		var falseFeasible = falseBDD.FormulaBDDSolverSAT();
 #if DEBUG
@@ -811,20 +810,20 @@ public static class ValueSummaryExt
 #endif
 		if (trueFeasible) {
 			if (falseFeasible) {
-				return new PathConstraint.BranchPoint(trueBDD, falseBDD, PathConstraint.BranchPoint.State.Both);
+				return new PathConstraint.BranchPoint(trueBDD, falseBDD, PathConstraint.BranchPoint.State.Both, pc);
 			}
 			else {
-				return new PathConstraint.BranchPoint(trueBDD, null, PathConstraint.BranchPoint.State.True);
+				return new PathConstraint.BranchPoint(trueBDD, null, PathConstraint.BranchPoint.State.True, pc);
 			}
 		}
 		else {
 			if (falseFeasible) {
-				return new PathConstraint.BranchPoint(null, falseBDD, PathConstraint.BranchPoint.State.False);
+				return new PathConstraint.BranchPoint(null, falseBDD, PathConstraint.BranchPoint.State.False, pc);
 			}
 			else {
 				if (!PathConstraint.EvalPc())
 				{
-					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None);	
+					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None, pc);	
 				}
 				else 
 				{
@@ -857,10 +856,10 @@ public static class ValueSummaryExt
 #endif
 			if (b.values[0].value) {
 
-				return new PathConstraint.BranchPoint(bddForm, null, PathConstraint.BranchPoint.State.True);
+				return new PathConstraint.BranchPoint(bddForm, null, PathConstraint.BranchPoint.State.True, pc);
 			}
 			else {
-				return new PathConstraint.BranchPoint(null, bddForm, PathConstraint.BranchPoint.State.False);
+				return new PathConstraint.BranchPoint(null, bddForm, PathConstraint.BranchPoint.State.False, pc);
 			}
 		}
 		else if (b.values.Count == 2) {
@@ -874,7 +873,7 @@ public static class ValueSummaryExt
 		else {
 				if (!PathConstraint.EvalPc())
 				{
-					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None);	
+					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None, pc);	
 				}
 				else 
 				{
@@ -887,7 +886,6 @@ public static class ValueSummaryExt
 	public static PathConstraint.BranchPoint Cond(this ValueSummary<bool> b) 
 	{
 		var ret = _Cond(b);
-		PathConstraint.PushScope();
 		return ret;
  	}
 		
@@ -938,20 +936,20 @@ public static class ValueSummaryExt
 		}
 		if (predTrue != bdd.bddfalse) {
 			if (predFalse != bdd.bddfalse) {
-				return new PathConstraint.BranchPoint(predTrue, predFalse, PathConstraint.BranchPoint.State.Both);
+				return new PathConstraint.BranchPoint(predTrue, predFalse, PathConstraint.BranchPoint.State.Both, pc);
 			}
 			else {
-				return new PathConstraint.BranchPoint(predTrue, null, PathConstraint.BranchPoint.State.True);
+				return new PathConstraint.BranchPoint(predTrue, null, PathConstraint.BranchPoint.State.True, pc);
 			}
 		}
 		else {
 			if (predFalse != bdd.bddfalse) {
-				return new PathConstraint.BranchPoint(null, predFalse, PathConstraint.BranchPoint.State.False);
+				return new PathConstraint.BranchPoint(null, predFalse, PathConstraint.BranchPoint.State.False, pc);
 			}
 			else {
 				if (!PathConstraint.EvalPc())
 				{
-					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None);	
+					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None, pc);	
 				}
 				else 
 				{
@@ -969,7 +967,6 @@ public static class ValueSummaryExt
 	public static PathConstraint.BranchPoint Cond(this ValueSummary<SymbolicBool> b) 
 	{
 		var ret = _Cond(b);
-		PathConstraint.PushScope();
 		return ret;
  	}
 	
@@ -981,7 +978,6 @@ public static class ValueSummaryExt
 	public static PathConstraint.BranchPoint Cond(this ValueSummary<PBool> b) 
 	{
 		var ret = _Cond(b);
-		PathConstraint.PushScope();
 		return ret;
  	}
 

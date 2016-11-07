@@ -67,7 +67,7 @@ public class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
 
     public ValueSummary<SymbolicBool> PTypeEquals(ValueSummary<PList<T>> other)
     {
-        PathConstraint.PushFrame();
+        var _frame_pc = PathConstraint.GetPC();
         var vs_ret_3 = new ValueSummary<SymbolicBool>();
         var vs_cond_17 = (this._count.InvokeBinary<int, bool>((l, r) => l != r, other.GetField<int>(_ => _._count))).Cond();
         {
@@ -99,7 +99,7 @@ public class PList<T> : List<T>, IPType<PList<T>> where T : IPType<T>
             }
         }
 
-        PathConstraint.PopFrame();
+        PathConstraint.RestorePC(_frame_pc);
         return vs_ret_3;
     }
 }

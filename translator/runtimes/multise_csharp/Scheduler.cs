@@ -21,7 +21,7 @@ partial class Scheduler
     ValueSummary<List<PMachine>> machines = new ValueSummary<List<PMachine>>(new List<PMachine>());
     public ValueSummary<bool> ChooseAndRunMachine()
     {
-        PathConstraint.PushFrame();
+        var _frame_pc = PathConstraint.GetPC();
         var vs_ret_0 = new ValueSummary<bool>();
         ValueSummary<SchedulerChoice> chosen = this.ChooseMachine();
         var vs_cond_53 = (chosen.InvokeBinary<object, bool>((l, r) => l == r, new ValueSummary<object>(null))).Cond();
@@ -75,7 +75,7 @@ partial class Scheduler
         }
 
         vs_cond_53.MergeBranch();
-        PathConstraint.PopFrame();
+        PathConstraint.RestorePC(_frame_pc);
         return vs_ret_0;
     }
 

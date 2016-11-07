@@ -19,7 +19,7 @@ public static partial class PathConstraint
 	public static Context ctx;
 	public static Solver solver;
 
-	static SCG.List<bdd> pcs = new SCG.List<bdd>();
+	static bdd pc;
 
 	static PathConstraint()
 	{
@@ -28,8 +28,8 @@ public static partial class PathConstraint
 		var options = Program.options;
 
 #if USE_SYLVAN
-		BDDLIB.init(options.SylvanLaceNWorkers, options.SylvanLaceStack, 
-					options.SylvanNumInitialNodesLg2, options.SylvanNumMaxNodesLg2, 
+		SylvanSharp.Lace.Init(options.SylvanLaceNWorkers, options.SylvanLaceStack);
+		BDDLIB.init(options.SylvanNumInitialNodesLg2, options.SylvanNumMaxNodesLg2, 
 					options.SylvanNumInitialCachesizeLg2, options.SylvanNumMaxCachesizeLg2,
 					options.SylvanGranularity
 		);
@@ -43,7 +43,7 @@ public static partial class PathConstraint
 		BDDLIB.autoreorder(BDDLIB.BDD_REORDER_NONE);
 #endif
 		BDDToZ3Wrap.Converter.Init(ctx);
-		pcs.Add(bdd.bddtrue);
+		pc = bdd.bddtrue;
 
 		InitSymVar();
 	}
@@ -55,8 +55,7 @@ public static partial class PathConstraint
 	public static void BeginRecover()
 	{
 		solver.Reset();
-		pcs.Clear();
-		pcs.Add(bdd.bddtrue);
+		pc = bdd.bddtrue;
 		decision_cnt = 0;
 		solver_bool_var_cnt = 0;
 		sym_bool_vars = new SCG.List<SymbolicBool>();
@@ -71,34 +70,19 @@ public static partial class PathConstraint
 
 	public static bdd GetPC()
 	{
-		return pcs[pcs.Count - 1];
-	}
-
-	public static void PushScope()
-	{
-		pcs.Add(pcs[pcs.Count - 1]);
-	}
-
-	public static void PopScope(int count = 1)
-	{
-		pcs.RemoveRange(pcs.Count - count, count);
-	}
-
-	public static void PushFrame()
-	{
-		PushScope();
+		return pc;
 	}
 
 	public static void AddAxiom(bdd bddForm)
 	{
-		pcs[pcs.Count - 1] = bddForm.And(pcs[pcs.Count - 1]);
+		pc = bddForm.And(pc);
 	}
-
-	public static void PopFrame()
+	
+	public static void RestorePC(bdd oldPC)
 	{
-		PopScope();
+		pc = oldPC;
 	}
-
+	
 #region record_return_paths
 	public static void RecordReturnPath<T>(ValueSummary<T> ret, ValueSummary<T> val, BranchPoint bp)
 	{
@@ -137,8 +121,7 @@ public static partial class PathConstraint
 
 	public static LoopPoint BeginLoop()
 	{
-		PushScope();
-		return LoopPoint.NewLoopPoint();
+		return LoopPoint.NewLoopPoint(GetPC());
 	}
 
 	public static Stopwatch SolverStopWatch = new Stopwatch();

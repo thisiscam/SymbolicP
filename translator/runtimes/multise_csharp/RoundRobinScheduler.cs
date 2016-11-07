@@ -8,7 +8,7 @@ partial class Scheduler
     public ValueSummary<int> DelayBudget;
     private ValueSummary<SchedulerChoice> ChooseMachine()
     {
-        PathConstraint.PushFrame();
+        var _frame_pc = PathConstraint.GetPC();
         var vs_ret_0 = new ValueSummary<SchedulerChoice>();
         ValueSummary<bool> vs_lgc_tmp_0;
         ValueSummary<List<SchedulerChoice>> choices = new ValueSummary<List<Scheduler.SchedulerChoice>>(new List<SchedulerChoice>());
@@ -116,7 +116,7 @@ partial class Scheduler
             PathConstraint.RecordReturnPath(vs_ret_0, choices.InvokeMethod<int, Scheduler.SchedulerChoice>((_, a0) => _[a0], idx));
         }
 
-        PathConstraint.PopFrame();
+        PathConstraint.RestorePC(_frame_pc);
         return vs_ret_0;
     }
 }

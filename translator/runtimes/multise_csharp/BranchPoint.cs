@@ -29,8 +29,10 @@ public static partial class PathConstraint
 		private bool trueBranchAllEscaped;
 		private bool falseBranchAllEscaped;
 		private bdd returnPaths;
+		
+		private bdd oldPC;
 
-		public BranchPoint(bdd trueBDD, bdd falseBDD, State state)
+		public BranchPoint(bdd trueBDD, bdd falseBDD, State state, bdd oldPC)
 		{
 			this.state = state;
 			this.trueBDD = trueBDD;
@@ -38,6 +40,7 @@ public static partial class PathConstraint
 			this.returnPaths = bdd.bddfalse;
 			this.trueBranchAllEscaped = false;
 			this.falseBranchAllEscaped = false;
+			this.oldPC = oldPC;
 		}
 
 		public bool CondTrue()
@@ -53,11 +56,12 @@ public static partial class PathConstraint
 		{
 			if (state == State.Both) {
 				this.state = State.BothWithTrueDone;
-				PathConstraint.pcs[PathConstraint.pcs.Count - 1] = PathConstraint.pcs[PathConstraint.pcs.Count - 2].And(this.falseBDD);
+				RestorePC(this.oldPC);
+				AddAxiom(this.falseBDD);
 				return true;
 			}
 			else if (state == State.False) {
-				PathConstraint.AddAxiom(this.falseBDD);
+				AddAxiom(this.falseBDD);
 				return true;
 			}
 			else {
@@ -97,8 +101,8 @@ public static partial class PathConstraint
 
 		public bool MergeBranch()
 		{
-			PathConstraint.PopScope();
-			PathConstraint.pcs[PathConstraint.pcs.Count - 1] = PathConstraint.pcs[PathConstraint.pcs.Count - 1].And(this.returnPaths.Not());
+			RestorePC(this.oldPC);
+			AddAxiom(this.returnPaths.Not());
 			return !AllEscaped;
 		}
 
@@ -120,12 +124,14 @@ public static partial class PathConstraint
 		bool AllEscaped;
 		bool CurrentIterationAllEscaped;
 		bdd returnPaths;
+		bdd oldPC;
 		
-		public static LoopPoint NewLoopPoint()
+		public static LoopPoint NewLoopPoint(bdd pc)
 		{
 			var ret = new LoopPoint();
 			ret.AllEscaped = true;
 			ret.returnPaths = bdd.bddfalse;
+			ret.oldPC = pc;
 			return ret;
 		}
 		
@@ -137,8 +143,8 @@ public static partial class PathConstraint
 
 		public bool MergeBranch()
 		{
-			PathConstraint.PopScope();
-			PathConstraint.pcs[PathConstraint.pcs.Count - 1] = PathConstraint.pcs[PathConstraint.pcs.Count - 1].And(this.returnPaths.Not());
+			PathConstraint.RestorePC(oldPC);
+			AddAxiom(this.returnPaths.Not());
 			return !this.AllEscaped;
 		}
 

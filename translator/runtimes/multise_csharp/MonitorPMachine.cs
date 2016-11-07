@@ -13,7 +13,7 @@ abstract class MonitorPMachine
     protected ExitFunction[] ExitFunctions;
     public void ServeEvent(ValueSummary<PInteger> e, ValueSummary<IPType> payload)
     {
-        PathConstraint.PushFrame();
+        var _frame_pc = PathConstraint.GetPC();
         var vs_cond_9 = PathConstraint.BeginLoop();
         for (ValueSummary<int> i = 0; vs_cond_9.Loop(i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count))); i.Increment())
         {
@@ -59,7 +59,7 @@ abstract class MonitorPMachine
             throw new SystemException("Unhandled event");
         }
 
-        PathConstraint.PopFrame();
+        PathConstraint.RestorePC(_frame_pc);
     }
 
     protected void RaiseEvent(ValueSummary<PInteger> e, ValueSummary<IPType> payload)
