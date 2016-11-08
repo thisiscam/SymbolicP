@@ -61,7 +61,7 @@ partial class Scheduler
                             {
                                 ValueSummary<PMachine> targetMachine = dequeuedItem.GetField<PMachine>(_ => _.target);
                                 Console.WriteLine(chosenSourceMachine.ToString() + chosenSourceMachine.GetHashCode() + " sends event " + dequeuedItem.GetField<PInteger>(_ => _.e).ToString() + " to " + targetMachine.ToString() + targetMachine.GetHashCode());
-                                targetMachine.InvokeMethod<int, PInteger, IPType>((_, a0, a1, a2) => _.RunStateMachine(a0, a1, a2), chosen.GetField<int>(_ => _.targetMachineStateIndex), dequeuedItem.GetField<PInteger>(_ => _.e), dequeuedItem.GetField<IPType>(_ => _.payload));
+                                targetMachine.InvokeMethodParallel<int, PInteger, IPType>((_, a0, a1, a2) => _.RunStateMachine(a0, a1, a2), chosen.GetField<int>(_ => _.targetMachineStateIndex), dequeuedItem.GetField<PInteger>(_ => _.e), dequeuedItem.GetField<IPType>(_ => _.payload));
                             }
                         }
 
@@ -81,12 +81,12 @@ partial class Scheduler
 
     public void SendMsg(ValueSummary<PMachine> source, ValueSummary<PMachine> target, ValueSummary<PInteger> e, ValueSummary<IPType> payload)
     {
-        source.GetConstField<List<SendQueueItem>>(_ => _.sendQueue).InvokeMethod<SendQueueItem>((_, a0) => _.Add(a0), new ValueSummary<SendQueueItem>(new SendQueueItem(target, e, payload)));
+        source.GetConstField<List<SendQueueItem>>(_ => _.sendQueue).InvokeMethodParallel<SendQueueItem>((_, a0) => _.Add(a0), new ValueSummary<SendQueueItem>(new SendQueueItem(target, e, payload)));
     }
 
     public void NewMachine(ValueSummary<PMachine> source, ValueSummary<PMachine> newMachine, ValueSummary<IPType> payload)
     {
-        source.GetConstField<List<SendQueueItem>>(_ => _.sendQueue).InvokeMethod<SendQueueItem>((_, a0) => _.Add(a0), new ValueSummary<SendQueueItem>(new SendQueueItem(newMachine, (PInteger)Constants.EVENT_NEW_MACHINE, payload)));
+        source.GetConstField<List<SendQueueItem>>(_ => _.sendQueue).InvokeMethodParallel<SendQueueItem>((_, a0) => _.Add(a0), new ValueSummary<SendQueueItem>(new SendQueueItem(newMachine, (PInteger)Constants.EVENT_NEW_MACHINE, payload)));
     }
 
     public ValueSummary<SymbolicBool> RandomBool()

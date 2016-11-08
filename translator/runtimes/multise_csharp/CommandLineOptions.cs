@@ -39,7 +39,13 @@ public class CommandLineOptions
 
     [Option('i', "num-iter", DefaultValue=200, HelpText = "Max number of scheduler steps to explore")]
     public int MaxNumSchedulerIterations { get; set; }
-
+	
+    [Option('e', "error-trace-file", DefaultValue="error.json", HelpText = "Error trace file to write/load from")]
+	public string ErrorTraceFile{ get; set; }
+	
+    [Option('r', "re-run", DefaultValue=false, HelpText = "If true, rerun application with trace file given in -e")]
+	public bool Rerun { get; set; }
+	
 #if ROUND_ROBIN_SCHEDULER
 	[Option('d', "delay-budget", DefaultValue=1, HelpText = "Delay budget for scheduler")]
     public int DelayBudget { get; set; }

@@ -30,45 +30,20 @@ public class Program {
         }
 	}
 	
-	private static void ResetMachines()
-	{
-		var subclasses =
-		from assembly in AppDomain.CurrentDomain.GetAssemblies()
-		    from type in assembly.GetTypes()
-		    where type.IsSubclassOf(typeof(PMachine))
-		    select type;
-		foreach(var machineSubclass in subclasses)
-		{
-			var allocsField = machineSubclass.GetField("_allAllocsCounter", System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic);
-			allocsField.SetValue(null, new ValueSummary<int>(0));
-			var allAllocsField = machineSubclass.GetField("_allAllocs", System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic);
-			allAllocsField.SetValue(null, new System.Collections.Generic.List<PMachine>());
-		}
-	}
-	
     static int Main(string[] args) {
 		CommandLine.Parser.Default.ParseArguments(args, options);
-		try {
-	        Run();
-	    } catch (Exception e) {
-	    	var counterExampleBDD = PathConstraint.GetPC();
-			Console.WriteLine("Program encountered exception at PC = {0}(in BDD form), exception trace follows", counterExampleBDD);
-			counterExampleBDD = PathConstraint.ExtractOneCounterExampleFromAggregatePC(counterExampleBDD);
-			PathConstraint.BeginRecover();
-			ResetMachines();
-			PathConstraint.AddAxiom(counterExampleBDD);
+		if(options.Rerun) {
+			PathConstraint.RecoverFromTrace(options.ErrorTraceFile);
+			Run();
+		} else {
 			try {
-				Console.WriteLine("Rerun recovery trace, with counter example PC = {0}", counterExampleBDD);
-				Console.WriteLine("Used BDD vars mapped as follow: ");
-				BDDToZ3Wrap.PInvoke.debug_print_used_bdd_vars();
-				Run();
-			} catch (Exception ex) {
-				Console.WriteLine(ex);
+		        Run();
+		    } catch (Exception e) {
+		    	PathConstraint.SaveTrace(options.ErrorTraceFile);
+		    	Console.WriteLine("Encountered error with the following trace: {0}", e);
+				Console.WriteLine("Writing P trace to {0}...", options.ErrorTraceFile);
 			}
 		}
-#if USE_SYLVAN
-		//SylvanSharp.SylvanSharp.exit_lace();
-#endif
         return 0;
     }
 }

@@ -33,7 +33,7 @@ internal class GuardedValue<T>
 	}
 }
 
-public class ValueSummary<T>
+public partial class ValueSummary<T>
 {
 
 	internal SCG.List<GuardedValue<T>> values = new SCG.List<GuardedValue<T>>();
@@ -75,23 +75,6 @@ public class ValueSummary<T>
 #if DEBUG
 		ret.AssertPredExclusion();
 #endif
-		return ret;
-	}
-
-	public static ValueSummary<ValueSummary<T>[]> NewVSArray(ValueSummary<int> size)
-	{
-		var pc = PathConstraint.GetPC();
-		var ret = new ValueSummary<ValueSummary<T>[]>();
-		foreach (var guardedSize in size.values) {
-			var bddForm = pc.And(guardedSize.bddForm);
-			if (bddForm.FormulaBDDSAT()) {
-				var array = new ValueSummary<T>[guardedSize.value];
-				for (int i = 0; i < guardedSize.value; i++) {
-					array[i] = new ValueSummary<T>(default(T));
-				}
-				ret.values.Add(new GuardedValue<ValueSummary<T>[]>(bddForm, array));
-			}
-		}
 		return ret;
 	}
 
@@ -421,15 +404,7 @@ public class ValueSummary<T>
 	{
 		var pc = PathConstraint.GetPC();
 
-#if USE_SYLVAN
-		SylvanSharp.Lace.ParallelFor((i) => 
-		{
-			// Set new task's pc to the current one
-			PathConstraint.ForceSetPC(pc);
-			var guardedTarget = this.values[i];
-#else
 		foreach (var guardedTarget in this.values) {
-#endif 
 			bdd newPC = pc.And(guardedTarget.bddForm);
 			if (newPC.FormulaBDDSolverSAT()) {
 				NullTargetCheck((c, v) => 
@@ -441,10 +416,6 @@ public class ValueSummary<T>
 				guardedTarget.value, guardedTarget.bddForm);
 			}			
 		}
-#if USE_SYLVAN
-	    , this.values.Count);
-	    PathConstraint.ForceSetPC(pc);
-#endif
 	}
 
 	public void InvokeMethod(Action<T> f)

@@ -6,6 +6,8 @@ using SCG = System.Collections.Generic;
 using BDDToZ3Wrap;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.IO;
+using System.Runtime.Serialization.Json;
 
 #if USE_SYLVAN
 using bdd = SylvanSharp.bdd;
@@ -42,10 +44,10 @@ public static partial class PathConstraint
 		};
 #else
 		BDDLIB.init(options.BDDNumInitialNodes, options.BDDNumInitialNodes / options.BDDCacheRatio);
-		var x = BDDLIB.setcacheratio(options.BDDCacheRatio);
-		x = BDDLIB.setvarnum(options.BDDNumVars);
+		BDDLIB.setcacheratio(options.BDDCacheRatio);
+		BDDLIB.setvarnum(options.BDDNumVars);
 		Console.WriteLine(BDDLIB.varnum());
-		x = BDDLIB.setmaxincrease(options.BDDMaxIncrease);
+		BDDLIB.setmaxincrease(options.BDDMaxIncrease);
 		BDDLIB.reorder_verbose(2);
 		BDDLIB.autoreorder(BDDLIB.BDD_REORDER_NONE);
 #endif
@@ -67,18 +69,7 @@ public static partial class PathConstraint
 	
 	static SCG.List<SymbolicBool> sym_bool_vars;
 	static ValueSummary<int> solver_bool_var_cnt;
-	
-	private static bool recovering = false;
-	public static void BeginRecover()
-	{
-		solver.Reset();
-		ForceSetPC(bdd.bddtrue);
-		decision_cnt = 0;
-		solver_bool_var_cnt = 0;
-		sym_bool_vars = new SCG.List<SymbolicBool>();
-		recovering = true;
-	}
-
+		
 	private static void InitSymVar()
 	{
 		sym_bool_vars = new SCG.List<SymbolicBool>();
@@ -227,24 +218,36 @@ public static partial class PathConstraint
 				return fresh_const;
 			}, sym_bool_vars, solver_bool_var_cnt);
 	}
-	
+
+#if USE_SYLVAN
+	private static IntPtr mutex = SylvanSharp.Lace.CreateMutex();
+#endif
+
 	public static ValueSummary<T> Allocate<T>(Func<int, T> f, SCG.List<T> allAllocated, ValueSummary<int> counter)
     {
     	var ret = new ValueSummary<T>();
-    	var pc = PathConstraint.GetPC();
-    	foreach(var allocCnt in counter.values)
-    	{
-    		var bddForm = allocCnt.bddForm.And(pc);
-    		if(bddForm.FormulaBDDSAT())
-    		{
-    			if(allocCnt.value >= allAllocated.Count)
-    			{
-    				allAllocated.Add(f.Invoke(allocCnt.value));
+	   	var pc = PathConstraint.GetPC();
+#if USE_SYLVAN
+    	SylvanSharp.Lace.LockRegion(mutex, () => 
+#endif
+		{
+	    	foreach(var allocCnt in counter.values)
+	    	{
+	    		var bddForm = allocCnt.bddForm.And(pc);
+	    		if(bddForm.FormulaBDDSAT())
+	    		{
+	    			if(allocCnt.value >= allAllocated.Count)
+	    			{
+	    				allAllocated.Add(f.Invoke(allocCnt.value));
+					}
+					ret.AddValue(bddForm, allAllocated[allocCnt.value]);
 				}
-				ret.AddValue(bddForm, allAllocated[allocCnt.value]);
 			}
+			counter.Increment();
 		}
-		counter.Increment();
+#if USE_SYLVAN
+		);
+#endif
 		return ret;
 	}
 	
@@ -282,7 +285,7 @@ public static partial class PathConstraint
 	{
 		var pc = GetPC();
 		int num_decision_vars = -1;
-		if(recovering) {
+		if(Program.options.Rerun) {
 			num_decision_vars = num_decision_vars_history[decision_cnt];
 		} else {
 			var max_count = count.values.Max((GuardedValue<int> arg) => 
@@ -360,7 +363,100 @@ public static partial class PathConstraint
 		}
 		return false;
  	}
+ 
+ #region trace
+ 	[Serializable]
+ 	private class Trace {
+ 		public SCG.List<int> NumDecisionVarsHistory { get; set;}
+ 		public string FailurePc { get; set; }
+ 		public string FailureOnePc {get; set; }
+ 		public SCG.List<string> BDDZ3Vars{ get; set;}
+	}
+ 
+ #if USE_SYLVAN
+	private static string BDDToSavedString(bdd b)
+ 	{
+ 		string tmpfile = Path.GetTempFileName();
+ 		SylvanSharp.SylvanSharp.sylvan_serialize_reset();
+ 		var key = SylvanSharp.SylvanSharp.sylvan_serialize_add(b.Id);
+ 		SylvanSharp.SylvanSharp.sylvan_serialize_tofile(tmpfile);
+ 		string s = File.ReadAllText(tmpfile);
+ 		File.Delete(tmpfile);
+ 		return String.Format("{0}|{1}", key, s);
+ 	}
  	
+ 	private static bdd SavedStringToBDD(string s)
+ 	{
+ 		var key_bdd_pair = s.Split('|');
+ 		string tmpfile = Path.GetTempFileName();
+ 		File.WriteAllText(tmpfile, key_bdd_pair[1]);
+ 		SylvanSharp.SylvanSharp.sylvan_serialize_fromfile(s);
+ 		var i = SylvanSharp.SylvanSharp.sylvan_serialize_get_reversed(Convert.ToUInt64(key_bdd_pair[0]));
+ 		File.Delete(tmpfile);
+ 		return new bdd(i);
+ 	}
+#else
+ 	private static string BDDToSavedString(bdd b)
+ 	{
+ 		string tmpfile = Path.GetTempFileName();
+ 		BuDDySharp.BuDDySharp.fnsave(tmpfile, b.Id);
+ 		string s = File.ReadAllText(tmpfile);
+ 		File.Delete(tmpfile);
+ 		return s;
+ 	}
+ 	
+ 	private static bdd SavedStringToBDD(string s)
+ 	{
+ 		int i = 0;
+ 		string tmpfile = Path.GetTempFileName();
+ 		File.WriteAllText(tmpfile, s);
+ 		BuDDySharp.BuDDySharp.fnload(tmpfile, ref i);
+ 		File.Delete(tmpfile);
+ 		return new bdd(i);
+ 	}
+ #endif
+ 
+ 	public static void SaveTrace(string tracefile)
+ 	{
+ 		FileStream trace_stream = new FileStream(tracefile, FileMode.Create);
+		DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(Trace));
+		var trace = new Trace();
+		trace.NumDecisionVarsHistory = num_decision_vars_history;
+		var pc = GetPC();
+		trace.FailurePc = BDDToSavedString(pc);
+		var onePc = ExtractOneCounterExampleFromAggregatePC(pc);
+		trace.FailureOnePc = BDDToSavedString(onePc);
+		var recover = SavedStringToBDD(trace.FailureOnePc);
+		if(!recover.EqualEqual(onePc)) {
+			Debugger.Break();
+		}
+		trace.BDDZ3Vars = BDDToZ3Wrap.Converter.GetAllUsedFormulas().Select((arg1) => arg1.ToString()).ToList();
+		ser.WriteObject(trace_stream, trace);
+ 	}
+ 	
+ 	public static void RecoverFromTrace(string tracefile)
+ 	{
+ 		FileStream trace_stream = new FileStream(tracefile, FileMode.Open);
+		DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(Trace));
+ 		var trace = (Trace)ser.ReadObject(trace_stream);
+ 		num_decision_vars_history = trace.NumDecisionVarsHistory;
+ 		var pc = SavedStringToBDD(trace.FailureOnePc);
+ 		ForceSetPC(pc);
+ 		foreach(var bs in trace.BDDZ3Vars)
+ 		{
+ 			/* Very hacky way to deserialize z3 formulas.. */
+ 			BoolExpr formula = null;
+ 			if(bs.Contains("(")) {
+ 				// TODO this is incorrect as Z3 cannot parse expression without decl
+ 				formula = ctx.ParseSMTLIB2String(String.Format("(assert {0})", bs));
+			} else {
+ 				formula = ctx.MkBoolConst(bs);
+			}
+ 			formula.ToBDD();
+ 		}
+ 	}
+#endregion
+
 #region BDD_Z3_Ext
 	public static bool FormulaBDDSAT(this bdd x)
 	{
