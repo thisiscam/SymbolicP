@@ -49,7 +49,7 @@
     <DebugSymbols>true</DebugSymbols>
     <Optimize>false</Optimize>
     <OutputPath>bin\x64\Release</OutputPath>
-    <DefineConstants></DefineConstants>
+    <DefineConstants>USE_SYLVAN</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x64</PlatformTarget>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -66,12 +66,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <None Include="build\libBDD_Z3_Wrap.so">
-      <Link>libBDD_Z3_Wrap.so</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="build\libBDD_SYLVAN_Z3_Wrap.so">
       <Link>libBDD_SYLVAN_Z3_Wrap.so</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="build\libBDD_BUDDY_Z3_Wrap.so">
+      <Link>libBDD_BUDDY_Z3_Wrap.so</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

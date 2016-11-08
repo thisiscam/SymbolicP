@@ -33,7 +33,6 @@ public static partial class PathConstraint
 		var options = Program.options;
 
 #if USE_SYLVAN
-		SylvanSharp.Lace.Init(options.SylvanLaceNWorkers, options.SylvanLaceStack);
 		BDDLIB.init(options.SylvanNumInitialNodesLg2, options.SylvanNumMaxNodesLg2, 
 					options.SylvanNumInitialCachesizeLg2, options.SylvanNumMaxCachesizeLg2,
 					options.SylvanGranularity
@@ -364,34 +363,38 @@ public static partial class PathConstraint
 		return false;
  	}
  
- #region trace
+#region trace
  	[Serializable]
  	private class Trace {
  		public SCG.List<int> NumDecisionVarsHistory { get; set;}
+#if USE_SYLVAN
+ 		public Tuple<byte[], ulong> FailurePc { get; set; }
+ 		public Tuple<byte[], ulong> FailureOnePc {get; set; }
+#else
  		public string FailurePc { get; set; }
  		public string FailureOnePc {get; set; }
+#endif
  		public SCG.List<string> BDDZ3Vars{ get; set;}
 	}
  
  #if USE_SYLVAN
-	private static string BDDToSavedString(bdd b)
+	private static Tuple<byte[], ulong> BDDToSavedString(bdd b)
  	{
  		string tmpfile = Path.GetTempFileName();
  		SylvanSharp.SylvanSharp.sylvan_serialize_reset();
  		var key = SylvanSharp.SylvanSharp.sylvan_serialize_add(b.Id);
  		SylvanSharp.SylvanSharp.sylvan_serialize_tofile(tmpfile);
- 		string s = File.ReadAllText(tmpfile);
+ 		byte[] s = File.ReadAllBytes(tmpfile);
  		File.Delete(tmpfile);
- 		return String.Format("{0}|{1}", key, s);
+ 		return Tuple.Create(s, key);
  	}
  	
- 	private static bdd SavedStringToBDD(string s)
+ 	private static bdd SavedStringToBDD(Tuple<byte[], ulong> s)
  	{
- 		var key_bdd_pair = s.Split('|');
  		string tmpfile = Path.GetTempFileName();
- 		File.WriteAllText(tmpfile, key_bdd_pair[1]);
- 		SylvanSharp.SylvanSharp.sylvan_serialize_fromfile(s);
- 		var i = SylvanSharp.SylvanSharp.sylvan_serialize_get_reversed(Convert.ToUInt64(key_bdd_pair[0]));
+ 		File.WriteAllBytes(tmpfile, s.Item1);
+ 		SylvanSharp.SylvanSharp.sylvan_serialize_fromfile(tmpfile);
+ 		var i = SylvanSharp.SylvanSharp.sylvan_serialize_get_reversed(s.Item2);
  		File.Delete(tmpfile);
  		return new bdd(i);
  	}
