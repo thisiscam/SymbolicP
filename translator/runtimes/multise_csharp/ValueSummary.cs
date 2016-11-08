@@ -38,14 +38,14 @@ public partial class ValueSummary<T>
 
 	internal SCG.List<GuardedValue<T>> values = new SCG.List<GuardedValue<T>>();
 
-#if DEBUG_VS
+#if false
 	private static SCG.List<WeakReference<ValueSummary<T>>> ALL_VS = new SCG.List<WeakReference<ValueSummary<T>>>();
 #endif
 
 	#region constructor
 	public ValueSummary()
 	{
-#if DEBUG_VS
+#if false
 		ALL_VS.Add (new WeakReference<ValueSummary<T>>(this));
 #endif
 	}
@@ -72,7 +72,7 @@ public partial class ValueSummary<T>
 				ret.values.Add(new GuardedValue<T>(bddForm, val.value));
 			}
 		}
-#if DEBUG
+#if DEBUG_VS
 		ret.AssertPredExclusion();
 #endif
 		return ret;
@@ -112,7 +112,7 @@ public partial class ValueSummary<T>
 #endif
 			this.values.Add(new GuardedValue<T>(pred, val));
 		}
-#if DEBUG
+#if DEBUG_VS
 		this.AssertPredExclusion();
 #endif
 		//MergeMax();
@@ -244,7 +244,7 @@ public partial class ValueSummary<T>
 #if MERGE_PVAL
 		MergeMax();
 #endif
-#if DEBUG
+#if DEBUG_VS
 		this.AssertPredExclusion();
 #endif
 	}
@@ -471,7 +471,7 @@ public partial class ValueSummary<T>
 				}
 			}
 		}
-#if DEBUG
+#if DEBUG_VS
 		ret.AssertPredExclusion();
 #endif
 		return ret;
@@ -765,7 +765,7 @@ public static class ValueSummaryExt
 		var pc = PathConstraint.GetPC();
 		var trueFeasible = trueBDD.FormulaBDDSolverSAT();
 		var falseFeasible = falseBDD.FormulaBDDSolverSAT();
-#if DEBUG
+#if DEBUG_VS
 		if (trueFeasible && falseFeasible) {
 			var a0 = trueBDD.ToZ3Expr();
 			var a1 = falseBDD.ToZ3Expr();
@@ -822,7 +822,7 @@ public static class ValueSummaryExt
 		}
 		if (b.values.Count == 1) {
 			var bddForm = b.values[0].bddForm.And(pc);
-#if DEBUG
+#if DEBUG_VS
 			if (!bddForm.FormulaBDDSolverSAT()) 
 			{
 				Debugger.Break();

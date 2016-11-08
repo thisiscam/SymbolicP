@@ -70,6 +70,10 @@
       <Link>libBDD_Z3_Wrap.so</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="build\libBDD_SYLVAN_Z3_Wrap.so">
+      <Link>libBDD_SYLVAN_Z3_Wrap.so</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\libraries\BuDDySharp\BuDDySharp\BuDDySharp\BuDDySharp.csproj">

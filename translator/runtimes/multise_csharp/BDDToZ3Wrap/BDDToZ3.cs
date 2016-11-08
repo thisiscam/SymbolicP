@@ -86,37 +86,41 @@ namespace BDDToZ3Wrap
 	
 	public static class PInvoke
 	{
-		
-		const string Z3_DLL_NAME = "BDD_Z3_Wrap";
 
-		[DllImport(Z3_DLL_NAME)]
+#if USE_SYLVAN 
+		const string DLLNAME = "BDD_SYLVAN_Z3_WRAP";
+#else
+		const string DLLNAME = "BDD_BUDDY_Z3_WRAP";
+#endif
+
+		[DllImport(DLLNAME)]
 		public extern static void init_bdd_z3_wrap(IntPtr ctx); 
 
-		[DllImport(Z3_DLL_NAME)]
+		[DllImport(DLLNAME)]
 		public extern static IntPtr bdd_to_Z3_formula(BDD a0);
 
-		[DllImport(Z3_DLL_NAME)]
+		[DllImport(DLLNAME)]
 		public extern static BDD Z3_formula_to_bdd(IntPtr ast);
 		
-		[DllImport(Z3_DLL_NAME)]
+		[DllImport(DLLNAME)]
 		public extern static IntPtr get_ith_Z3_formula(int i);
 		
-		[DllImport(Z3_DLL_NAME)]
+		[DllImport(DLLNAME)]
 		public extern static int get_num_formulas();
 	
-		[DllImport(Z3_DLL_NAME)]
+		[DllImport(DLLNAME)]
 		public extern static void debug_print_used_bdd_vars();
 		
-		[DllImport(Z3_DLL_NAME)]
+		[DllImport(DLLNAME)]
 		public unsafe extern static void force_set_task_pc(BDD bdd);
 
-		[DllImport(Z3_DLL_NAME)]
+		[DllImport(DLLNAME)]
 		public unsafe extern static void set_task_pc(BDD bdd);
 		
-		[DllImport(Z3_DLL_NAME)]
+		[DllImport(DLLNAME)]
 		public unsafe extern static BDD get_task_pc();
 
-		[DllImport(Z3_DLL_NAME)]
+		[DllImport(DLLNAME)]
 		public unsafe extern static void task_pc_addaxiom(BDD bdd);
 	}
 }
