@@ -97,6 +97,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Xml" />
     <Reference Include="Microsoft.Z3">
       <HintPath>@lib_dir/Microsoft.Z3.dll</HintPath>
     </Reference>

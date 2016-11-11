@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Reflection;
 
 #if USE_SYLVAN
 using SylvanSharp;
@@ -60,6 +61,18 @@ public partial class ValueSummary<T>
 #else
 		InvokeMethodHelper(f);
 #endif
+	}
+
+	public void InvokeParallel(params object[] args)
+	{
+		InvokeMethodParallelHelper(t => {
+				try {
+					(t as Delegate).DynamicInvoke(args);
+				} catch (TargetInvocationException ex) {
+					throw ex.InnerException;
+				}
+			}
+		);
 	}
 
 	public ValueSummary<R> InvokeMethodParallel<R>(Func<T, ValueSummary<R>> f)

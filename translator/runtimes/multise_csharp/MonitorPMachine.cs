@@ -12,67 +12,55 @@ abstract class MonitorPMachine
     protected TransitionFunction[, ] Transitions;
     protected ExitFunction[] ExitFunctions;
     
-#if USE_SYLVAN
-    private IntPtr _mutex = SylvanSharp.Lace.CreateMutex();
-#endif
-
     public void ServeEvent(ValueSummary<PInteger> e, ValueSummary<IPType> payload)
     {
-#if USE_SYLVAN
-		SylvanSharp.Lace.LockRegion(_mutex, () =>
-#endif 
-		{
-	        var _frame_pc = PathConstraint.GetPC();
-	        var vs_cond_9 = PathConstraint.BeginLoop();
-	        for (ValueSummary<int> i = 0; vs_cond_9.Loop(i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count))); i.Increment())
-	        {
-	            ValueSummary<bool> vs_lgc_tmp_0;
-	            ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], i);
-	            var vs_cond_8 = ((new Func<ValueSummary<bool>>(() =>
-	            {
-	                var vs_cond_39 = ((vs_lgc_tmp_0 = ValueSummary<bool>.InitializeFrom(this.DeferedSet.GetIndex(state, e).InvokeUnary<bool>(_ => !_)))).Cond();
-	                var vs_cond_ret_39 = new ValueSummary<bool>();
-	                if (vs_cond_39.CondTrue())
-	                    vs_cond_ret_39.Merge(vs_lgc_tmp_0.InvokeBinary<bool, bool>((l, r) => l & r, this.Transitions.GetIndex(state, e).InvokeBinary<MonitorPMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<MonitorPMachine.TransitionFunction>(null))));
-	                if (vs_cond_39.CondFalse())
-	                    vs_cond_ret_39.Merge(vs_lgc_tmp_0);
-	                vs_cond_39.MergeBranch();
-	                return vs_cond_ret_39;
-	            }
-	
-	            )())).Cond();
-	            {
-	                if (vs_cond_8.CondTrue())
-	                {
-	                    var vs_cond_7 = (this.IsGotoTransition.GetIndex(state, e)).Cond();
-	                    {
-	                        if (vs_cond_7.CondTrue())
-	                        {
-	                            this.states.InvokeMethod<int, int>((_, a0, a1) => _.RemoveRange(a0, a1), 0, i);
-	                        }
-	                    }
-	
-	                    vs_cond_7.MergeBranch();
-	                    this.retcode.Assign<int>(Constants.EXECUTE_FINISHED);
-	                    ValueSummary<TransitionFunction> transition_fn = this.Transitions.GetIndex(state, e);
-	                    transition_fn.Invoke(payload);
-	                    PathConstraint.RecordReturnPath(vs_cond_8);
-	                }
-	            }
-	
-	            vs_cond_8.MergeBranch(vs_cond_9);
-	        }
-	
-	        if (vs_cond_9.MergeBranch())
-	        {
-	            throw new SystemException("Unhandled event");
-	        }
-	
-	        PathConstraint.RestorePC(_frame_pc);
-	   	}
-#if USE_SYLVAN
-		);
-#endif
+        var _frame_pc = PathConstraint.GetPC();
+        var vs_cond_9 = PathConstraint.BeginLoop();
+        for (ValueSummary<int> i = 0; vs_cond_9.Loop(i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count))); i.Increment())
+        {
+            ValueSummary<bool> vs_lgc_tmp_0;
+            ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], i);
+            var vs_cond_8 = ((new Func<ValueSummary<bool>>(() =>
+            {
+                var vs_cond_39 = ((vs_lgc_tmp_0 = ValueSummary<bool>.InitializeFrom(this.DeferedSet.GetIndex(state, e).InvokeUnary<bool>(_ => !_)))).Cond();
+                var vs_cond_ret_39 = new ValueSummary<bool>();
+                if (vs_cond_39.CondTrue())
+                    vs_cond_ret_39.Merge(vs_lgc_tmp_0.InvokeBinary<bool, bool>((l, r) => l & r, this.Transitions.GetIndex(state, e).InvokeBinary<MonitorPMachine.TransitionFunction, bool>((l, r) => l != r, new ValueSummary<MonitorPMachine.TransitionFunction>(null))));
+                if (vs_cond_39.CondFalse())
+                    vs_cond_ret_39.Merge(vs_lgc_tmp_0);
+                vs_cond_39.MergeBranch();
+                return vs_cond_ret_39;
+            }
+
+            )())).Cond();
+            {
+                if (vs_cond_8.CondTrue())
+                {
+                    var vs_cond_7 = (this.IsGotoTransition.GetIndex(state, e)).Cond();
+                    {
+                        if (vs_cond_7.CondTrue())
+                        {
+                            this.states.InvokeMethod<int, int>((_, a0, a1) => _.RemoveRange(a0, a1), 0, i);
+                        }
+                    }
+
+                    vs_cond_7.MergeBranch();
+                    this.retcode.Assign<int>(Constants.EXECUTE_FINISHED);
+                    ValueSummary<TransitionFunction> transition_fn = this.Transitions.GetIndex(state, e);
+                    transition_fn.Invoke(payload);
+                    PathConstraint.RecordReturnPath(vs_cond_8);
+                }
+            }
+
+            vs_cond_8.MergeBranch(vs_cond_9);
+        }
+
+        if (vs_cond_9.MergeBranch())
+        {
+            throw new SystemException("Unhandled event");
+        }
+
+        PathConstraint.RestorePC(_frame_pc);
     }
 
     protected void RaiseEvent(ValueSummary<PInteger> e, ValueSummary<IPType> payload)

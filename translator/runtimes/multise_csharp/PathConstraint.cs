@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.IO;
 using System.Runtime.Serialization.Json;
+using System.Threading;
 
 #if USE_SYLVAN
 using bdd = SylvanSharp.bdd;
@@ -219,7 +220,7 @@ public static partial class PathConstraint
 	}
 
 #if USE_SYLVAN
-	private static IntPtr mutex = SylvanSharp.Lace.CreateMutex();
+	private static Int64 mutex = SylvanSharp.Lace.CreateMutex();
 #endif
 
 	public static ValueSummary<T> Allocate<T>(Func<int, T> f, SCG.List<T> allAllocated, ValueSummary<int> counter)
@@ -227,7 +228,7 @@ public static partial class PathConstraint
     	var ret = new ValueSummary<T>();
 	   	var pc = PathConstraint.GetPC();
 #if USE_SYLVAN
-    	SylvanSharp.Lace.LockRegion(mutex, () => 
+    	SylvanSharp.Lace.LockRegion(ref mutex, () => 
 #endif
 		{
 	    	foreach(var allocCnt in counter.values)
@@ -280,8 +281,10 @@ public static partial class PathConstraint
 	}
 	
 	private static SCG.List<int> num_decision_vars_history = new SCG.List<int>();
+	private static Stopwatch riwatch = new Stopwatch();
 	public static ValueSummary<int> ChooseRandomIndex(ValueSummary<int> count)
 	{
+		riwatch.Restart();
 		var pc = GetPC();
 		int num_decision_vars = -1;
 		if(Program.options.Rerun) {
@@ -317,6 +320,8 @@ public static partial class PathConstraint
 				idx.AddValue(bddForm.And(DecisionTreeFromIdx(all_vars, i, guardedCnt.value)), i);
 			}
 		}
+		riwatch.Stop();
+		Console.WriteLine("ChooseRandomIndex: {0}", riwatch.Elapsed);
 		return idx;
 	}
 	
@@ -419,22 +424,26 @@ public static partial class PathConstraint
  	}
  #endif
  
+ 	private static int saving_trace = 0;
  	public static void SaveTrace(string tracefile)
  	{
- 		FileStream trace_stream = new FileStream(tracefile, FileMode.Create);
-		DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(Trace));
-		var trace = new Trace();
-		trace.NumDecisionVarsHistory = num_decision_vars_history;
-		var pc = GetPC();
-		trace.FailurePc = BDDToSavedString(pc);
-		var onePc = ExtractOneCounterExampleFromAggregatePC(pc);
-		trace.FailureOnePc = BDDToSavedString(onePc);
-		var recover = SavedStringToBDD(trace.FailureOnePc);
-		if(!recover.EqualEqual(onePc)) {
-			Debugger.Break();
+		// Let only one worker save log
+ 		if(Interlocked.CompareExchange(ref saving_trace, 1, 0) == 0) {
+	 		FileStream trace_stream = new FileStream(tracefile, FileMode.Create);
+			DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(Trace));
+			var trace = new Trace();
+			trace.NumDecisionVarsHistory = num_decision_vars_history;
+			var pc = GetPC();
+			trace.FailurePc = BDDToSavedString(pc);
+			var onePc = ExtractOneCounterExampleFromAggregatePC(pc);
+			trace.FailureOnePc = BDDToSavedString(onePc);
+			var recover = SavedStringToBDD(trace.FailureOnePc);
+			if(!recover.EqualEqual(onePc)) {
+				Debugger.Break();
+			}
+			trace.BDDZ3Vars = BDDToZ3Wrap.Converter.GetAllUsedFormulas().Select((arg1) => arg1.ToString()).ToList();
+			ser.WriteObject(trace_stream, trace);
 		}
-		trace.BDDZ3Vars = BDDToZ3Wrap.Converter.GetAllUsedFormulas().Select((arg1) => arg1.ToString()).ToList();
-		ser.WriteObject(trace_stream, trace);
  	}
  	
  	public static void RecoverFromTrace(string tracefile)
