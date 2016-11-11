@@ -187,7 +187,7 @@ machine PaxosNode {
 			nextProposal = GetNextProposal(maxRound);
 			receivedAgree = (proposal = (round = -1, servermachine = -1), value = -1);
 			BroadCastAcceptors(prepare, (proposer = this, slot = nextSlotForProposer, proposal = (round = nextProposal.round, servermachine = myRank)));
-			announce announce_proposer_sent, proposeVal;
+			monitor announce_proposer_sent, proposeVal;
 			send timer, startTimer;
 		}
 		
@@ -229,9 +229,9 @@ machine PaxosNode {
 			if(countAccept == majority)
 			{
 				//the value is chosen, hence invoke the announce on chosen event
-				announce announce_valueChosen, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal);
+				monitor announce_valueChosen, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal);
 				send timer, cancelTimer;
-				announce announce_proposer_chosen, proposeVal;
+				monitor announce_proposer_chosen, proposeVal;
 				//increment the nextSlotForProposer
 				nextSlotForProposer = nextSlotForProposer + 1;
 				raise chosen, receivedMess_1;
@@ -260,8 +260,8 @@ machine PaxosNode {
 			countAccept = 0;
 			proposeVal = getHighestProposedValue();
 			//announce the announce on proposal event
-			announce announce_valueProposed, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal);
-			announce announce_proposer_sent, proposeVal;
+			monitor announce_valueProposed, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal);
+			monitor announce_proposer_sent, proposeVal;
 			
 			BroadCastAcceptors(accept, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal));
 			send timer, startTimer;
@@ -328,64 +328,63 @@ P2b : If a proposal is chosen with value v , then every higher numbered proposal
 
 event announce_valueChosen : (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int);
 event announce_valueProposed : (proposer: machine, slot:int, proposal : (round: int, servermachine : int), value : int);
-/*
-spec BasicPaxosInvariant_P2b observes announce_valueChosen, announce_valueProposed {
-	var lastValueChosen : map[int, (proposal : (round: int, servermachine : int), value : int)];
-	var returnVal : bool;
-	var receivedValue : (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int);
-	start state Init {
-		entry {
-			raise(local);
+
+// spec BasicPaxosInvariant_P2b monitors announce_valueChosen, announce_valueProposed {
+// 	var lastValueChosen : map[int, (proposal : (round: int, servermachine : int), value : int)];
+// 	var returnVal : bool;
+// 	var receivedValue : (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int);
+// 	start state Init {
+// 		entry {
+// 			raise(local);
 		
-		}
-		on local goto WaitForValueChosen;
-	}
+// 		}
+// 		on local goto WaitForValueChosen;
+// 	}
 	
-	state WaitForValueChosen {
-		ignore announce_valueProposed;
-		entry {
+// 	state WaitForValueChosen {
+// 		ignore announce_valueProposed;
+// 		entry {
 			
-		}
-		on announce_valueChosen goto CheckValueProposed with (receivedValue : (proposer: machine, slot:int, proposal : (round: int, servermachine : int), value : int))
-		{
-			lastValueChosen[receivedValue.slot] = (proposal = receivedValue.proposal, value = receivedValue.value);
-		}
-	}
+// 		}
+// 		on announce_valueChosen goto CheckValueProposed with (receivedValue : (proposer: machine, slot:int, proposal : (round: int, servermachine : int), value : int))
+// 		{
+// 			lastValueChosen[receivedValue.slot] = (proposal = receivedValue.proposal, value = receivedValue.value);
+// 		}
+// 	}
 	
-	fun lessThan (p1 : (round: int, servermachine : int), p2 : (round: int, servermachine : int)) : bool {
-		if(p1.round < p2.round)
-		{
-			return true;
-		}
-		else if(p1.round == p2.round)
-		{
-			if(p1.servermachine < p2.servermachine)
-				return true;
-			else
-				return false;
-		}
-		else
-		{
-			return false;
-		}
+// 	fun lessThan (p1 : (round: int, servermachine : int), p2 : (round: int, servermachine : int)) : bool {
+// 		if(p1.round < p2.round)
+// 		{
+// 			return true;
+// 		}
+// 		else if(p1.round == p2.round)
+// 		{
+// 			if(p1.servermachine < p2.servermachine)
+// 				return true;
+// 			else
+// 				return false;
+// 		}
+// 		else
+// 		{
+// 			return false;
+// 		}
 	
-	}
+// 	}
 	
-	state CheckValueProposed {
-		on announce_valueChosen goto CheckValueProposed with (receivedValue : (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int)){
-			assert(lastValueChosen[receivedValue.slot].value == receivedValue.value);
-		}
+// 	state CheckValueProposed {
+// 		on announce_valueChosen goto CheckValueProposed with (receivedValue : (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int)){
+// 			assert(lastValueChosen[receivedValue.slot].value == receivedValue.value);
+// 		}
 		
-		on announce_valueProposed goto CheckValueProposed with (receivedValue : (proposer: machine, slot : int, proposal : (round: int, servermachine : int), value : int)){
-			returnVal = lessThan(lastValueChosen[receivedValue.slot].proposal, receivedValue.proposal);
-			if(returnVal)
-				assert(lastValueChosen[receivedValue.slot].value == receivedValue.value);
-		}
-	}
+// 		on announce_valueProposed goto CheckValueProposed with (receivedValue : (proposer: machine, slot : int, proposal : (round: int, servermachine : int), value : int)){
+// 			returnVal = lessThan(lastValueChosen[receivedValue.slot].proposal, receivedValue.proposal);
+// 			if(returnVal)
+// 				assert(lastValueChosen[receivedValue.slot].value == receivedValue.value);
+// 		}
+// 	}
 
-}
+// }
 
-*/
 
 
 /*
@@ -397,27 +396,26 @@ event announce_client_sent : int;
 event announce_proposer_sent : int;
 event announce_proposer_chosen : int;
 
-/*
-spec ValmachineityCheck observes announce_client_sent, announce_proposer_sent, announce_proposer_chosen {
-	var clientSet : map[int, int];
-	var ProposedSet : map[int, int];
+// spec ValmachineityCheck monitors announce_client_sent, announce_proposer_sent, announce_proposer_chosen {
+// 	var clientSet : map[int, int];
+// 	var ProposedSet : map[int, int];
 	
-	start state Init {
-		entry {
-			raise(local);
-		}
-		on local goto Wait;
-	}
+// 	start state Init {
+// 		entry {
+// 			raise(local);
+// 		}
+// 		on local goto Wait;
+// 	}
 	
-	state Wait {
-		on announce_client_sent do (payload : int) { clientSet[payload] = 0; }
-		on announce_proposer_sent do (payload : int) { assert(payload in clientSet);
-		ProposedSet[payload as int] = 0; }
-		on announce_proposer_chosen do (payload : int) {	assert(payload in ProposedSet); }
-	}
+// 	state Wait {
+// 		on announce_client_sent do (payload : int) { clientSet[payload] = 0; }
+// 		on announce_proposer_sent do (payload : int) { assert(payload in clientSet);
+// 		ProposedSet[payload as int] = 0; }
+// 		on announce_proposer_chosen do (payload : int) {	assert(payload in ProposedSet); }
+// 	}
 	
-}
-*/
+// }
+
 /*
 The leader election protocol for multi-paxos, the protocol is based on broadcast based approach. 
 */
@@ -507,7 +505,7 @@ machine Timer {
 
 event response;
 
-machine Main {
+main machine Main {
 	var paxosnodes : seq[machine];
 	var temp : machine;
 	var iter : int;
@@ -545,7 +543,7 @@ machine Client {
 	state PumpRequestOne {
 		entry {
 			
-			announce announce_client_sent, 1;
+			monitor announce_client_sent, 1;
 			if($)
 				send servers[0], update, (seqmachine  = 0, command = 1);
 			else
@@ -559,7 +557,7 @@ machine Client {
 	state PumpRequestTwo {
 		entry {
 			
-			announce announce_client_sent, 2;
+			monitor announce_client_sent, 2;
 			if($)
 				send servers[0], update, (seqmachine  = 0, command = 2);
 			else
