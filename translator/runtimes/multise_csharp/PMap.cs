@@ -35,7 +35,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
 
     private ValueSummary<V> Get(ValueSummary<K> k)
     {
-        PathConstraint.PushFrame();
+        var _frame_pc = PathConstraint.GetPC();
         var vs_ret_1 = new ValueSummary<V>();
         var vs_cond_30 = PathConstraint.BeginLoop();
         for (ValueSummary<int> i = 0; vs_cond_30.Loop(i.InvokeBinary<PInteger, PBool>((l, r) => l < r, data.GetField<PInteger>(_ => _.Count))); i.Increment())
@@ -56,13 +56,13 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
             throw new SystemException("Key does not exist in dictionary");
         }
 
-        PathConstraint.PopFrame();
+        PathConstraint.RestorePC(_frame_pc);
         return vs_ret_1;
     }
 
     private void Set(ValueSummary<K> k, ValueSummary<V> v)
     {
-        PathConstraint.PushFrame();
+        var _frame_pc = PathConstraint.GetPC();
         var vs_cond_32 = PathConstraint.BeginLoop();
         for (ValueSummary<int> i = 0; vs_cond_32.Loop(i.InvokeBinary<PInteger, PBool>((l, r) => l < r, data.GetField<PInteger>(_ => _.Count))); i.Increment())
         {
@@ -83,12 +83,12 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
             this.Insert(k, v);
         }
 
-        PathConstraint.PopFrame();
+        PathConstraint.RestorePC(_frame_pc);
     }
 
     public void Remove(ValueSummary<K> k)
     {
-        PathConstraint.PushFrame();
+        var _frame_pc = PathConstraint.GetPC();
         var vs_cond_34 = PathConstraint.BeginLoop();
         for (ValueSummary<int> i = 0; vs_cond_34.Loop(i.InvokeBinary<PInteger, PBool>((l, r) => l < r, data.GetField<PInteger>(_ => _.Count))); i.Increment())
         {
@@ -105,7 +105,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
         }
 
         vs_cond_34.MergeBranch();
-        PathConstraint.PopFrame();
+        PathConstraint.RestorePC(_frame_pc);
     }
 
     public void Insert(ValueSummary<PTuple<K, V>> t)
@@ -115,7 +115,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
 
     public ValueSummary<PBool> ContainsKey(ValueSummary<K> k)
     {
-        PathConstraint.PushFrame();
+        var _frame_pc = PathConstraint.GetPC();
         var vs_ret_5 = new ValueSummary<PBool>();
         var vs_cond_36 = PathConstraint.BeginLoop();
         for (ValueSummary<int> i = 0; vs_cond_36.Loop(i.InvokeBinary<PInteger, PBool>((l, r) => l < r, data.GetField<PInteger>(_ => _.Count))); i.Increment())
@@ -136,7 +136,7 @@ public class PMap<K, V> : IPType<PMap<K, V>> where K : IPType<K> where V : IPTyp
             PathConstraint.RecordReturnPath(vs_ret_5, (PBool)false);
         }
 
-        PathConstraint.PopFrame();
+        PathConstraint.RestorePC(_frame_pc);
         return vs_ret_5;
     }
 

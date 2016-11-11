@@ -24,46 +24,39 @@ public class Program {
 			Watch.Stop();
 			Console.WriteLine("==== Iter {0}========", i);
 			Console.WriteLine("Solver: {0}, Total: {1}, Convert: {2}", PathConstraint.SolverStopWatch.Elapsed, Watch.Elapsed, BDDToZ3Wrap.Converter.Watch.Elapsed);
-			PathConstraint.SolverStopWatch.Reset();
+			PathConstraint.SolverStopWatch.Reset();	
 			Watch.Reset();
 			BDDToZ3Wrap.Converter.Watch.Reset();
         }
 	}
 	
-	private static void ResetMachines()
+	static void HandleProgramException(Exception e)
 	{
-		var subclasses =
-		from assembly in AppDomain.CurrentDomain.GetAssemblies()
-		    from type in assembly.GetTypes()
-		    where type.IsSubclassOf(typeof(PMachine))
-		    select type;
-		foreach(var machineSubclass in subclasses)
-		{
-			var allocsField = machineSubclass.GetField("_allAllocsCounter", System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic);
-			allocsField.SetValue(null, new ValueSummary<int>(0));
-			var allAllocsField = machineSubclass.GetField("_allAllocs", System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic);
-			allAllocsField.SetValue(null, new System.Collections.Generic.List<PMachine>());
-		}
+		Console.WriteLine("Encountered error during expoloration: {0}", e);
+    	Console.WriteLine("Saving program trace log to {0}...", options.ErrorTraceFile);
+		PathConstraint.SaveTrace(options.ErrorTraceFile);
+		Console.WriteLine("You can rerun with -r to inspect the trace! Good Bye!");
+		Process.GetCurrentProcess().Kill(); //TODO better way to shut down the system
 	}
 	
-    static int Main(string[] args) {
+    static int Main(string[] args) 
+	{
 		CommandLine.Parser.Default.ParseArguments(args, options);
-		try {
-	        Run();
-	    } catch (Exception e) {
-	    	var counterExampleBDD = PathConstraint.GetPC();
-			Console.WriteLine("Program encountered exception at PC = {0}(in BDD form), exception trace follows", counterExampleBDD);
-			counterExampleBDD = PathConstraint.ExtractOneCounterExampleFromAggregatePC(counterExampleBDD);
-			PathConstraint.BeginRecover();
-			ResetMachines();
-			PathConstraint.AddAxiom(counterExampleBDD);
+#if USE_SYLVAN
+			SylvanSharp.Lace.Init(
+				options.SylvanLaceNWorkers, 
+				options.SylvanLaceStack, 
+				ex_handler: HandleProgramException
+			);
+#endif
+		if(options.Rerun) {
+			PathConstraint.RecoverFromTrace(options.ErrorTraceFile);
+			Run();
+		} else {
 			try {
-				Console.WriteLine("Rerun recovery trace, with counter example PC = {0}", counterExampleBDD);
-				Console.WriteLine("Used BDD vars mapped as follow: ");
-				BDDToZ3Wrap.PInvoke.debug_print_used_bdd_vars();
-				Run();
-			} catch (Exception ex) {
-				Console.WriteLine(ex);
+		    	Run();
+		    } catch(Exception ex) {
+		    	HandleProgramException(ex);
 			}
 		}
         return 0;

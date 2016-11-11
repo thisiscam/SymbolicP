@@ -5,3 +5,6 @@
 [submodule "translator/tests/Benchmarks"]
 	path = translator/tests/Benchmarks
 	url = https://github.com/thisiscam/SymbolicP-Benchmarks.git
+[submodule "translator/libraries/SylvanSharp"]
+	path = translator/libraries/SylvanSharp
+	url = https://github.com/thisiscam/SylvanSharp.git

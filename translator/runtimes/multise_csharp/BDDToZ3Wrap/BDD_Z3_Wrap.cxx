@@ -3,12 +3,22 @@
 #include <functional>
 
 /* Use the C version of bdd.h*/
+#ifdef USE_SYLVAN
+#include "sylvan.h"
+#define bddtrue sylvan_true
+#define bddfalse sylvan_false
+#define bdd_low sylvan_low
+#define bdd_high sylvan_high
+#define bdd_ithvar sylvan_ithvar
+#define bdd_var sylvan_var
+#else
 #undef __cplusplus
 extern "C" 
-{ 
+{
 #include "bdd.h"
 }
 #define __cplusplus
+#endif
 
 #include "z3.h"
 
@@ -37,7 +47,7 @@ namespace std {
     };
 };
 
-static unordered_map<Z3_ast, bdd> Z3_formula_to_bdd_map;
+static unordered_map<Z3_ast, BDD> Z3_formula_to_bdd_map;
 
 extern "C" 
 {
@@ -47,7 +57,7 @@ void init_bdd_z3_wrap(void* c)
 	ctx = (Z3_context)c;
 }
 
-static Z3_ast _bdd_to_Z3_formula(BDD root, unordered_map<int, Z3_ast> &visited, int* count)
+static Z3_ast _bdd_to_Z3_formula(BDD root, unordered_map<BDD, Z3_ast> &visited, int* count)
 {
 	// TODO, optimize to make smt form more compact? e.g. using ITE, 
 	// or switch over shape of root for possible simplier forms
@@ -98,9 +108,9 @@ static Z3_ast _bdd_to_Z3_formula(BDD root, unordered_map<int, Z3_ast> &visited, 
 Z3_ast bdd_to_Z3_formula(BDD r)
 {
 	int i = 0;
-	unordered_map<int, Z3_ast> visited;
+	unordered_map<BDD, Z3_ast> visited;
 	Z3_ast ret = _bdd_to_Z3_formula(r, visited, &i);
-	for (unordered_map<int, Z3_ast>::iterator it = visited.begin(); it != visited.end(); ++it) {
+	for (unordered_map<BDD, Z3_ast>::iterator it = visited.begin(); it != visited.end(); ++it) {
 		Z3_dec_ref(ctx, it->second);
 	}
 	// printf("traversal count: %d, bddnodecount: %d\n", i, bdd_nodecount(*r));
@@ -148,4 +158,43 @@ void debug_print_used_bdd_vars()
 		printf("%d: %s\n", i, Z3_ast_to_string(ctx, bdd_vars_to_z3_formula[i]));
 	}
 }
+
+#ifdef USE_SYLVAN
+void force_set_task_pc(BDD pc)
+{
+	LACE_ME;
+	void** task_buf = (void**)__lace_worker->current_task->d;
+	// printf("xxx worker %d: force set from %p to %lu\n", __lace_worker->worker, task_buf[5], pc);
+	sylvan_ref(pc);
+	task_buf[5] = (void*)pc;
+}
+void set_task_pc(BDD pc)
+{
+	LACE_ME;
+	void** task_buf = (void**)__lace_worker->current_task->d;
+	BDD old_pc = (BDD)task_buf[5];
+	// printf("xxx worker %d: set from %lu to %lu\n", __lace_worker->worker, old_pc, pc);
+	sylvan_ref(pc);
+	sylvan_deref(old_pc);
+	task_buf[5] = (void*)pc;
+}
+BDD get_task_pc()
+{
+	LACE_ME;
+	void** task_buf = (void**)__lace_worker->current_task->d;
+	BDD pc = (BDD)task_buf[5];
+	// printf("xxx worker %d: get %lu\n", __lace_worker->worker, pc);
+	return sylvan_ref(pc);
+}
+void task_pc_addaxiom(BDD bdd)
+{
+	LACE_ME;
+	void** task_buf = (void**)__lace_worker->current_task->d;
+	BDD old_pc = (BDD)task_buf[5];
+	BDD new_pc = sylvan_ref(sylvan_and(old_pc, bdd));
+	sylvan_deref(old_pc);
+	// printf("xxx worker %d: and old %lu with %lu -> %lu\n", __lace_worker->worker, old_pc, bdd, new_pc);
+	task_buf[5] = (void*)new_pc;
+}
+#endif
 }

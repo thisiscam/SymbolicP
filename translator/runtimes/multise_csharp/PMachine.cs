@@ -21,7 +21,7 @@ abstract class PMachine : IPType<PMachine>
     /* Returns the index that can serve this event */
     public ValueSummary<int> CanServeEvent(ValueSummary<PInteger> e)
     {
-        PathConstraint.PushFrame();
+        var _frame_pc = PathConstraint.GetPC();
         var vs_ret_1 = new ValueSummary<int>();
         var vs_cond_20 = PathConstraint.BeginLoop();
         for (ValueSummary<int> i = 0; vs_cond_20.Loop(i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count))); i.Increment())
@@ -56,13 +56,13 @@ abstract class PMachine : IPType<PMachine>
             PathConstraint.RecordReturnPath(vs_ret_1, -1);
         }
 
-        PathConstraint.PopFrame();
+        PathConstraint.RestorePC(_frame_pc);
         return vs_ret_1;
     }
 
     protected void RaiseEvent(ValueSummary<PInteger> e, ValueSummary<IPType> payload)
     {
-        PathConstraint.PushFrame();
+        var _frame_pc = PathConstraint.GetPC();
         var vs_cond_22 = PathConstraint.BeginLoop();
         for (ValueSummary<int> i = 0; vs_cond_22.Loop(i.InvokeBinary<int, bool>((l, r) => l < r, this.states.GetField<int>(_ => _.Count))); i.Increment())
         {
@@ -84,7 +84,7 @@ abstract class PMachine : IPType<PMachine>
             throw new SystemException("Unhandled event");
         }
 
-        PathConstraint.PopFrame();
+        PathConstraint.RestorePC(_frame_pc);
     }
 
     protected void SendMsg(ValueSummary<PMachine> other, ValueSummary<PInteger> e, ValueSummary<IPType> payload)

@@ -25,6 +25,7 @@ namespace MultiSETransformer
         public static readonly string KW_PMACHINE_EXIT_FUNCTIONS = "ExitFunctions";
         public static readonly string KW_PMACHINE_SENDQUEUE = "sendQueue";
         public static readonly string KW_PMONITOR = "monitor_";
+        public static readonly string KW_FRAME_PC = "_frame_pc";
 
         public static readonly HashSet<string> special_kw_fields = new HashSet<string> {
 //			KW_PMACHINE_STATES,
@@ -34,7 +35,8 @@ namespace MultiSETransformer
             KW_PMACHINE_TRANSITIONS,
             KW_PMACHINE_EXIT_FUNCTIONS,
             KW_PMACHINE_SENDQUEUE,
-            KW_PMONITOR
+            KW_PMONITOR,
+            KW_FRAME_PC
         };
 
         private int pass = 0;
@@ -782,8 +784,8 @@ namespace MultiSETransformer
 
                         if (node.Body != null && handle_return)
                         {
-                            var push_frame = SyntaxFactory.ParseStatement("PathConstraint.PushFrame();");
-                            var pop_frame = SyntaxFactory.ParseStatement("PathConstraint.PopFrame();");
+                            var push_frame = SyntaxFactory.ParseStatement("var _frame_pc = PathConstraint.GetPC();");
+                            var pop_frame = SyntaxFactory.ParseStatement("PathConstraint.RestorePC(_frame_pc);");
                             if (not_returns_void)
                             {
                                 var ret_var_decl = SyntaxFactory.ParseStatement(String.Format("var {0} = new {1}();", ret_var_name, node.ReturnType.ToFullString()));

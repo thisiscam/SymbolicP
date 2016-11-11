@@ -2,92 +2,107 @@ using Microsoft.Z3;
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
-using BuDDySharp;
 using SCG = System.Collections.Generic;
 using BDDToZ3Wrap;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.IO;
+using System.Runtime.Serialization.Json;
+using System.Threading;
+
+#if USE_SYLVAN
+using bdd = SylvanSharp.bdd;
+using BDDLIB = SylvanSharp.SylvanSharp;
+#else
+using bdd = BuDDySharp.bdd;
+using BDDLIB = BuDDySharp.BuDDySharp;
+#endif
 
 public static partial class PathConstraint
 {
 	public static Context ctx;
 	public static Solver solver;
 
-	static SCG.List<bdd> pcs = new SCG.List<bdd>();
+#if !USE_SYLVAN
+	static bdd pc;
+#endif
 
 	static PathConstraint()
 	{
 		ctx = new Context();
 		solver = ctx.MkSolver();
 		var options = Program.options;
-		
-		BuDDySharp.BuDDySharp.init(options.BDDNumInitialNodes, options.BDDNumInitialNodes / options.BDDCacheRatio);
-		var x = BuDDySharp.BuDDySharp.setcacheratio(options.BDDCacheRatio);
-		x = BuDDySharp.BuDDySharp.setvarnum(options.BDDNumVars);
-		Console.WriteLine(BuDDySharp.BuDDySharp.varnum());
-		x = BuDDySharp.BuDDySharp.setmaxincrease(options.BDDMaxIncrease);
-		BuDDySharp.BuDDySharp.reorder_verbose(2);
-		BuDDySharp.BuDDySharp.autoreorder(BuDDySharp.BuDDySharp.BDD_REORDER_NONE);
+
+#if USE_SYLVAN
+		BDDLIB.init(options.SylvanNumInitialNodesLg2, options.SylvanNumMaxNodesLg2, 
+					options.SylvanNumInitialCachesizeLg2, options.SylvanNumMaxCachesizeLg2,
+					options.SylvanGranularity
+		);
+		AppDomain.CurrentDomain.ProcessExit += (sender, e) => {
+			BDDLIB.quit();
+			SylvanSharp.Lace.Exit();
+		};
+#else
+		BDDLIB.init(options.BDDNumInitialNodes, options.BDDNumInitialNodes / options.BDDCacheRatio);
+		BDDLIB.setcacheratio(options.BDDCacheRatio);
+		BDDLIB.setvarnum(options.BDDNumVars);
+		Console.WriteLine(BDDLIB.varnum());
+		BDDLIB.setmaxincrease(options.BDDMaxIncrease);
+		BDDLIB.reorder_verbose(2);
+		BDDLIB.autoreorder(BDDLIB.BDD_REORDER_NONE);
+#endif
 		BDDToZ3Wrap.Converter.Init(ctx);
-		BuDDySharp.BuDDySharp.error_hook((arg0) => { 
-			Console.WriteLine(BuDDySharp.BuDDySharp.varnum());
-			Debugger.Break();
-		});
-		pcs.Add(bdd.bddtrue);
+		
+		ForceSetPC(bdd.bddtrue);
 
 		InitSymVar();
 	}
-
+	
+	public static void ForceSetPC(bdd forcedPC)
+	{
+#if USE_SYLVAN
+		BDDToZ3Wrap.PInvoke.force_set_task_pc(forcedPC.Id);
+#else
+		pc = forcedPC;
+#endif
+	}
+	
 	static SCG.List<SymbolicBool> sym_bool_vars;
 	static ValueSummary<int> solver_bool_var_cnt;
-	
-	private static bool recovering = false;
-	public static void BeginRecover()
-	{
-		solver.Reset();
-		pcs.Clear();
-		pcs.Add(bdd.bddtrue);
-		decision_cnt = 0;
-		solver_bool_var_cnt = 0;
-		sym_bool_vars = new SCG.List<SymbolicBool>();
-		recovering = true;
-	}
-
+		
 	private static void InitSymVar()
 	{
 		sym_bool_vars = new SCG.List<SymbolicBool>();
 		solver_bool_var_cnt = 0;
 	}
-
+	
 	public static bdd GetPC()
 	{
-		return pcs[pcs.Count - 1];
-	}
-
-	public static void PushScope()
-	{
-		pcs.Add(pcs[pcs.Count - 1]);
-	}
-
-	public static void PopScope(int count = 1)
-	{
-		pcs.RemoveRange(pcs.Count - count, count);
-	}
-
-	public static void PushFrame()
-	{
-		PushScope();
+#if USE_SYLVAN
+	 	return new bdd(BDDToZ3Wrap.PInvoke.get_task_pc(), false);
+#else
+		return pc;
+#endif
 	}
 
 	public static void AddAxiom(bdd bddForm)
 	{
-		pcs[pcs.Count - 1] = bddForm.And(pcs[pcs.Count - 1]);
+#if USE_SYLVAN
+		BDDToZ3Wrap.PInvoke.task_pc_addaxiom(bddForm.Id);
+#else
+		pc = bddForm.And(pc);
+#endif
 	}
-
-	public static void PopFrame()
+	
+	public static void RestorePC(bdd oldPC)
 	{
-		PopScope();
+#if USE_SYLVAN
+		BDDToZ3Wrap.PInvoke.set_task_pc(oldPC.Id);
+#else
+		pc = oldPC;
+#endif
 	}
-
+	
 #region record_return_paths
 	public static void RecordReturnPath<T>(ValueSummary<T> ret, ValueSummary<T> val, BranchPoint bp)
 	{
@@ -126,8 +141,7 @@ public static partial class PathConstraint
 
 	public static LoopPoint BeginLoop()
 	{
-		PushScope();
-		return LoopPoint.NewLoopPoint();
+		return LoopPoint.NewLoopPoint(GetPC());
 	}
 
 	public static Stopwatch SolverStopWatch = new Stopwatch();
@@ -204,24 +218,36 @@ public static partial class PathConstraint
 				return fresh_const;
 			}, sym_bool_vars, solver_bool_var_cnt);
 	}
-	
+
+#if USE_SYLVAN
+	private static Int64 mutex = SylvanSharp.Lace.CreateMutex();
+#endif
+
 	public static ValueSummary<T> Allocate<T>(Func<int, T> f, SCG.List<T> allAllocated, ValueSummary<int> counter)
     {
     	var ret = new ValueSummary<T>();
-    	var pc = PathConstraint.GetPC();
-    	foreach(var allocCnt in counter.values)
-    	{
-    		var bddForm = allocCnt.bddForm.And(pc);
-    		if(bddForm.FormulaBDDSAT())
-    		{
-    			if(allocCnt.value >= allAllocated.Count)
-    			{
-    				allAllocated.Add(f.Invoke(allocCnt.value));
+	   	var pc = PathConstraint.GetPC();
+#if USE_SYLVAN
+    	SylvanSharp.Lace.LockRegion(ref mutex, () => 
+#endif
+		{
+	    	foreach(var allocCnt in counter.values)
+	    	{
+	    		var bddForm = allocCnt.bddForm.And(pc);
+	    		if(bddForm.FormulaBDDSAT())
+	    		{
+	    			if(allocCnt.value >= allAllocated.Count)
+	    			{
+	    				allAllocated.Add(f.Invoke(allocCnt.value));
+					}
+					ret.AddValue(bddForm, allAllocated[allocCnt.value]);
 				}
-				ret.AddValue(bddForm, allAllocated[allocCnt.value]);
 			}
+			counter.Increment();
 		}
-		counter.Increment();
+#if USE_SYLVAN
+		);
+#endif
 		return ret;
 	}
 	
@@ -255,11 +281,13 @@ public static partial class PathConstraint
 	}
 	
 	private static SCG.List<int> num_decision_vars_history = new SCG.List<int>();
+	private static Stopwatch riwatch = new Stopwatch();
 	public static ValueSummary<int> ChooseRandomIndex(ValueSummary<int> count)
 	{
+		riwatch.Restart();
 		var pc = GetPC();
 		int num_decision_vars = -1;
-		if(recovering) {
+		if(Program.options.Rerun) {
 			num_decision_vars = num_decision_vars_history[decision_cnt];
 		} else {
 			var max_count = count.values.Max((GuardedValue<int> arg) => 
@@ -283,10 +311,6 @@ public static partial class PathConstraint
 			var fresh_const = new SymbolicBool(ctx.MkBoolConst(sym_var_name).ToBDD());
 			all_vars[i] = fresh_const.AbstractValue;
 		}
-		if(all_vars.Length > 1) {
-			bdd s = bdd.makeset(all_vars.Select((arg) => arg.Var()).ToArray(), all_vars.Length);
-			BuDDySharp.BuDDySharp.addvarblock(s.Id, BuDDySharp.BuDDySharp.BDD_REORDER_FREE);
-		}
 		decision_cnt++;
 		ValueSummary<int> idx = new ValueSummary<int>();
 		foreach(var guardedCnt in count.values)
@@ -296,6 +320,8 @@ public static partial class PathConstraint
 				idx.AddValue(bddForm.And(DecisionTreeFromIdx(all_vars, i, guardedCnt.value)), i);
 			}
 		}
+		riwatch.Stop();
+		Console.WriteLine("ChooseRandomIndex: {0}", riwatch.Elapsed);
 		return idx;
 	}
 	
@@ -341,7 +367,108 @@ public static partial class PathConstraint
 		}
 		return false;
  	}
+ 
+#region trace
+ 	[Serializable]
+ 	private class Trace {
+ 		public SCG.List<int> NumDecisionVarsHistory { get; set;}
+#if USE_SYLVAN
+ 		public Tuple<byte[], ulong> FailurePc { get; set; }
+ 		public Tuple<byte[], ulong> FailureOnePc {get; set; }
+#else
+ 		public string FailurePc { get; set; }
+ 		public string FailureOnePc {get; set; }
+#endif
+ 		public SCG.List<string> BDDZ3Vars{ get; set;}
+	}
+ 
+ #if USE_SYLVAN
+	private static Tuple<byte[], ulong> BDDToSavedString(bdd b)
+ 	{
+ 		string tmpfile = Path.GetTempFileName();
+ 		SylvanSharp.SylvanSharp.sylvan_serialize_reset();
+ 		var key = SylvanSharp.SylvanSharp.sylvan_serialize_add(b.Id);
+ 		SylvanSharp.SylvanSharp.sylvan_serialize_tofile(tmpfile);
+ 		byte[] s = File.ReadAllBytes(tmpfile);
+ 		File.Delete(tmpfile);
+ 		return Tuple.Create(s, key);
+ 	}
  	
+ 	private static bdd SavedStringToBDD(Tuple<byte[], ulong> s)
+ 	{
+ 		string tmpfile = Path.GetTempFileName();
+ 		File.WriteAllBytes(tmpfile, s.Item1);
+ 		SylvanSharp.SylvanSharp.sylvan_serialize_fromfile(tmpfile);
+ 		var i = SylvanSharp.SylvanSharp.sylvan_serialize_get_reversed(s.Item2);
+ 		File.Delete(tmpfile);
+ 		return new bdd(i);
+ 	}
+#else
+ 	private static string BDDToSavedString(bdd b)
+ 	{
+ 		string tmpfile = Path.GetTempFileName();
+ 		BuDDySharp.BuDDySharp.fnsave(tmpfile, b.Id);
+ 		string s = File.ReadAllText(tmpfile);
+ 		File.Delete(tmpfile);
+ 		return s;
+ 	}
+ 	
+ 	private static bdd SavedStringToBDD(string s)
+ 	{
+ 		int i = 0;
+ 		string tmpfile = Path.GetTempFileName();
+ 		File.WriteAllText(tmpfile, s);
+ 		BuDDySharp.BuDDySharp.fnload(tmpfile, ref i);
+ 		File.Delete(tmpfile);
+ 		return new bdd(i);
+ 	}
+ #endif
+ 
+ 	private static int saving_trace = 0;
+ 	public static void SaveTrace(string tracefile)
+ 	{
+		// Let only one worker save log
+ 		if(Interlocked.CompareExchange(ref saving_trace, 1, 0) == 0) {
+	 		FileStream trace_stream = new FileStream(tracefile, FileMode.Create);
+			DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(Trace));
+			var trace = new Trace();
+			trace.NumDecisionVarsHistory = num_decision_vars_history;
+			var pc = GetPC();
+			trace.FailurePc = BDDToSavedString(pc);
+			var onePc = ExtractOneCounterExampleFromAggregatePC(pc);
+			trace.FailureOnePc = BDDToSavedString(onePc);
+			var recover = SavedStringToBDD(trace.FailureOnePc);
+			if(!recover.EqualEqual(onePc)) {
+				Debugger.Break();
+			}
+			trace.BDDZ3Vars = BDDToZ3Wrap.Converter.GetAllUsedFormulas().Select((arg1) => arg1.ToString()).ToList();
+			ser.WriteObject(trace_stream, trace);
+		}
+ 	}
+ 	
+ 	public static void RecoverFromTrace(string tracefile)
+ 	{
+ 		FileStream trace_stream = new FileStream(tracefile, FileMode.Open);
+		DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(Trace));
+ 		var trace = (Trace)ser.ReadObject(trace_stream);
+ 		num_decision_vars_history = trace.NumDecisionVarsHistory;
+ 		var pc = SavedStringToBDD(trace.FailureOnePc);
+ 		ForceSetPC(pc);
+ 		foreach(var bs in trace.BDDZ3Vars)
+ 		{
+ 			/* Very hacky way to deserialize z3 formulas.. */
+ 			BoolExpr formula = null;
+ 			if(bs.Contains("(")) {
+ 				// TODO this is incorrect as Z3 cannot parse expression without decl
+ 				formula = ctx.ParseSMTLIB2String(String.Format("(assert {0})", bs));
+			} else {
+ 				formula = ctx.MkBoolConst(bs);
+			}
+ 			formula.ToBDD();
+ 		}
+ 	}
+#endregion
+
 #region BDD_Z3_Ext
 	public static bool FormulaBDDSAT(this bdd x)
 	{
