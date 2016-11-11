@@ -326,16 +326,15 @@ class PProgramToCSharpTranslator(TranslatorBase):
                     m_type=spec_machine.name)
                 )
             self.out("return new {0}();\n}}\n\n".format(classname))
-            if len(self.pprogram.observes_map) > 0:
-                self.out("/* Observers */\n")
-                self.out("public static void AnnounceEvent({0} e, {1} payload) {{\n".format(self.translate_type(PTypeEventUnknown), self.translate_type(PTypeAny)))
-                for observed_event, observing_machines in self.pprogram.observes_map.items():
-                    self.out("if(e == {0}) {{\n".format(self.translate_event(observed_event)))
-                    for m in observing_machines:
-                        self.out("{0}.ServeEvent({1}, payload);\n".format("monitor_" + m.name.lower(), self.translate_event(observed_event)))
-                    self.out("return;\n")
-                    self.out("}\n")
+            self.out("/* Observers */\n")
+            self.out("public static void AnnounceEvent({0} e, {1} payload) {{\n".format(self.translate_type(PTypeEventUnknown), self.translate_type(PTypeAny)))
+            for observed_event, observing_machines in self.pprogram.observes_map.items():
+                self.out("if(e == {0}) {{\n".format(self.translate_event(observed_event)))
+                for m in observing_machines:
+                    self.out("{0}.ServeEvent({1}, payload);\n".format("monitor_" + m.name.lower(), self.translate_event(observed_event)))
+                self.out("return;\n")
                 self.out("}\n")
+            self.out("}\n")
             self.out("}\n")
 
     pipeline = [make_output_dir, create_proj_macros, generate_foreach_machine, create_csproj]

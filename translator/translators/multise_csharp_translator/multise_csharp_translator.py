@@ -110,8 +110,25 @@ class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
         c3 = ctx.getChild(3).accept(self, **kwargs)
         self.out("NewMachine(Machine{0}.Allocate(),{1});\n".format(ctx.getChild(1).getText(), c3))
 
+    def visitExp_nondet(self, ctx, **kwargs):
+        self.rand_bool_cnt += 1
+        return "RandomBool(_rnd{cnt}, _allRnds{cnt})".format(cnt=self.rand_bool_cnt)
+
+    def visitExp_fairnondet(self, ctx, **kwargs):
+        self.rand_bool_cnt += 1
+        return "RandomBool(_rnd{cnt}, _allRnds{cnt})".format(cnt=self.rand_bool_cnt)
+
+    def out_random_cnts(self):
+        self.out("#region multisenorewrite\n")
+        for i in range(self.rand_bool_cnt):
+            self.out("System.Collections.Generic.List<PBool> _allRnds{cnt} = new System.Collections.Generic.List<PBool>();\n".format(cnt=i+1))
+            self.out("ValueSummary<int> _rnd{cnt} = 0;\n".format(cnt=i+1))
+        self.out("#endregion\n")
+
     def out_machine_body(self):
+        self.rand_bool_cnt = 0
         super(PProgramToSymbolicCSharpTranslator, self).out_machine_body()
+        self.out_random_cnts()
         if not self.current_visited_machine.is_spec:
             machine_name = self.get_machine_csclassname(self.current_visited_machine)
             self.out(

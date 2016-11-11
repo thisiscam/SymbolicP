@@ -6,7 +6,9 @@ partial class Scheduler
 {
     private ValueSummary<int> CurrentMachineIndex = 0;
     public ValueSummary<int> DelayBudget;
-    private ValueSummary<SchedulerChoice> ChooseMachine()
+    
+	ValueSummary<List<PMachine>> machines = new ValueSummary<List<PMachine>>(new List<PMachine>());    
+	private ValueSummary<SchedulerChoice> ChooseMachine()
     {
         var _frame_pc = PathConstraint.GetPC();
         var vs_ret_0 = new ValueSummary<SchedulerChoice>();
@@ -118,6 +120,12 @@ partial class Scheduler
 
         PathConstraint.RestorePC(_frame_pc);
         return vs_ret_0;
+    }
+    
+    public void StartMachine(ValueSummary<PMachine> machine, ValueSummary<IPType> payload)
+    {
+		this.machines.InvokeMethod<PMachine>((_, a0) => _.Add(a0), machine);
+        machine.InvokeMethod<Scheduler, IPType>((_, a0, a1) => _.StartMachine(a0, a1), this, payload);
     }
 }
 #endif

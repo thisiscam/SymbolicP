@@ -18,7 +18,6 @@ partial class Scheduler
         }
     }
 
-    VSSet<PMachine> machines = new VSSet<PMachine>();
     public ValueSummary<bool> ChooseAndRunMachine()
     {
         var _frame_pc = PathConstraint.GetPC();
@@ -61,7 +60,7 @@ partial class Scheduler
                             {
                                 ValueSummary<PMachine> targetMachine = dequeuedItem.GetField<PMachine>(_ => _.target);
                                 Console.WriteLine(chosenSourceMachine.ToString() + chosenSourceMachine.GetHashCode() + " sends event " + dequeuedItem.GetField<PInteger>(_ => _.e).ToString() + " to " + targetMachine.ToString() + targetMachine.GetHashCode());
-                                targetMachine.InvokeMethod<int, PInteger, IPType>((_, a0, a1, a2) => _.RunStateMachine(a0, a1, a2), chosen.GetField<int>(_ => _.targetMachineStateIndex), dequeuedItem.GetField<PInteger>(_ => _.e), dequeuedItem.GetField<IPType>(_ => _.payload));
+                                targetMachine.InvokeMethodParallel<int, PInteger, IPType>((_, a0, a1, a2) => _.RunStateMachine(a0, a1, a2), chosen.GetField<int>(_ => _.targetMachineStateIndex), dequeuedItem.GetField<PInteger>(_ => _.e), dequeuedItem.GetField<IPType>(_ => _.payload));
                             }
                         }
 
@@ -92,11 +91,5 @@ partial class Scheduler
     public ValueSummary<SymbolicBool> RandomBool()
     {
         return PathConstraint.NewSymbolicBoolVar("RB");
-    }
-
-    public void StartMachine(ValueSummary<PMachine> machine, ValueSummary<IPType> payload)
-    {
-        this.machines.Add(machine);
-        machine.InvokeMethod<Scheduler, IPType>((_, a0, a1) => _.StartMachine(a0, a1), this, payload);
     }
 }

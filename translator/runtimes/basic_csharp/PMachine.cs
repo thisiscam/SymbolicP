@@ -55,7 +55,6 @@ abstract class PMachine : IPType<PMachine> {
     }
 
     protected void PopState() {
-        this.retcode = Constants.EXECUTE_FINISHED;
         int current_state = this.states[0];
         this.states.RemoveAt(0);
         if(this.ExitFunctions[current_state] != null) {

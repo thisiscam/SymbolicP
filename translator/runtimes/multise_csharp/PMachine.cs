@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using BDDToZ3Wrap;
 
 abstract class PMachine : IPType<PMachine>
 {
@@ -114,9 +115,14 @@ abstract class PMachine : IPType<PMachine>
         vs_cond_23.MergeBranch();
     }
 
-    protected ValueSummary<PBool> RandomBool()
+    protected ValueSummary<PBool> RandomBool(ValueSummary<int> cnt, System.Collections.Generic.List<PBool> list)
     {
-        return this.scheduler.RandomBool().Cast<PBool>(_ => (PBool)_);
+        return PathConstraint.Allocate<PBool>((idx) => 
+			{
+				var sym_var_name = String.Format("RB_{0}_{1}", this.GetHashCode(), idx);
+				var fresh_const = new SymbolicBool(PathConstraint.ctx.MkBoolConst(sym_var_name).ToBDD());
+				return new PBool(fresh_const);
+			}, list, cnt);
     }
 
     protected void Assert(ValueSummary<PBool> cond, ValueSummary<string> msg)

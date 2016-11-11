@@ -97,6 +97,9 @@ public partial class ValueSummary<T>
 			var bddForm = v2.bddForm.And(pred);
 			AddValue(bddForm, v2.value);
 		}
+#if MERGE_PVAL
+		MergeMax();
+#endif
 	}
 	
 	public void AddValue(bdd pred, T val)

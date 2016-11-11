@@ -2,7 +2,7 @@ using System;
 
 class Program {
     static int Main(string[] args) {
-        int maxExplorationSteps = 100;
+        int maxExplorationSteps = 300;
         Random rng = new Random();
 
         int iteration = 0;

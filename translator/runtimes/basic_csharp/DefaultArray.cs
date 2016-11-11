@@ -1,32 +1,37 @@
+using System;
 using System.Collections.Generic;
 
-public struct DefaultArray<T> {
-	System.Collections.Generic.List<T> data;
-	Func<T> defaultValueFunction;
+public class DefaultArray<T> {
+	private System.Collections.Generic.List<T> data = new System.Collections.Generic.List<T>();
 
-	public DefaultArray<T>(Func<T> defaultValueFunction) 
+	private Func<T> defaultValueFunction;
+	
+	public DefaultArray<T> NewEmpty()
 	{
-		this.defaultValueFunction = defaultValueFunction;	
+		return new DefaultArray<T>(defaultValueFunction);
+	}
+	
+	public DefaultArray(Func<T> defaultValueFunction) 
+	{
+		this.defaultValueFunction = defaultValueFunction;
+	}
+
+	public void EnsureLength(int length) 
+	{
+		for(int i=data.Count; i < length; i++)
+		{
+			data.Add(defaultValueFunction());
+		}
 	}
 
 	public T this[int index] { 
-        get {
-        	if(index >= data.Count) {
-        		for(int i=0; i < index; i++)
-        		{
-        			data.Add(defaultValueFunction.Invoke());
-        		}
-        	}
-            return this.data [index];
-        }
-        set {
-        	if(index >= data.Count) {
-        		for(int i=0; i < index; i++)
-        		{
-        			data.Add(defaultValueFunction.Invoke());
-        		}
-        	}
-            this.data [index] = value;
-        }
-    }
+		get {
+			EnsureLength(index + 1);
+			return this.data [index];
+		} 
+		set {
+			EnsureLength(index + 1);
+			this.data [index] = value;
+		}
+	}
 }
