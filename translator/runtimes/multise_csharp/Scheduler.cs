@@ -18,10 +18,10 @@ partial class Scheduler
         }
     }
 
-    ValueSummary<List<PMachine>> machines = new ValueSummary<List<PMachine>>(new List<PMachine>());
+    VSSet<PMachine> machines = new VSSet<PMachine>();
     public ValueSummary<bool> ChooseAndRunMachine()
     {
-        PathConstraint.PushFrame();
+        var _frame_pc = PathConstraint.GetPC();
         var vs_ret_0 = new ValueSummary<bool>();
         ValueSummary<SchedulerChoice> chosen = this.ChooseMachine();
         var vs_cond_53 = (chosen.InvokeBinary<object, bool>((l, r) => l == r, new ValueSummary<object>(null))).Cond();
@@ -75,7 +75,7 @@ partial class Scheduler
         }
 
         vs_cond_53.MergeBranch();
-        PathConstraint.PopFrame();
+        PathConstraint.RestorePC(_frame_pc);
         return vs_ret_0;
     }
 
@@ -96,7 +96,7 @@ partial class Scheduler
 
     public void StartMachine(ValueSummary<PMachine> machine, ValueSummary<IPType> payload)
     {
-        this.machines.InvokeMethod<PMachine>((_, a0) => _.Add(a0), machine);
+        this.machines.Add(machine);
         machine.InvokeMethod<Scheduler, IPType>((_, a0, a1) => _.StartMachine(a0, a1), this, payload);
     }
 }

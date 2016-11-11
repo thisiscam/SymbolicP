@@ -1,12 +1,19 @@
 using System;
 using Microsoft.Z3;
-using BuDDySharp;
 using SCG = System.Collections.Generic;
 using System.Diagnostics;
 using BDDToZ3Wrap;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+
+#if USE_SYLVAN
+using bdd = SylvanSharp.bdd;
+using BDDLIB = SylvanSharp.SylvanSharp;
+#else
+using bdd = BuDDySharp.bdd;
+using BDDLIB = BuDDySharp.BuDDySharp;
+#endif
 
 internal class GuardedValue<T>
 {
@@ -26,19 +33,19 @@ internal class GuardedValue<T>
 	}
 }
 
-public class ValueSummary<T>
+public partial class ValueSummary<T>
 {
 
 	internal SCG.List<GuardedValue<T>> values = new SCG.List<GuardedValue<T>>();
 
-#if DEBUG_VS
+#if false
 	private static SCG.List<WeakReference<ValueSummary<T>>> ALL_VS = new SCG.List<WeakReference<ValueSummary<T>>>();
 #endif
 
 	#region constructor
 	public ValueSummary()
 	{
-#if DEBUG_VS
+#if false
 		ALL_VS.Add (new WeakReference<ValueSummary<T>>(this));
 #endif
 	}
@@ -65,26 +72,9 @@ public class ValueSummary<T>
 				ret.values.Add(new GuardedValue<T>(bddForm, val.value));
 			}
 		}
-#if DEBUG
+#if DEBUG_VS
 		ret.AssertPredExclusion();
 #endif
-		return ret;
-	}
-
-	public static ValueSummary<ValueSummary<T>[]> NewVSArray(ValueSummary<int> size)
-	{
-		var pc = PathConstraint.GetPC();
-		var ret = new ValueSummary<ValueSummary<T>[]>();
-		foreach (var guardedSize in size.values) {
-			var bddForm = pc.And(guardedSize.bddForm);
-			if (bddForm.FormulaBDDSAT()) {
-				var array = new ValueSummary<T>[guardedSize.value];
-				for (int i = 0; i < guardedSize.value; i++) {
-					array[i] = new ValueSummary<T>(default(T));
-				}
-				ret.values.Add(new GuardedValue<ValueSummary<T>[]>(bddForm, array));
-			}
-		}
 		return ret;
 	}
 
@@ -122,7 +112,7 @@ public class ValueSummary<T>
 #endif
 			this.values.Add(new GuardedValue<T>(pred, val));
 		}
-#if DEBUG
+#if DEBUG_VS
 		this.AssertPredExclusion();
 #endif
 		//MergeMax();
@@ -254,7 +244,7 @@ public class ValueSummary<T>
 #if MERGE_PVAL
 		MergeMax();
 #endif
-#if DEBUG
+#if DEBUG_VS
 		this.AssertPredExclusion();
 #endif
 	}
@@ -365,10 +355,9 @@ public class ValueSummary<T>
 			if (newPC.FormulaBDDSolverSAT()) {
 				NullTargetCheck((c, v) => 
 				{
-					PathConstraint.PushScope();
 					PathConstraint.AddAxiom(c);
 					ret.Merge(f.Invoke(v));
-					PathConstraint.PopScope(); 
+					PathConstraint.RestorePC(pc); 
 				},
 				guardedTarget.value, guardedTarget.bddForm);
 			}			
@@ -410,19 +399,19 @@ public class ValueSummary<T>
 	{
 		return InvokeMethodHelper((v) => f.Invoke(v, arg1, arg2, arg3, arg4));
 	}
-
+	
 	public void InvokeMethodHelper(Action<T> f)
 	{
 		var pc = PathConstraint.GetPC();
+
 		foreach (var guardedTarget in this.values) {
 			bdd newPC = pc.And(guardedTarget.bddForm);
 			if (newPC.FormulaBDDSolverSAT()) {
 				NullTargetCheck((c, v) => 
 				{
-					PathConstraint.PushScope();
 					PathConstraint.AddAxiom(c);
 					f.Invoke(v);
-					PathConstraint.PopScope(); 
+					PathConstraint.RestorePC(pc); 
 				},
 				guardedTarget.value, guardedTarget.bddForm);
 			}			
@@ -482,7 +471,7 @@ public class ValueSummary<T>
 				}
 			}
 		}
-#if DEBUG
+#if DEBUG_VS
 		ret.AssertPredExclusion();
 #endif
 		return ret;
@@ -772,10 +761,11 @@ public static class ValueSummaryExt
 	}
 
 	private static PathConstraint.BranchPoint CondConcreteHelper(bdd trueBDD, bdd falseBDD)
-	{		
+	{	
+		var pc = PathConstraint.GetPC();
 		var trueFeasible = trueBDD.FormulaBDDSolverSAT();
 		var falseFeasible = falseBDD.FormulaBDDSolverSAT();
-#if DEBUG
+#if DEBUG_VS
 		if (trueFeasible && falseFeasible) {
 			var a0 = trueBDD.ToZ3Expr();
 			var a1 = falseBDD.ToZ3Expr();
@@ -794,20 +784,20 @@ public static class ValueSummaryExt
 #endif
 		if (trueFeasible) {
 			if (falseFeasible) {
-				return new PathConstraint.BranchPoint(trueBDD, falseBDD, PathConstraint.BranchPoint.State.Both);
+				return new PathConstraint.BranchPoint(trueBDD, falseBDD, PathConstraint.BranchPoint.State.Both, pc);
 			}
 			else {
-				return new PathConstraint.BranchPoint(trueBDD, null, PathConstraint.BranchPoint.State.True);
+				return new PathConstraint.BranchPoint(trueBDD, null, PathConstraint.BranchPoint.State.True, pc);
 			}
 		}
 		else {
 			if (falseFeasible) {
-				return new PathConstraint.BranchPoint(null, falseBDD, PathConstraint.BranchPoint.State.False);
+				return new PathConstraint.BranchPoint(null, falseBDD, PathConstraint.BranchPoint.State.False, pc);
 			}
 			else {
 				if (!PathConstraint.EvalPc())
 				{
-					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None);	
+					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None, pc);	
 				}
 				else 
 				{
@@ -832,7 +822,7 @@ public static class ValueSummaryExt
 		}
 		if (b.values.Count == 1) {
 			var bddForm = b.values[0].bddForm.And(pc);
-#if DEBUG
+#if DEBUG_VS
 			if (!bddForm.FormulaBDDSolverSAT()) 
 			{
 				Debugger.Break();
@@ -840,10 +830,10 @@ public static class ValueSummaryExt
 #endif
 			if (b.values[0].value) {
 
-				return new PathConstraint.BranchPoint(bddForm, null, PathConstraint.BranchPoint.State.True);
+				return new PathConstraint.BranchPoint(bddForm, null, PathConstraint.BranchPoint.State.True, pc);
 			}
 			else {
-				return new PathConstraint.BranchPoint(null, bddForm, PathConstraint.BranchPoint.State.False);
+				return new PathConstraint.BranchPoint(null, bddForm, PathConstraint.BranchPoint.State.False, pc);
 			}
 		}
 		else if (b.values.Count == 2) {
@@ -857,7 +847,7 @@ public static class ValueSummaryExt
 		else {
 				if (!PathConstraint.EvalPc())
 				{
-					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None);	
+					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None, pc);	
 				}
 				else 
 				{
@@ -870,7 +860,6 @@ public static class ValueSummaryExt
 	public static PathConstraint.BranchPoint Cond(this ValueSummary<bool> b) 
 	{
 		var ret = _Cond(b);
-		PathConstraint.PushScope();
 		return ret;
  	}
 		
@@ -921,20 +910,20 @@ public static class ValueSummaryExt
 		}
 		if (predTrue != bdd.bddfalse) {
 			if (predFalse != bdd.bddfalse) {
-				return new PathConstraint.BranchPoint(predTrue, predFalse, PathConstraint.BranchPoint.State.Both);
+				return new PathConstraint.BranchPoint(predTrue, predFalse, PathConstraint.BranchPoint.State.Both, pc);
 			}
 			else {
-				return new PathConstraint.BranchPoint(predTrue, null, PathConstraint.BranchPoint.State.True);
+				return new PathConstraint.BranchPoint(predTrue, null, PathConstraint.BranchPoint.State.True, pc);
 			}
 		}
 		else {
 			if (predFalse != bdd.bddfalse) {
-				return new PathConstraint.BranchPoint(null, predFalse, PathConstraint.BranchPoint.State.False);
+				return new PathConstraint.BranchPoint(null, predFalse, PathConstraint.BranchPoint.State.False, pc);
 			}
 			else {
 				if (!PathConstraint.EvalPc())
 				{
-					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None);	
+					return new PathConstraint.BranchPoint(null, null, PathConstraint.BranchPoint.State.None, pc);	
 				}
 				else 
 				{
@@ -952,7 +941,6 @@ public static class ValueSummaryExt
 	public static PathConstraint.BranchPoint Cond(this ValueSummary<SymbolicBool> b) 
 	{
 		var ret = _Cond(b);
-		PathConstraint.PushScope();
 		return ret;
  	}
 	
@@ -964,7 +952,6 @@ public static class ValueSummaryExt
 	public static PathConstraint.BranchPoint Cond(this ValueSummary<PBool> b) 
 	{
 		var ret = _Cond(b);
-		PathConstraint.PushScope();
 		return ret;
  	}
 

@@ -6,14 +6,12 @@ partial class Scheduler
 {
     private ValueSummary<SchedulerChoice> ChooseMachine()
     {
-        PathConstraint.PushFrame();
+        var _frame_pc = PathConstraint.GetPC();
         var vs_ret_0 = new ValueSummary<SchedulerChoice>();
         ValueSummary<List<SchedulerChoice>> choices = new ValueSummary<List<Scheduler.SchedulerChoice>>(new List<SchedulerChoice>());
-        var vs_cond_42 = PathConstraint.BeginLoop();
-        for (ValueSummary<int> i = 0; vs_cond_42.Loop(i.InvokeBinary<int, bool>((l, r) => l < r, this.machines.GetField<int>(_ => _.Count))); i.Increment())
+		machines.ForEach((machine) =>         
         {
             ValueSummary<bool> vs_lgc_tmp_0;
-            ValueSummary<PMachine> machine = this.machines.InvokeMethod<int, PMachine>((_, a0) => _[a0], i);
             ValueSummary<// Collect from send queue
             List<SendQueueItem>> sendQueue = machine.GetConstField<List<SendQueueItem>>(_ => _.sendQueue);
             ValueSummary<bool> do_loop = true;
@@ -72,9 +70,8 @@ partial class Scheduler
             }
 
             vs_cond_41.MergeBranch();
-        }
+        });
 
-        vs_cond_42.MergeBranch();
         var vs_cond_43 = (choices.GetField<int>(_ => _.Count).InvokeBinary<int, bool>((l, r) => l == r, 0)).Cond();
         {
             if (vs_cond_43.CondTrue())
@@ -90,7 +87,7 @@ partial class Scheduler
             PathConstraint.RecordReturnPath(vs_ret_0, choices.InvokeMethod<int, Scheduler.SchedulerChoice>((_, a0) => _[a0], idx));
         }
 
-        PathConstraint.PopFrame();
+        PathConstraint.RestorePC(_frame_pc);
         return vs_ret_0;
     }
 }

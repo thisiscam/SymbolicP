@@ -1,7 +1,14 @@
 using System;
 using BDDToZ3Wrap;
-using BuDDySharp;
 using Microsoft.Z3;
+
+#if USE_SYLVAN
+using bdd = SylvanSharp.bdd;
+using BDDLIB = SylvanSharp.SylvanSharp;
+#else
+using bdd = BuDDySharp.bdd;
+using BDDLIB = BuDDySharp.BuDDySharp;
+#endif
 
 /* This class uses concreteValue as a cache for abstract BDD val, since BDD value involves PInvoke for every evaluation */
 public struct SymbolicBool {

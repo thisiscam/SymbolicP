@@ -9,6 +9,7 @@ import shutil
 
 class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
     buddysharp_dir = os.environ.get("BUDDYSHARP_DIR", os.path.realpath(os.path.join(os.path.dirname(__file__), "../../libraries/BuDDySharp")))
+    sylvansharp_dir = os.environ.get("SYLVANSHARP_DIR", os.path.realpath(os.path.join(os.path.dirname(__file__), "../../libraries/SylvanSharp")))
     runtime_dir = os.environ.get("RUNTIME_DIR", os.path.realpath(os.path.join(os.path.dirname(__file__), "../../runtimes/multise_csharp")))
     
     def __init__(self, *args):
@@ -50,7 +51,8 @@ class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
     def find_referenced_projects(self):
         reference_project_paths = [ 
               os.path.join(self.runtime_dir, "BDDToZ3Wrap/BDDToZ3Wrap.csproj"),
-              os.path.join(self.buddysharp_dir, "BuDDySharp/BuDDySharp/BuDDySharp.csproj")
+              os.path.join(self.buddysharp_dir, "BuDDySharp/BuDDySharp/BuDDySharp.csproj"),
+              os.path.join(self.sylvansharp_dir, "SylvanSharp/SylvanSharp/SylvanSharp.csproj")
             ]
         self.reference_projects = map(self.find_project, reference_project_paths)
 
