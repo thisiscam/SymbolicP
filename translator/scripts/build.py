@@ -3,6 +3,7 @@ import os, subprocess
 import fnmatch
 
 MONO_CMD = os.environ.get("MONO_CMD", "mono")
+NUGET_CMD = os.environ.get("NUGET_CMD", "nuget")
 
 if os.name == "nt":
 	builder = "msbuild"
@@ -18,10 +19,16 @@ def translate_and_execute(out_dir, p_file, configuration):
 	print "Building {0} Configuration: {1}".format(project_name, configuration)
 	subprocess.check_call(
 						[
+							NUGET_CMD, 
+							"restore"
+						],
+						cwd=project_dir
+					)
+	subprocess.check_call(
+						[
 							builder, 
 							'/property:Configuration={0}'.format(configuration), 
 							'/property:Platform=x64',
-							'/property:DefineConstants=RANDOM_SCHEDULER',
 							'{0}.sln'.format(project_name)
 						],
 						cwd=project_dir

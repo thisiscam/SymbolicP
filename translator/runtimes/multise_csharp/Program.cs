@@ -22,7 +22,7 @@ public class Program {
 				break;
 			}
 			Watch.Stop();
-			Console.WriteLine("==== Iter {0}========", i);
+			Console.WriteLine("==== Step {0}========", i);
 			Console.WriteLine("Solver: {0}, Total: {1}, Convert: {2}", PathConstraint.SolverStopWatch.Elapsed, Watch.Elapsed, BDDToZ3Wrap.Converter.Watch.Elapsed);
 			PathConstraint.SolverStopWatch.Reset();	
 			Watch.Reset();
