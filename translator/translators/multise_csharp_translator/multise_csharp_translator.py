@@ -135,7 +135,7 @@ class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
                 """
                 #region multisenorewrite
                 private static System.Collections.Generic.List<PMachine> _allAllocs = new System.Collections.Generic.List<PMachine>();
-                private static ValueSummary<int> _allAllocsCounter = 0;
+                private static ValueSummary<int> _allAllocsCounter = ValueSummary<int>.InitWithTrue(0);
                 #endregion
                 public static PMachine Allocate()
                 {{

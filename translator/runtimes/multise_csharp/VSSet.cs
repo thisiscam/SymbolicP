@@ -28,6 +28,7 @@ public class VSSet<T>
 		{
 			var bddForm = pc.And(guardedvalue.bddForm);
 			if(bddForm.FormulaBDDSAT()) {
+				try {
 				if(data.ContainsKey(guardedvalue.value)) {
 					PathConstraint.AddAxiom(data[guardedvalue.value].Not().And(bddForm));
 					data[guardedvalue.value] = data[guardedvalue.value].Or(bddForm);
@@ -38,6 +39,10 @@ public class VSSet<T>
 					data.Add(guardedvalue.value, bddForm);
 					_count.Increment();
 					PathConstraint.RestorePC(pc);
+				}
+				} catch(Exception ex)
+				{
+					Debugger.Break();
 				}
 			}
 		}

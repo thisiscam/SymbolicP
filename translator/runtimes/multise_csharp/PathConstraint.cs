@@ -248,7 +248,11 @@ public static partial class PathConstraint
 	    		{
 	    			if(allocCnt.value >= allAllocated.Count)
 	    			{
+	    				// Set PC to true, and set back
+	    				// This way Allocated object's field will have initial PC of true
+	    				PathConstraint.ForceSetPC(bdd.bddtrue);
 	    				allAllocated.Add(f.Invoke(allocCnt.value));
+	    				PathConstraint.RestorePC(pc);
 					}
 					ret.AddValue(bddForm, allAllocated[allocCnt.value]);
 				}
