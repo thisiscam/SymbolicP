@@ -112,11 +112,11 @@ class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
 
     def visitExp_nondet(self, ctx, **kwargs):
         self.rand_bool_cnt += 1
-        return "RandomBool(_rnd{cnt}, _allRnds{cnt})".format(cnt=self.rand_bool_cnt)
+        return "RandomBool({cnt}, _rnd{cnt}, _allRnds{cnt})".format(cnt=self.rand_bool_cnt)
 
     def visitExp_fairnondet(self, ctx, **kwargs):
         self.rand_bool_cnt += 1
-        return "RandomBool(_rnd{cnt}, _allRnds{cnt})".format(cnt=self.rand_bool_cnt)
+        return "RandomBool({cnt}, _rnd{cnt}, _allRnds{cnt})".format(cnt=self.rand_bool_cnt)
 
     def out_random_cnts(self):
         self.out("#region multisenorewrite\n")

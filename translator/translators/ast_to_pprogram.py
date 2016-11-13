@@ -375,6 +375,8 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         new_visiting_state.name = ctx.getChild(3).getText()
         self.current_visited_state = new_visiting_state
         self.visitChildren(ctx)
+        if "EVENT_NULL" not in self.current_visited_state.transitions:
+            self.current_visited_state.defered_events.add("EVENT_NULL")
         self.current_visited_state = None
         self.current_visited_machine.state_decls[new_visiting_state.name] = new_visiting_state
         return new_visiting_state
@@ -534,15 +536,22 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
                                                         for e in new_event_list})
         return new_event_list
 
+    def event_id_helper(self, event_name):
+        if event_name == "null":
+            return "EVENT_NULL"
+        elif event_name == "halt":
+            return "EVENT_HALT"
+        else:
+            return event_name
 
     # Visit a parse tree produced by pParser#event_id.
     def visitEvent_id(self, ctx):
-        return self.current_visited_event_list.append(ctx.getChild(0).getText())
+        return self.current_visited_event_list.append(self.event_id_helper(ctx.getChild(0).getText()))
 
 
     # Visit a parse tree produced by pParser#non_default_event_id.
     def visitNon_default_event_id(self, ctx):
-        return self.current_visited_event_list.append(ctx.getChild(0).getText())
+        return self.current_visited_event_list.append(self.event_id_helper(ctx.getChild(0).getText()))
 
 
     # Visit a parse tree produced by pParser#stmt_block.

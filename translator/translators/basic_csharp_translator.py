@@ -103,9 +103,9 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     def out_enter_state(self, machine, state, last_stmt=True, ret_type=None, is_push=False):
         if is_push:
-            self.out("this.states.Insert(0, {0});\n".format(self.translate_state(machine, state)))
+            self.out("this.states.Add({0});\n".format(self.translate_state(machine, state)))
         else:
-            self.out("this.states[0] = {0};\n".format(self.translate_state(machine, state)))
+            self.out("this.states[this.states.Count - 1] = {0};\n".format(self.translate_state(machine, state)))
         if state.entry_fn:
             self.out_fn_call(machine, state.entry_fn, last_stmt, ret_type)
 
@@ -212,6 +212,35 @@ class PProgramToCSharpTranslator(TranslatorBase):
     def get_machine_csclassname(self, machine):
         return "Machine" + machine.name
 
+    def out_constructor_body(self, machine, rtransitions_map):
+        self.out("this.DeferedSet = _DeferedSet;\nthis.IsGotoTransition = _IsGotoTransition;\n")
+        self.out("this.Transitions = new TransitionFunction[{0},{1}];\n".format(len(machine.state_decls), len(self.pprogram.events)))
+        for (state, to_state, fn_name, is_named, is_push), on_es in rtransitions_map.items():
+            transition_fn_name = None
+            if is_named or not fn_name:
+                transition_fn_name = "{0}_on_{1}".format(state.name, "_".join(on_es))
+            else:
+                transition_fn_name = fn_name
+            for on_e in on_es:
+                self.out("this.Transitions[{0},{1}] = {2};\n".format(self.translate_state(machine, state), self.translate_event(on_e), transition_fn_name))
+        for state in machine.state_decls.values():
+            for ignored_event in state.ignored_events:
+                self.out("this.Transitions[{0},{1}] = Transition_Ignore;\n".format(self.translate_state(machine, state), self.translate_event(ignored_event)))
+        # Exit Functions
+        self.out("this.ExitFunctions = new ExitFunction[{0}];\n".format(len(machine.state_decls)))
+        for state in machine.state_decls.values():
+            if state.exit_fn:
+                self.out("this.ExitFunctions[{state}] = {exit_fn};\n".format(state=self.translate_state(machine,state), exit_fn=state.exit_fn))
+        # StartMachine
+        if machine.is_spec:
+            self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
+        else:
+            self.out("}\n")
+            self.out("public override void StartMachine (Scheduler scheduler, {0} payload) {{\n".format(self.translate_type(PTypeAny)))
+            self.out("this.scheduler = scheduler;\n")
+            self.current_payload_type = PTypeAny
+            self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
+
     def out_machine_body(self):
         machine = self.current_visited_machine
         classname = self.get_machine_csclassname(machine)
@@ -243,36 +272,12 @@ class PProgramToCSharpTranslator(TranslatorBase):
                             init=self.translate_default_exp(t)
                         ))
         self.out("\n\n")
+        
+        rtransitions_map = self.build_transition_map(machine)
+        
         # Constructor(including transition function map)
         self.out("public {0} () {{\n".format(classname))
-        self.out("this.DeferedSet = _DeferedSet;\nthis.IsGotoTransition = _IsGotoTransition;\n")
-        self.out("this.Transitions = new TransitionFunction[{0},{1}];\n".format(len(machine.state_decls), len(self.pprogram.events)))
-        rtransitions_map = self.build_transition_map(machine)
-        for (state, to_state, fn_name, is_named, is_push), on_es in rtransitions_map.items():
-            transition_fn_name = None
-            if is_named or not fn_name:
-                transition_fn_name = "{0}_on_{1}".format(state.name, "_".join(on_es))
-            else:
-                transition_fn_name = fn_name
-            for on_e in on_es:
-                self.out("this.Transitions[{0},{1}] = {2};\n".format(self.translate_state(machine, state), self.translate_event(on_e), transition_fn_name))
-        for state in machine.state_decls.values():
-            for ignored_event in state.ignored_events:
-                self.out("this.Transitions[{0},{1}] = Transition_Ignore;\n".format(self.translate_state(machine, state), self.translate_event(ignored_event)))
-        # Exit Functions
-        self.out("this.ExitFunctions = new ExitFunction[{0}];\n".format(len(machine.state_decls)))
-        for state in machine.state_decls.values():
-            if state.exit_fn:
-                self.out("this.ExitFunctions[{state}] = {exit_fn};\n".format(state=self.translate_state(machine,state), exit_fn=state.exit_fn))
-        # StartMachine
-        if machine.is_spec:
-            self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
-        else:
-            self.out("}\n")
-            self.out("public override void StartMachine (Scheduler scheduler, {0} payload) {{\n".format(self.translate_type(PTypeAny)))
-            self.out("this.scheduler = scheduler;\n")
-            self.current_payload_type = PTypeAny
-            self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
+        self.out_constructor_body(machine, rtransitions_map)
         self.out("}\n")
 
         # Transition functions

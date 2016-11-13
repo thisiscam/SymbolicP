@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 
 #if USE_SYLVAN
 using bdd = SylvanSharp.bdd;
@@ -132,6 +133,7 @@ public static partial class PathConstraint
 			ret.AllEscaped = true;
 			ret.returnPaths = bdd.bddfalse;
 			ret.oldPC = pc;
+			ret.CurrentIterationAllEscaped = false;
 			return ret;
 		}
 		

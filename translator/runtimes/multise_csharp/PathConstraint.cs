@@ -76,6 +76,16 @@ public static partial class PathConstraint
 		solver_bool_var_cnt = 0;
 	}
 	
+	public static void BeginRecover()
+	{
+		solver.Reset();
+		ForceSetPC(bdd.bddtrue);
+		decision_cnt = 0;
+		solver_bool_var_cnt = 0;
+		sym_bool_vars = new SCG.List<SymbolicBool>();
+		Program.options.Rerun = true;
+	}
+	
 	public static bdd GetPC()
 	{
 #if USE_SYLVAN
@@ -335,7 +345,7 @@ public static partial class PathConstraint
 		{
 			solver.Check();
 			var v = (BoolExpr)solver.Model.Evaluate(b, true);
-			solver.Assert(ctx.MkEq(v, b));
+			solver.Assert(ctx.MkEq(b, v));
 			if(v.BoolValue == Z3_lbool.Z3_L_TRUE) {
 				ret = ret.And(bdd.ithvar(i));
 			} else if(v.BoolValue == Z3_lbool.Z3_L_FALSE) {
@@ -398,6 +408,7 @@ public static partial class PathConstraint
  	{
  		string tmpfile = Path.GetTempFileName();
  		File.WriteAllBytes(tmpfile, s.Item1);
+  		SylvanSharp.SylvanSharp.sylvan_serialize_reset();
  		SylvanSharp.SylvanSharp.sylvan_serialize_fromfile(tmpfile);
  		var i = SylvanSharp.SylvanSharp.sylvan_serialize_get_reversed(s.Item2);
  		File.Delete(tmpfile);
@@ -453,7 +464,6 @@ public static partial class PathConstraint
  		var trace = (Trace)ser.ReadObject(trace_stream);
  		num_decision_vars_history = trace.NumDecisionVarsHistory;
  		var pc = SavedStringToBDD(trace.FailureOnePc);
- 		ForceSetPC(pc);
  		foreach(var bs in trace.BDDZ3Vars)
  		{
  			/* Very hacky way to deserialize z3 formulas.. */
@@ -466,6 +476,7 @@ public static partial class PathConstraint
 			}
  			formula.ToBDD();
  		}
+ 		ForceSetPC(pc);
  	}
 #endregion
 

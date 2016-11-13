@@ -57,6 +57,9 @@ public class List<T> {
 		}
 		this._count -= count;
 	}
+	public void RemoveRange(int start) {
+		this._count = start;
+	}
 
 	public T this[int index] { 
 		get {

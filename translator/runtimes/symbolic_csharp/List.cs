@@ -32,6 +32,13 @@ public class List<T> {
 		this._count = this._count - count;
 	}
 
+	public void RemoveRange(int start) {
+		if(this._count < start) {
+			throw new IndexOutOfRangeException();
+		}
+		this._count = start;
+	}
+
 	public T this[int index] { 
 		get {
 			if(index >= this._count) {

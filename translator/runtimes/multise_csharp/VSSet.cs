@@ -14,7 +14,6 @@ using BDDLIB = BuDDySharp.BuDDySharp;
 public class VSSet<T>
 {
 	private SCG.Dictionary<T, bdd> data = new SCG.Dictionary<T, bdd>();
-	private SCG.List<T> ordered = new SCG.List<T>();
 	private ValueSummary<int> _count = 0;
 	
 	public VSSet()
@@ -37,7 +36,6 @@ public class VSSet<T>
 				} else {
 					PathConstraint.AddAxiom(guardedvalue.bddForm);
 					data.Add(guardedvalue.value, bddForm);
-					ordered.Add(guardedvalue.value);
 					_count.Increment();
 					PathConstraint.RestorePC(pc);
 				}

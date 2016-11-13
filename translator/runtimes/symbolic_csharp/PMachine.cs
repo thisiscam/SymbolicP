@@ -25,21 +25,27 @@ abstract class PMachine : IPType<PMachine> {
     
     /* Returns the index that can serve this event */
     public int CanServeEvent(PInteger e) {
-        for(int i=0; i < this.states.Count; i++) {
+        for(int i=this.states.Count-1; i >= 0; i--) {
             int state = this.states[i];
-            if(!this.DeferedSet[state, e] && this.Transitions[state, e] != null) {
-                return i;
+            if(this.DeferedSet[state, e]) {
+                return -1;
+            } else {
+                if(this.Transitions[state, e] != null) {
+                    return i;
+                }
             }
         }
-        return -1;
+        throw new Exception("Unhandled event");
     }
 
     protected void RaiseEvent(PInteger e, IPType payload) {
-        for(int i=0; i < this.states.Count; i++) {
+        for(int i=this.states.Count-1; i >= 0; i--) {
             int state = this.states[i];
             if(this.Transitions[state, e] != null) {
-                this.RunStateMachine(i, e, payload);
+                this.Transitions[state, e](payload);
                 return;
+            } else {
+                PopState();
             }
         }
         throw new SystemException("Unhandled event");
@@ -55,9 +61,9 @@ abstract class PMachine : IPType<PMachine> {
     }
 
     protected void PopState() {
-        this.retcode = Constants.EXECUTE_FINISHED;
-        int current_state = this.states[0];
-        this.states.RemoveAt(0);
+        int last = states.Count-1;
+        int current_state = this.states[last];
+        this.states.RemoveRange(last);
         if(this.ExitFunctions[current_state] != null) {
             this.ExitFunctions[current_state]();
         }
@@ -67,6 +73,12 @@ abstract class PMachine : IPType<PMachine> {
         return (PBool)this.scheduler.RandomBool();
     }
 
+#if MULTISE_RUNTIME
+    protected PBool RandomBool(int site, ValueSummary<int> cnt, System.Collections.Generic.List<PBool> list) {
+        return null;
+    }
+#endif
+    
 	protected void Assert(PBool cond, string msg) {
         if(!cond) {
             throw new SystemException(msg);
@@ -82,7 +94,10 @@ abstract class PMachine : IPType<PMachine> {
     public void RunStateMachine(int state_idx, PInteger e, IPType payload) {
         int state = this.states[state_idx];
         if(this.IsGotoTransition[state, e]) {
-            this.states.RemoveRange(0, state_idx);
+            for(int i=this.states.Count-1; i > state_idx; i--)
+            {
+                this.PopState();
+            }
         }
         this.retcode = Constants.EXECUTE_FINISHED;
         TransitionFunction transition_fn = this.Transitions[state, e];

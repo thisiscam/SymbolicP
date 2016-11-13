@@ -29,7 +29,8 @@ namespace MultiSETransformer
 
 			var noCopySrcs = args.Count() > 3 ? args [3].Split (new []{ ',' }, 1000).Select((src_path, i) => Path.GetFullPath(src_path)) : new string[0];
 
-            var definedSymbols = args.Count() > 4 ? args[4].Split(new []{ ',' }, 1000) : new string[0];
+            var definedSymbols = args.Count() > 4 ? args[4].Split(new []{ ',' }, 1000).ToList() : new List<string>();
+            definedSymbols.Add("MULTISE_RUNTIME");
             
 			Compilation test = CreateTestCompilation(files.ToArray(), definedSymbols.ToArray());
 			

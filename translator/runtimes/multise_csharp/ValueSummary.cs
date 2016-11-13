@@ -52,7 +52,7 @@ public partial class ValueSummary<T>
 
 	public ValueSummary(T t) : this()
 	{
-		this.values.Add(new GuardedValue<T>(bdd.bddtrue, t));
+		this.values.Add(new GuardedValue<T>(PathConstraint.GetPC(), t));
 	}
 
 	public static implicit operator T(ValueSummary<T> vs)

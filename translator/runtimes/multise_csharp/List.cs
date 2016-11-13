@@ -47,23 +47,23 @@ public class List<T>
         this._count.Assign<int>(this._count.InvokeBinary<int, int>((l, r) => l - r, count));
     }
 
+    public void RemoveRange(ValueSummary<int> start)
+    {
+        var vs_cond_3 = (this._count.InvokeBinary<int, bool>((l, r) => l < r, start)).Cond();
+        {
+            if (vs_cond_3.CondTrue())
+            {
+                throw new IndexOutOfRangeException();
+            }
+        }
+
+        vs_cond_3.MergeBranch();
+        this._count.Assign<int>(start);
+    }
+
     public ValueSummary<T> this[ValueSummary<int> index]
     {
         get
-        {
-            var vs_cond_3 = (index.InvokeBinary<int, bool>((l, r) => l >= r, this._count)).Cond();
-            {
-                if (vs_cond_3.CondTrue())
-                {
-                    throw new IndexOutOfRangeException();
-                }
-            }
-
-            vs_cond_3.MergeBranch();
-            return this.data.GetIndex<T>(index);
-        }
-
-        set
         {
             var vs_cond_4 = (index.InvokeBinary<int, bool>((l, r) => l >= r, this._count)).Cond();
             {
@@ -74,15 +74,12 @@ public class List<T>
             }
 
             vs_cond_4.MergeBranch();
-            this.data.SetIndex<T>(index, value);
+            return this.data.GetIndex<T>(index);
         }
-    }
 
-    public ValueSummary<T> this[ValueSummary<SymbolicInteger> index]
-    {
-        get
+        set
         {
-            var vs_cond_5 = (index.InvokeBinary<int, SymbolicBool>((l, r) => l >= r, this._count)).Cond();
+            var vs_cond_5 = (index.InvokeBinary<int, bool>((l, r) => l >= r, this._count)).Cond();
             {
                 if (vs_cond_5.CondTrue())
                 {
@@ -91,10 +88,13 @@ public class List<T>
             }
 
             vs_cond_5.MergeBranch();
-            return this.data.GetIndex<T>(index);
+            this.data.SetIndex<T>(index, value);
         }
+    }
 
-        set
+    public ValueSummary<T> this[ValueSummary<SymbolicInteger> index]
+    {
+        get
         {
             var vs_cond_6 = (index.InvokeBinary<int, SymbolicBool>((l, r) => l >= r, this._count)).Cond();
             {
@@ -105,6 +105,20 @@ public class List<T>
             }
 
             vs_cond_6.MergeBranch();
+            return this.data.GetIndex<T>(index);
+        }
+
+        set
+        {
+            var vs_cond_7 = (index.InvokeBinary<int, SymbolicBool>((l, r) => l >= r, this._count)).Cond();
+            {
+                if (vs_cond_7.CondTrue())
+                {
+                    throw new IndexOutOfRangeException();
+                }
+            }
+
+            vs_cond_7.MergeBranch();
             this.data.SetIndex<T>(index, value);
         }
     }

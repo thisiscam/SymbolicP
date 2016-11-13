@@ -11,7 +11,7 @@ partial class Scheduler
         var _frame_pc = PathConstraint.GetPC();
         var vs_ret_0 = new ValueSummary<SchedulerChoice>();
         ValueSummary<List<SchedulerChoice>> choices = new ValueSummary<List<Scheduler.SchedulerChoice>>(new List<SchedulerChoice>());
-		machines.ForEach((machine) =>         
+		machines.ForEach((machine) =>
         {
             ValueSummary<bool> vs_lgc_tmp_0;
             ValueSummary<// Collect from send queue
