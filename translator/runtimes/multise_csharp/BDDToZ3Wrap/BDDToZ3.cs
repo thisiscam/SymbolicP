@@ -82,6 +82,11 @@ namespace BDDToZ3Wrap
 				yield return GetithZ3Expr(i);
 			}
 		}
+		
+		public static bdd OneSat(bdd aggregatePC)
+		{
+			return new bdd(PInvoke.find_one_sat(aggregatePC.Id), false);
+		}
 	}
 	
 	public static class PInvoke
@@ -122,6 +127,9 @@ namespace BDDToZ3Wrap
 
 		[DllImport(DLLNAME)]
 		public unsafe extern static void task_pc_addaxiom(BDD bdd);
+		
+		[DllImport(DLLNAME)]
+		public unsafe extern static BDD find_one_sat(BDD bdd);
 	}
 }
 

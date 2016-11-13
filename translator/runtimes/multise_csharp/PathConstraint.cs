@@ -337,25 +337,27 @@ public static partial class PathConstraint
 	
 	public static bdd ExtractOneCounterExampleFromAggregatePC(bdd aggregatePC)
 	{
-		solver.Push();
-		solver.Assert(aggregatePC.ToZ3Expr());
-		var ret = bdd.bddtrue;
-		int i = 0;
-		foreach(var b in BDDToZ3Wrap.Converter.GetAllUsedFormulas())
-		{
-			solver.Check();
-			var v = (BoolExpr)solver.Model.Evaluate(b, true);
-			solver.Assert(ctx.MkEq(b, v));
-			if(v.BoolValue == Z3_lbool.Z3_L_TRUE) {
-				ret = ret.And(bdd.ithvar(i));
-			} else if(v.BoolValue == Z3_lbool.Z3_L_FALSE) {
-				ret = ret.And(bdd.nithvar(i));
-			} else {
-				throw new Exception("Not reachable");
-			}
-			i++;
-		}
-		solver.Pop();
+		//solver.Push();
+		//solver.Assert(aggregatePC.ToZ3Expr());
+		//var ret = bdd.bddtrue;
+		//int i = 0;
+		//solver.Check();
+		//foreach(var b in BDDToZ3Wrap.Converter.GetAllUsedFormulas())
+		//{
+		//	var v = (BoolExpr)solver.Model.Evaluate(b, false);
+		//	if(v.BoolValue == Z3_lbool.Z3_L_TRUE) {
+		//		ret = ret.And(bdd.ithvar(i));
+		//	} else if(v.BoolValue == Z3_lbool.Z3_L_FALSE) {
+		//		ret = ret.And(bdd.nithvar(i));
+		//	} else if(v.BoolValue == Z3_lbool.Z3_L_UNDEF) {
+		//		//ret = ret.And(bdd.nithvar(i));
+		//	} else {
+		//		throw new Exception("Not reachable");
+		//	}
+		//	i++;
+		//}
+		//solver.Pop();
+		var ret = BDDToZ3Wrap.Converter.OneSat(aggregatePC);
 		return ret;
 	}
 	

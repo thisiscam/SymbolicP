@@ -10,7 +10,10 @@
 #define bdd_low sylvan_low
 #define bdd_high sylvan_high
 #define bdd_ithvar sylvan_ithvar
+#define bdd_nithvar sylvan_nithvar
 #define bdd_var sylvan_var
+#define bdd_addref sylvan_ref
+#define bdd_delref sylvan_deref
 #else
 #undef __cplusplus
 extern "C" 
@@ -77,8 +80,12 @@ static Z3_ast _bdd_to_Z3_formula(BDD root, unordered_map<BDD, Z3_ast> &visited, 
 	} else {
 		Z3_ast t = bdd_vars_to_z3_formula[bdd_var(root)];
 
-		Z3_ast left = _bdd_to_Z3_formula(bdd_low(root), visited, count);
-		Z3_ast right = _bdd_to_Z3_formula(bdd_high(root), visited, count);
+		BDD low = bdd_addref(bdd_low(root));
+		BDD high = bdd_addref(bdd_high(root));
+		Z3_ast left = _bdd_to_Z3_formula(low, visited, count);
+		Z3_ast right = _bdd_to_Z3_formula(high, visited, count);
+		bdd_delref(low);
+		bdd_delref(high);
 
 		Z3_ast not_t = Z3_mk_not(ctx, t);
 		Z3_inc_ref(ctx, not_t);
@@ -101,6 +108,7 @@ static Z3_ast _bdd_to_Z3_formula(BDD root, unordered_map<BDD, Z3_ast> &visited, 
 		Z3_dec_ref(ctx, t_and_right);
 	}
 	Z3_inc_ref(ctx, ret);
+	bdd_addref(root);
 	visited[root] = ret;
 	return ret;
 }
@@ -112,6 +120,7 @@ Z3_ast bdd_to_Z3_formula(BDD r)
 	Z3_ast ret = _bdd_to_Z3_formula(r, visited, &i);
 	for (unordered_map<BDD, Z3_ast>::iterator it = visited.begin(); it != visited.end(); ++it) {
 		Z3_dec_ref(ctx, it->second);
+		bdd_delref(it->first);
 	}
 	// printf("traversal count: %d, bddnodecount: %d\n", i, bdd_nodecount(*r));
 	return ret;
@@ -157,6 +166,48 @@ void debug_print_used_bdd_vars()
 	{
 		printf("%d: %s\n", i, Z3_ast_to_string(ctx, bdd_vars_to_z3_formula[i]));
 	}
+}
+BDD find_one_sat(BDD bdd)
+{
+	/* TODO: fix this function to take into account Z3 */
+#ifdef USE_SYLVAN
+	LACE_ME;
+	BDDVAR vars[bdd_vars_to_z3_formula.size()];
+	for(int i=0; i < bdd_vars_to_z3_formula.size(); i++) {
+		vars[i] = i;
+	}
+	BDDSET varset = sylvan_set_fromarray(vars, bdd_vars_to_z3_formula.size());
+	uint8_t str[bdd_vars_to_z3_formula.size()];
+	int retcode = sylvan_sat_one(bdd, varset, str);
+	if(retcode == 0) {
+		printf("Failed to find one sat!\n");
+	}
+	BDD ret = bddtrue;
+	for(int i=0; i < bdd_vars_to_z3_formula.size(); i++) {
+		switch(str[i]) {
+			case 0: {
+				ret = bdd_addref(sylvan_and(ret, bdd_nithvar(i)));
+				break;
+			}
+			case 1: {
+				ret = bdd_addref(sylvan_and(ret, bdd_ithvar(i)));
+				break;
+			}
+			default: {				
+				ret = bdd_addref(sylvan_and(ret, bdd_nithvar(i)));
+				break;
+			}
+		}
+	}
+	return ret;
+#else
+	BDD vars[bdd_vars_to_z3_formula.size()];
+	for(int i=0; i < bdd_vars_to_z3_formula.size(); i++) {
+		vars[i] = i;
+	}
+	BDD varset = bdd_makeset(vars, bdd_vars_to_z3_formula.size());
+	return bdd_addref(bdd_satoneset(bdd, varset, bddtrue));
+#endif
 }
 
 #ifdef USE_SYLVAN
