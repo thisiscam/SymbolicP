@@ -341,27 +341,27 @@ public static partial class PathConstraint
 	
 	public static bdd ExtractOneCounterExampleFromAggregatePC(bdd aggregatePC)
 	{
-		//solver.Push();
-		//solver.Assert(aggregatePC.ToZ3Expr());
-		//var ret = bdd.bddtrue;
-		//int i = 0;
-		//solver.Check();
-		//foreach(var b in BDDToZ3Wrap.Converter.GetAllUsedFormulas())
-		//{
-		//	var v = (BoolExpr)solver.Model.Evaluate(b, false);
-		//	if(v.BoolValue == Z3_lbool.Z3_L_TRUE) {
-		//		ret = ret.And(bdd.ithvar(i));
-		//	} else if(v.BoolValue == Z3_lbool.Z3_L_FALSE) {
-		//		ret = ret.And(bdd.nithvar(i));
-		//	} else if(v.BoolValue == Z3_lbool.Z3_L_UNDEF) {
-		//		//ret = ret.And(bdd.nithvar(i));
-		//	} else {
-		//		throw new Exception("Not reachable");
-		//	}
-		//	i++;
-		//}
-		//solver.Pop();
-		var ret = BDDToZ3Wrap.Converter.OneSat(aggregatePC);
+		solver.Push();
+		solver.Assert(aggregatePC.ToZ3Expr());
+		var ret = bdd.bddtrue;
+		int i = 0;
+		solver.Check();
+		foreach(var b in BDDToZ3Wrap.Converter.GetAllUsedFormulas())
+		{
+			var v = (BoolExpr)solver.Model.Evaluate(b, true);
+			if(v.BoolValue == Z3_lbool.Z3_L_TRUE) {
+				ret = ret.And(bdd.ithvar(i));
+			} else if(v.BoolValue == Z3_lbool.Z3_L_FALSE) {
+				ret = ret.And(bdd.nithvar(i));
+			} else {
+				throw new Exception("Not reachable");
+			}
+			i++;
+		}
+		solver.Pop();
+		var retz3 = BDDToZ3Wrap.Converter.OneSat(aggregatePC.And(ret.Not()));
+		ret.PrintDot();
+		retz3.PrintDot();
 		return ret;
 	}
 	
@@ -386,7 +386,7 @@ public static partial class PathConstraint
  
 #region trace
  	[Serializable]
- 	private class Trace {
+ 	public class Trace {
  		public SCG.List<int> NumDecisionVarsHistory { get; set;}
 #if USE_SYLVAN
  		public Tuple<byte[], ulong> FailurePc { get; set; }
@@ -410,7 +410,7 @@ public static partial class PathConstraint
  		return Tuple.Create(s, key);
  	}
  	
- 	private static bdd SavedStringToBDD(Tuple<byte[], ulong> s)
+ 	public static bdd SavedStringToBDD(Tuple<byte[], ulong> s)
  	{
  		string tmpfile = Path.GetTempFileName();
  		File.WriteAllBytes(tmpfile, s.Item1);
@@ -482,6 +482,7 @@ public static partial class PathConstraint
 			}
  			formula.ToBDD();
  		}
+ 		//pc = ExtractOneCounterExampleFromAggregatePC(pc);
  		ForceSetPC(pc);
  	}
 #endregion

@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Security;
 
 #if USE_SYLVAN
 using bdd = SylvanSharp.bdd;
@@ -98,36 +99,47 @@ namespace BDDToZ3Wrap
 		const string DLLNAME = "BDD_BUDDY_Z3_WRAP";
 #endif
 
+		[SuppressUnmanagedCodeSecurity]		
 		[DllImport(DLLNAME)]
 		public extern static void init_bdd_z3_wrap(IntPtr ctx); 
 
+		[SuppressUnmanagedCodeSecurity]		
 		[DllImport(DLLNAME)]
 		public extern static IntPtr bdd_to_Z3_formula(BDD a0);
 
+		[SuppressUnmanagedCodeSecurity]
 		[DllImport(DLLNAME)]
 		public extern static BDD Z3_formula_to_bdd(IntPtr ast);
 		
+		[SuppressUnmanagedCodeSecurity]
 		[DllImport(DLLNAME)]
 		public extern static IntPtr get_ith_Z3_formula(int i);
 		
+		[SuppressUnmanagedCodeSecurity]
 		[DllImport(DLLNAME)]
 		public extern static int get_num_formulas();
 	
+		[SuppressUnmanagedCodeSecurity]
 		[DllImport(DLLNAME)]
 		public extern static void debug_print_used_bdd_vars();
 		
+		[SuppressUnmanagedCodeSecurity]
 		[DllImport(DLLNAME)]
 		public unsafe extern static void force_set_task_pc(BDD bdd);
 
+		[SuppressUnmanagedCodeSecurity]
 		[DllImport(DLLNAME)]
 		public unsafe extern static void set_task_pc(BDD bdd);
 		
+		[SuppressUnmanagedCodeSecurity]
 		[DllImport(DLLNAME)]
 		public unsafe extern static BDD get_task_pc();
 
+		[SuppressUnmanagedCodeSecurity]
 		[DllImport(DLLNAME)]
 		public unsafe extern static void task_pc_addaxiom(BDD bdd);
 		
+		[SuppressUnmanagedCodeSecurity]
 		[DllImport(DLLNAME)]
 		public unsafe extern static BDD find_one_sat(BDD bdd);
 	}

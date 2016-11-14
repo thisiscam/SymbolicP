@@ -177,31 +177,9 @@ BDD find_one_sat(BDD bdd)
 		vars[i] = i;
 	}
 	BDDSET varset = sylvan_set_fromarray(vars, bdd_vars_to_z3_formula.size());
-	uint8_t str[bdd_vars_to_z3_formula.size()];
-	int retcode = sylvan_sat_one(bdd, varset, str);
-	if(retcode == 0) {
-		printf("Failed to find one sat!\n");
-	}
-	BDD ret = bddtrue;
-	for(int i=0; i < bdd_vars_to_z3_formula.size(); i++) {
-		switch(str[i]) {
-			case 0: {
-				ret = bdd_addref(sylvan_and(ret, bdd_nithvar(i)));
-				break;
-			}
-			case 1: {
-				ret = bdd_addref(sylvan_and(ret, bdd_ithvar(i)));
-				break;
-			}
-			default: {				
-				ret = bdd_addref(sylvan_and(ret, bdd_nithvar(i)));
-				break;
-			}
-		}
-	}
-	return ret;
+	return bdd_addref(sylvan_sat_single(bdd, varset));
 #else
-	BDD vars[bdd_vars_to_z3_formula.size()];
+	int vars[bdd_vars_to_z3_formula.size()];
 	for(int i=0; i < bdd_vars_to_z3_formula.size(); i++) {
 		vars[i] = i;
 	}
@@ -213,7 +191,7 @@ BDD find_one_sat(BDD bdd)
 #ifdef USE_SYLVAN
 void force_set_task_pc(BDD pc)
 {
-	LACE_ME;
+	WorkerP* __lace_worker = lace_get_worker();
 	void** task_buf = (void**)__lace_worker->current_task->d;
 	// printf("xxx worker %d: force set from %p to %lu\n", __lace_worker->worker, task_buf[5], pc);
 	sylvan_ref(pc);
@@ -221,7 +199,7 @@ void force_set_task_pc(BDD pc)
 }
 void set_task_pc(BDD pc)
 {
-	LACE_ME;
+	WorkerP* __lace_worker = lace_get_worker();
 	void** task_buf = (void**)__lace_worker->current_task->d;
 	BDD old_pc = (BDD)task_buf[5];
 	// printf("xxx worker %d: set from %lu to %lu\n", __lace_worker->worker, old_pc, pc);
@@ -231,7 +209,7 @@ void set_task_pc(BDD pc)
 }
 BDD get_task_pc()
 {
-	LACE_ME;
+	WorkerP* __lace_worker = lace_get_worker();
 	void** task_buf = (void**)__lace_worker->current_task->d;
 	BDD pc = (BDD)task_buf[5];
 	// printf("xxx worker %d: get %lu\n", __lace_worker->worker, pc);

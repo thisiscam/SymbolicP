@@ -95,7 +95,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
                 self.out("(")
                 self.out(self.translate_type(possible_payload_type[0]))
                 self.out(")")
-            self.out("payload")
+            self.out(self.current_payload_name)
         self.out(");")
         if not last_stmt and machine.fun_decls[fn_name].can_raise_event:
             self.out_check_raise_exit(ret_type)
@@ -139,8 +139,10 @@ class PProgramToCSharpTranslator(TranslatorBase):
             t_str = self.translate_type(t)
             self.out("{0} {1} = ({2})_payload;\n".format(t_str, p, t_str))
             self.current_payload_type = t
+            self.current_payload_name = p
         else:
             self.current_payload_type = PTypeAny
+            self.current_payload_name = "_payload"
 
     def out_fn_decl(self, machine, fn_name):
         fn_node = machine.fun_decls[fn_name]
@@ -239,6 +241,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
             self.out("public override void StartMachine (Scheduler scheduler, {0} payload) {{\n".format(self.translate_type(PTypeAny)))
             self.out("this.scheduler = scheduler;\n")
             self.current_payload_type = PTypeAny
+            self.current_payload_name = "payload"
             self.out_enter_state(machine, list(filter(lambda s: s.is_start, machine.state_decls.values()))[0], is_push=True)
 
     def out_machine_body(self):
@@ -696,7 +699,7 @@ class PProgramToCSharpTranslator(TranslatorBase):
             if identifier in self.current_visited_fn.local_decls or identifier in self.current_visited_fn.params or identifier in self.current_visited_machine.var_decls:
                 return identifier
             else:
-                return self.translate_event(identifier)
+                return "new PInteger({0})".format(self.translate_event(identifier))
         else:
             return self.exp_emit_do_copy(ctx, identifier, **kwargs)
 

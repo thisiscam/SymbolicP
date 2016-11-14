@@ -122,7 +122,7 @@ class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
         self.out("#region multisenorewrite\n")
         for i in range(self.rand_bool_cnt):
             self.out("System.Collections.Generic.List<PBool> _allRnds{cnt} = new System.Collections.Generic.List<PBool>();\n".format(cnt=i+1))
-            self.out("ValueSummary<int> _rnd{cnt} = 0;\n".format(cnt=i+1))
+            self.out("ValueSummary<int> _rnd{cnt} = ValueSummary<int>.InitWithTrue(0);\n".format(cnt=i+1))
         self.out("#endregion\n")
 
     def out_machine_body(self):

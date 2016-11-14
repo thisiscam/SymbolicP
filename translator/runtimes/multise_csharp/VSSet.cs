@@ -23,12 +23,11 @@ public class VSSet<T>
 	
 	public void Add(ValueSummary<T> item)
 	{
-		var pc = PathConstraint.GetPC();
+		var pc = bdd.bddtrue;
 		foreach(var guardedvalue in item.values)
 		{
 			var bddForm = pc.And(guardedvalue.bddForm);
 			if(bddForm.FormulaBDDSAT()) {
-				try {
 				if(data.ContainsKey(guardedvalue.value)) {
 					PathConstraint.AddAxiom(data[guardedvalue.value].Not().And(bddForm));
 					data[guardedvalue.value] = data[guardedvalue.value].Or(bddForm);
@@ -39,10 +38,6 @@ public class VSSet<T>
 					data.Add(guardedvalue.value, bddForm);
 					_count.Increment();
 					PathConstraint.RestorePC(pc);
-				}
-				} catch(Exception ex)
-				{
-					Debugger.Break();
 				}
 			}
 		}
@@ -65,7 +60,7 @@ public class VSSet<T>
     		if(bddForm.FormulaBDDSolverSAT()) {
     			PathConstraint.AddAxiom(guardedData.Value);
     			var v = new ValueSummary<T>();
-    			v.AddValue(guardedData.Value, guardedData.Key);
+    			v.AddValue(bddForm, guardedData.Key);
     			f.Invoke(v);
     			PathConstraint.RestorePC(pc);
     		}
