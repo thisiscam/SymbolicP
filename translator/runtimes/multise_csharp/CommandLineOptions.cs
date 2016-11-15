@@ -24,7 +24,7 @@ public class CommandLineOptions
     [Option('g', "sylvan-granularity", DefaultValue=1, HelpText = "Maxium cache size(lg2) used in Sylvan library")]
     public int SylvanGranularity { get; set; }
 #else
-	[Option('b', "num-bdd-nodes", DefaultValue=50000000, HelpText = "Number of initial BDD nodes used in BuDDy library")]
+	[Option('b', "num-bdd-nodes", DefaultValue=5000000, HelpText = "Number of initial BDD nodes used in BuDDy library")]
     public int BDDNumInitialNodes { get; set; }
 
 	[Option('c', "bdd-cache-ratio", DefaultValue=1, HelpText = "Cache ratio of BuDDy library")]

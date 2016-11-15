@@ -61,7 +61,6 @@ abstract class PMachine : IPType<PMachine>
 
         if (vs_cond_22.MergeBranch())
         {
-
             throw new Exception("Unhandled event");
         }
 

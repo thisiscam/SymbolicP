@@ -359,9 +359,6 @@ public static partial class PathConstraint
 			i++;
 		}
 		solver.Pop();
-		var retz3 = BDDToZ3Wrap.Converter.OneSat(aggregatePC.And(ret.Not()));
-		ret.PrintDot();
-		retz3.PrintDot();
 		return ret;
 	}
 	
@@ -395,7 +392,7 @@ public static partial class PathConstraint
  		public string FailurePc { get; set; }
  		public string FailureOnePc {get; set; }
 #endif
- 		public SCG.List<string> BDDZ3Vars{ get; set;}
+ 		public SCG.List<string> BDDZ3Vars{ get; set;} 		
 	}
  
  #if USE_SYLVAN
@@ -482,7 +479,6 @@ public static partial class PathConstraint
 			}
  			formula.ToBDD();
  		}
- 		//pc = ExtractOneCounterExampleFromAggregatePC(pc);
  		ForceSetPC(pc);
  	}
 #endregion

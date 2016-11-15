@@ -1,10 +1,11 @@
 #if RANDOM_SCHEDULER
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 partial class Scheduler
 {
-    VSSet<PMachine> machines = new VSSet<PMachine>();
+    VSSet<PMachine> machines = new VSSet<PMachine>(Comparer<PMachine>.Create((PMachine x, PMachine y) => x._mid.CompareTo(y._mid)));
 
     private ValueSummary<SchedulerChoice> ChooseMachine()
     {

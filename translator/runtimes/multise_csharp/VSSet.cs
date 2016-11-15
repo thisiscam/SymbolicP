@@ -13,12 +13,12 @@ using BDDLIB = BuDDySharp.BuDDySharp;
 
 public class VSSet<T>
 {
-	private SCG.Dictionary<T, bdd> data = new SCG.Dictionary<T, bdd>();
+	private SCG.SortedDictionary<T, bdd> data;
 	private ValueSummary<int> _count = 0;
 	
-	public VSSet()
+	public VSSet(SCG.IComparer<T> comparer)
 	{
-		
+		 data = new SCG.SortedDictionary<T, bdd>(comparer:comparer);
 	}
 	
 	public void Add(ValueSummary<T> item)
