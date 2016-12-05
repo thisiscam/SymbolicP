@@ -5,6 +5,8 @@
 /* Use the C version of bdd.h*/
 #ifdef USE_SYLVAN
 #include "sylvan.h"
+#include "bdd_sylvan_z3_wrap_export.h"
+#define WRAP_EXPORT BDD_SYLVAN_Z3_WRAP_EXPORT
 #define bddtrue sylvan_true
 #define bddfalse sylvan_false
 #define bdd_low sylvan_low
@@ -20,6 +22,8 @@ extern "C"
 {
 #include "bdd.h"
 }
+#include "bdd_buddy_z3_wrap_export.h"
+#define WRAP_EXPORT BDD_BUDDY_Z3_WRAP_EXPORT
 #endif
 
 #include "z3.h"
@@ -54,7 +58,7 @@ static unordered_map<Z3_ast, BDD> Z3_formula_to_bdd_map;
 extern "C" 
 {
 
-void init_bdd_z3_wrap(void* c)
+WRAP_EXPORT void init_bdd_z3_wrap(void* c)
 {
 	ctx = (Z3_context)c;
 }
@@ -112,7 +116,7 @@ static Z3_ast _bdd_to_Z3_formula(BDD root, unordered_map<BDD, Z3_ast> &visited, 
 	return ret;
 }
 
-Z3_ast bdd_to_Z3_formula(BDD r)
+WRAP_EXPORT Z3_ast bdd_to_Z3_formula(BDD r)
 {
 	int i = 0;
 	unordered_map<BDD, Z3_ast> visited;
@@ -125,7 +129,7 @@ Z3_ast bdd_to_Z3_formula(BDD r)
 	return ret;
 }
 
-BDD Z3_formula_to_bdd(Z3_ast bool_exp)
+WRAP_EXPORT BDD Z3_formula_to_bdd(Z3_ast bool_exp)
 {
 	// TODO, decompose bool_exp into more atomic forms?
 	switch(Z3_get_bool_value(ctx, bool_exp)) {
@@ -149,24 +153,24 @@ BDD Z3_formula_to_bdd(Z3_ast bool_exp)
 	}
 }
 
-Z3_ast get_ith_Z3_formula(int i)
+WRAP_EXPORT Z3_ast get_ith_Z3_formula(int i)
 {
 	return bdd_vars_to_z3_formula[i];
 }
 
-int get_num_formulas()
+WRAP_EXPORT int get_num_formulas()
 {
 	return bdd_vars_to_z3_formula.size();
 }
 
-void debug_print_used_bdd_vars()
+WRAP_EXPORT void debug_print_used_bdd_vars()
 {
 	for(int i=0; i < bdd_vars_to_z3_formula.size(); i++)
 	{
 		printf("%d: %s\n", i, Z3_ast_to_string(ctx, bdd_vars_to_z3_formula[i]));
 	}
 }
-BDD find_one_sat(BDD bdd)
+WRAP_EXPORT BDD find_one_sat(BDD bdd)
 {
 	/* TODO: fix this function to take into account Z3 */
 #ifdef USE_SYLVAN
@@ -188,7 +192,7 @@ BDD find_one_sat(BDD bdd)
 }
 
 #ifdef USE_SYLVAN
-void force_set_task_pc(BDD pc)
+WRAP_EXPORT void force_set_task_pc(BDD pc)
 {
 	WorkerP* __lace_worker = lace_get_worker();
 	void** task_buf = (void**)__lace_worker->current_task->d;
@@ -196,7 +200,7 @@ void force_set_task_pc(BDD pc)
 	sylvan_ref(pc);
 	task_buf[5] = (void*)pc;
 }
-void set_task_pc(BDD pc)
+WRAP_EXPORT void set_task_pc(BDD pc)
 {
 	WorkerP* __lace_worker = lace_get_worker();
 	void** task_buf = (void**)__lace_worker->current_task->d;
@@ -206,7 +210,7 @@ void set_task_pc(BDD pc)
 	sylvan_deref(old_pc);
 	task_buf[5] = (void*)pc;
 }
-BDD get_task_pc()
+WRAP_EXPORT BDD get_task_pc()
 {
 	WorkerP* __lace_worker = lace_get_worker();
 	void** task_buf = (void**)__lace_worker->current_task->d;
@@ -214,7 +218,7 @@ BDD get_task_pc()
 	// printf("xxx worker %d: get %lu\n", __lace_worker->worker, pc);
 	return sylvan_ref(pc);
 }
-void task_pc_addaxiom(BDD bdd)
+WRAP_EXPORT void task_pc_addaxiom(BDD bdd)
 {
 	LACE_ME;
 	void** task_buf = (void**)__lace_worker->current_task->d;
