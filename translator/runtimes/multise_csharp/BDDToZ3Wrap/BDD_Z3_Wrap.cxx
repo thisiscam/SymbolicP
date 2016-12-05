@@ -182,11 +182,12 @@ WRAP_EXPORT BDD find_one_sat(BDD bdd)
 	BDDSET varset = sylvan_set_fromarray(vars, bdd_vars_to_z3_formula.size());
 	return bdd_addref(sylvan_sat_single(bdd, varset));
 #else
-	int vars[bdd_vars_to_z3_formula.size()];
+	int* vars = new int[bdd_vars_to_z3_formula.size()];
 	for(int i=0; i < bdd_vars_to_z3_formula.size(); i++) {
 		vars[i] = i;
 	}
 	BDD varset = bdd_makeset(vars, bdd_vars_to_z3_formula.size());
+	delete vars;
 	return bdd_addref(bdd_satoneset(bdd, varset, bddtrue));
 #endif
 }
