@@ -46,7 +46,7 @@
     <DebugType>full</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release</OutputPath>
-    <DefineConstants>RANDOM_SCHEDULER;MERGE_PVAL;LOG_TRANSITIONS</DefineConstants>
+    <DefineConstants>RANDOM_SCHEDULER;MERGE_PVAL;LOG_TRANSITIONS;USE_SYLVAN</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Externalconsole>true</Externalconsole>

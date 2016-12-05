@@ -15,12 +15,11 @@
 #define bdd_addref sylvan_ref
 #define bdd_delref sylvan_deref
 #else
-#undef __cplusplus
+#define BUDDY_USE_C
 extern "C" 
 {
 #include "bdd.h"
 }
-#define __cplusplus
 #endif
 
 #include "z3.h"
