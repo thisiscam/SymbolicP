@@ -505,13 +505,13 @@ class pVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by pParser#stmt_monitor.
-    def visitStmt_monitor(self, ctx):
+    # Visit a parse tree produced by pParser#stmt_announce.
+    def visitStmt_announce(self, ctx):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by pParser#stmt_monitor_with_arguments.
-    def visitStmt_monitor_with_arguments(self, ctx):
+    # Visit a parse tree produced by pParser#stmt_announce_with_arguments.
+    def visitStmt_announce_with_arguments(self, ctx):
         return self.visitChildren(ctx)
 
 

@@ -561,14 +561,14 @@ class PProgramToCSharpTranslator(TranslatorBase):
             or event_type.name in self.pprogram.observes_map:
             self.out("MachineController.AnnounceEvent({0},{1});\n".format(c4, c6))
 
-    # Visit a parse tree produced by pParser#stmt_monitor.
-    def visitStmt_monitor(self, ctx, **kwargs):
+    # Visit a parse tree produced by pParser#stmt_announce.
+    def visitStmt_announce(self, ctx, **kwargs):
         c1 = ctx.getChild(1).accept(self, **kwargs)
         self.out("MachineController.AnnounceEvent({0}, null);\n".format(c1))
 
 
-    # Visit a parse tree produced by pParser#stmt_monitor_with_arguments.
-    def visitStmt_monitor_with_arguments(self, ctx, **_kwargs):
+    # Visit a parse tree produced by pParser#stmt_announce_with_arguments.
+    def visitStmt_announce_with_arguments(self, ctx, **_kwargs):
         kwargs = _kwargs.copy()
         kwargs["do_copy"] = True
         c1 = ctx.getChild(1).accept(self, **kwargs)

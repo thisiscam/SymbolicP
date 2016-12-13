@@ -22,4 +22,4 @@ parser_jar: parser_src
 	rm -rf build
 
 clean: 
-	rm -rf java/* build 
+	rm -rf java/*.java build 

@@ -83,7 +83,7 @@ machine_name_decl
     ;
    
 observes_list
-    : MONITORS event_list 
+    : OBSERVES event_list 
     ;
 
 is_main
@@ -333,8 +333,8 @@ stmt
     | RAISE exp COMMA single_expr_arg_list SEMICOLON                                # stmt_raise_with_arguments
     | qualifier_or_none SEND exp COMMA exp SEMICOLON                                # stmt_send
     | qualifier_or_none SEND exp COMMA exp COMMA single_expr_arg_list SEMICOLON     # stmt_send_with_arguments
-    | MONITOR exp SEMICOLON                                                         # stmt_monitor
-    | MONITOR exp COMMA single_expr_arg_list SEMICOLON                              # stmt_monitor_with_arguments
+    | ANNOUNCE exp SEMICOLON                                                         # stmt_announce
+    | ANNOUNCE exp COMMA single_expr_arg_list SEMICOLON                              # stmt_announce_with_arguments
     | receive_stmt LCBRACE case_list RCBRACE                                        # stmt_recieve
     ;
 
@@ -486,7 +486,7 @@ ENTRY : 'entry';
 RBRACKET : ']';
 NEW : 'new';
 ASSIGN : '=';
-MONITOR : 'monitor';
+ANNOUNCE : 'announce';
 START : 'start';
 COLON : ':';
 LE : '<=';
@@ -498,7 +498,7 @@ IF : 'if';
 DEFAULT : 'default';
 DIV : '/';
 IN : 'in';
-MONITORS : 'monitors';
+OBSERVES : 'observes';
 MINUS : '-';
 LAND : '&&';
 CASE : 'case';

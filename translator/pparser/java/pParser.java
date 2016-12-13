@@ -18,8 +18,8 @@ public class pParser extends Parser {
 	public static final int
 		GOTO=1, WITH=2, VALUES=3, AS=4, REF=5, PLUS=6, LT=7, KEYS=8, FUN=9, DEFER=10, 
 		INCLUDE=11, LNOT=12, LPAREN=13, SEND=14, ENTRY=15, RBRACKET=16, NEW=17, 
-		ASSIGN=18, MONITOR=19, START=20, COLON=21, LE=22, MODEL=23, GE=24, MACHINE=25, 
-		TRUE=26, IF=27, DEFAULT=28, DIV=29, IN=30, MONITORS=31, MINUS=32, LAND=33, 
+		ASSIGN=18, ANNOUNCE=19, START=20, COLON=21, LE=22, MODEL=23, GE=24, MACHINE=25, 
+		TRUE=26, IF=27, DEFAULT=28, DIV=29, IN=30, OBSERVES=31, MINUS=32, LAND=33, 
 		CASE=34, LCBRACE=35, HOT=36, MAIN=37, REMOVE=38, NULL=39, NONDET=40, COMMA=41, 
 		SEQ=42, SPEC=43, DOT=44, SIZEOF=45, RECEIVE=46, BOOL=47, INT_TYPE=48, 
 		TYPE=49, ANY=50, NE=51, ASSERT=52, STATE=53, GT=54, WHILE=55, INSERT=56, 
@@ -73,8 +73,8 @@ public class pParser extends Parser {
 	private static final String[] _LITERAL_NAMES = {
 		null, "'goto'", "'with'", "'values'", "'as'", "'ref'", "'+'", "'<'", "'keys'", 
 		"'fun'", "'defer'", "'include'", "'!'", "'('", "'send'", "'entry'", "']'", 
-		"'new'", "'='", "'monitor'", "'start'", "':'", "'<='", "'model'", "'>='", 
-		"'machine'", "'true'", "'if'", "'default'", "'/'", "'in'", "'monitors'", 
+		"'new'", "'='", "'announce'", "'start'", "':'", "'<='", "'model'", "'>='", 
+		"'machine'", "'true'", "'if'", "'default'", "'/'", "'in'", "'observes'", 
 		"'-'", "'&&'", "'case'", "'{'", "'hot'", "'main'", "'-='", "'null'", "'$'", 
 		"','", "'seq'", "'spec'", "'.'", "'sizeof'", "'receive'", "'bool'", "'int'", 
 		"'type'", "'any'", "'!='", "'assert'", "'state'", "'>'", "'while'", "'+='", 
@@ -86,8 +86,8 @@ public class pParser extends Parser {
 	private static final String[] _SYMBOLIC_NAMES = {
 		null, "GOTO", "WITH", "VALUES", "AS", "REF", "PLUS", "LT", "KEYS", "FUN", 
 		"DEFER", "INCLUDE", "LNOT", "LPAREN", "SEND", "ENTRY", "RBRACKET", "NEW", 
-		"ASSIGN", "MONITOR", "START", "COLON", "LE", "MODEL", "GE", "MACHINE", 
-		"TRUE", "IF", "DEFAULT", "DIV", "IN", "MONITORS", "MINUS", "LAND", "CASE", 
+		"ASSIGN", "ANNOUNCE", "START", "COLON", "LE", "MODEL", "GE", "MACHINE", 
+		"TRUE", "IF", "DEFAULT", "DIV", "IN", "OBSERVES", "MINUS", "LAND", "CASE", 
 		"LCBRACE", "HOT", "MAIN", "REMOVE", "NULL", "NONDET", "COMMA", "SEQ", 
 		"SPEC", "DOT", "SIZEOF", "RECEIVE", "BOOL", "INT_TYPE", "TYPE", "ANY", 
 		"NE", "ASSERT", "STATE", "GT", "WHILE", "INSERT", "RETURN", "DO", "SEMICOLON", 
@@ -1011,7 +1011,7 @@ public class pParser extends Parser {
 	}
 
 	public static class Observes_listContext extends ParserRuleContext {
-		public TerminalNode MONITORS() { return getToken(pParser.MONITORS, 0); }
+		public TerminalNode OBSERVES() { return getToken(pParser.OBSERVES, 0); }
 		public Event_listContext event_list() {
 			return getRuleContext(Event_listContext.class,0);
 		}
@@ -1028,7 +1028,7 @@ public class pParser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(269);
-			match(MONITORS);
+			match(OBSERVES);
 			setState(270);
 			event_list(0);
 			}
@@ -1524,7 +1524,7 @@ public class pParser extends Parser {
 			case LPAREN:
 			case SEND:
 			case NEW:
-			case MONITOR:
+			case ANNOUNCE:
 			case TRUE:
 			case IF:
 			case DEFAULT:
@@ -3633,13 +3633,17 @@ public class pParser extends Parser {
 		public TerminalNode SEMICOLON() { return getToken(pParser.SEMICOLON, 0); }
 		public Stmt_popContext(StmtContext ctx) { copyFrom(ctx); }
 	}
-	public static class Stmt_monitorContext extends StmtContext {
-		public TerminalNode MONITOR() { return getToken(pParser.MONITOR, 0); }
+	public static class Stmt_announce_with_argumentsContext extends StmtContext {
+		public TerminalNode ANNOUNCE() { return getToken(pParser.ANNOUNCE, 0); }
 		public ExpContext exp() {
 			return getRuleContext(ExpContext.class,0);
 		}
+		public TerminalNode COMMA() { return getToken(pParser.COMMA, 0); }
+		public Single_expr_arg_listContext single_expr_arg_list() {
+			return getRuleContext(Single_expr_arg_listContext.class,0);
+		}
 		public TerminalNode SEMICOLON() { return getToken(pParser.SEMICOLON, 0); }
-		public Stmt_monitorContext(StmtContext ctx) { copyFrom(ctx); }
+		public Stmt_announce_with_argumentsContext(StmtContext ctx) { copyFrom(ctx); }
 	}
 	public static class Stmt_call_with_argumentsContext extends StmtContext {
 		public TerminalNode ID() { return getToken(pParser.ID, 0); }
@@ -3759,6 +3763,14 @@ public class pParser extends Parser {
 		public TerminalNode RCBRACE() { return getToken(pParser.RCBRACE, 0); }
 		public Stmt_recieveContext(StmtContext ctx) { copyFrom(ctx); }
 	}
+	public static class Stmt_announceContext extends StmtContext {
+		public TerminalNode ANNOUNCE() { return getToken(pParser.ANNOUNCE, 0); }
+		public ExpContext exp() {
+			return getRuleContext(ExpContext.class,0);
+		}
+		public TerminalNode SEMICOLON() { return getToken(pParser.SEMICOLON, 0); }
+		public Stmt_announceContext(StmtContext ctx) { copyFrom(ctx); }
+	}
 	public static class Stmt_sendContext extends StmtContext {
 		public Qualifier_or_noneContext qualifier_or_none() {
 			return getRuleContext(Qualifier_or_noneContext.class,0);
@@ -3816,18 +3828,6 @@ public class pParser extends Parser {
 		}
 		public TerminalNode SEMICOLON() { return getToken(pParser.SEMICOLON, 0); }
 		public Stmt_raiseContext(StmtContext ctx) { copyFrom(ctx); }
-	}
-	public static class Stmt_monitor_with_argumentsContext extends StmtContext {
-		public TerminalNode MONITOR() { return getToken(pParser.MONITOR, 0); }
-		public ExpContext exp() {
-			return getRuleContext(ExpContext.class,0);
-		}
-		public TerminalNode COMMA() { return getToken(pParser.COMMA, 0); }
-		public Single_expr_arg_listContext single_expr_arg_list() {
-			return getRuleContext(Single_expr_arg_listContext.class,0);
-		}
-		public TerminalNode SEMICOLON() { return getToken(pParser.SEMICOLON, 0); }
-		public Stmt_monitor_with_argumentsContext(StmtContext ctx) { copyFrom(ctx); }
 	}
 	public static class Stmt_whileContext extends StmtContext {
 		public TerminalNode WHILE() { return getToken(pParser.WHILE, 0); }
@@ -4190,11 +4190,11 @@ public class pParser extends Parser {
 				}
 				break;
 			case 24:
-				_localctx = new Stmt_monitorContext(_localctx);
+				_localctx = new Stmt_announceContext(_localctx);
 				enterOuterAlt(_localctx, 24);
 				{
 				setState(739);
-				match(MONITOR);
+				match(ANNOUNCE);
 				setState(740);
 				exp(0);
 				setState(741);
@@ -4202,11 +4202,11 @@ public class pParser extends Parser {
 				}
 				break;
 			case 25:
-				_localctx = new Stmt_monitor_with_argumentsContext(_localctx);
+				_localctx = new Stmt_announce_with_argumentsContext(_localctx);
 				enterOuterAlt(_localctx, 25);
 				{
 				setState(743);
-				match(MONITOR);
+				match(ANNOUNCE);
 				setState(744);
 				exp(0);
 				setState(745);
