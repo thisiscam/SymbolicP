@@ -94,7 +94,7 @@ namespace BDDToZ3Wrap
 	{
 
 #if USE_SYLVAN 
-		const string DLLNAME = "BDD_SYLVAN_Z3_WraP";
+		const string DLLNAME = "BDD_SYLVAN_Z3_Wrap";
 #else
 		const string DLLNAME = "BDD_BUDDY_Z3_Wrap";
 #endif
