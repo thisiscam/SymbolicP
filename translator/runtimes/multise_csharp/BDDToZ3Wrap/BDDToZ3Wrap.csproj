@@ -66,12 +66,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <None Include="build\libBDD_SYLVAN_Z3_Wrap.*" Condition="'$(OS)' != 'Windows_NT'">
-      <Link>libBDD_SYLVAN_Z3_Wrap%(Extension)</Link>
+    <None Include="build\libBDD_SYLVAN_Z3_Wrap.so" Condition="'$(OS)' != 'Windows_NT'">
+      <Link>libBDD_SYLVAN_Z3_Wrap.so</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="build\libBDD_BUDDY_Z3_Wrap.*" Condition="'$(OS)' != 'Windows_NT'">
-      <Link>libBDD_BUDDY_Z3_Wrap%(Extension)</Link>
+    <None Include="build\libBDD_BUDDY_Z3_Wrap.so" Condition="'$(OS)' != 'Windows_NT'">
+      <Link>libBDD_BUDDY_Z3_Wrap.so</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="build\Release\BDD_BUDDY_Z3_Wrap.dll" Condition="'$(OS)' == 'Windows_NT'">
