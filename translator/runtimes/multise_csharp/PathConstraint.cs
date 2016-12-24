@@ -280,19 +280,39 @@ public static partial class PathConstraint
 		return ret;
 	}
 	
-	private static bdd DecisionTreeFromIdx(bdd[] vars, int idx, int max_decisions)
+	private static IEnumerable<bdd> BuildTreePaths(bdd[] vars, int max_decisions)
 	{
-		if(idx == max_decisions - 1)
-		{
-			var ret = bdd.bddfalse;
-			for(int i=idx; i < Math.Pow(2, vars.Length); i++)
-			{
-				ret = ret.Or(DecisionTreeFromIdx(vars, i));
+		if (max_decisions == 1) {
+			yield return bdd.bddtrue;
+		} else {
+			int left = max_decisions / 2 + max_decisions % 2;
+			int right = max_decisions - left;
+			var left_paths = BuildTreePaths(vars, left);
+			var right_paths = BuildTreePaths(vars, right);
+			int unused_var = (int)Math.Ceiling(Math.Log(max_decisions, 2)) - 1;
+			foreach(var l in left_paths) {
+				yield return l.And(vars[unused_var]);
 			}
-			return ret;
+			foreach(var r in right_paths) {
+				yield return r.And(vars[unused_var].Not());
+			}
 		}
-		return DecisionTreeFromIdx(vars, idx);
 	}
+	
+	//private static bdd DecisionTreeFromIdx(bdd[] vars, int idx, int max_decisions)
+	//{
+	//	var fullTree = BuildFullTree(max_decisions);
+	//	if(idx == max_decisions - 1)
+	//	{
+	//		var ret = bdd.bddfalse;
+	//		for(int i=idx; i < Math.Pow(2, vars.Length); i++)
+	//		{
+	//			ret = ret.Or(DecisionTreeFromIdx(vars, i));
+	//		}
+	//		return ret;
+	//	}
+	//	return DecisionTreeFromIdx(vars, idx);
+	//}
 	
 	private static SCG.List<int> num_decision_vars_history = new SCG.List<int>();
 	private static Stopwatch riwatch = new Stopwatch();
@@ -329,9 +349,10 @@ public static partial class PathConstraint
 		ValueSummary<int> idx = new ValueSummary<int>();
 		foreach(var guardedCnt in count.values)
 		{
+			var all_paths = BuildTreePaths(all_vars, guardedCnt.value).ToList();
 			var bddForm = guardedCnt.bddForm.And(pc);
 			for(int i=0; i < guardedCnt.value; i++) {
-				idx.AddValue(bddForm.And(DecisionTreeFromIdx(all_vars, i, guardedCnt.value)), i);
+				idx.AddValue(bddForm.And(all_paths[i]), i);
 			}
 		}
 		riwatch.Stop();
