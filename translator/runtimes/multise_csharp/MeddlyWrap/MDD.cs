@@ -69,6 +69,11 @@ namespace MeddlyWrap
 			return PInvoke.get_num_vars();
 		}
 		
+		public void DebugPrint()
+		{
+			PInvoke.debug_edge(this.inner);
+		}
+
 		static class PInvoke
 		{
 			const string DLLNAME = "Meddly_Wrap";
@@ -120,6 +125,10 @@ namespace MeddlyWrap
 			[SuppressUnmanagedCodeSecurity]
 			[DllImport(DLLNAME)]
 			public static extern int get_num_vars();
+
+			[SuppressUnmanagedCodeSecurity]
+			[DllImport(DLLNAME)]
+			public static extern void debug_edge(MDD_Ptr d);
 		}	
 	}
 }

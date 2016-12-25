@@ -18,6 +18,7 @@ dd_edge* get_mdd_true();
 dd_edge* get_mdd_false();
 void mdd_free(dd_edge* d);
 int get_num_vars();
+void debug_edge(dd_edge* d);
 }
 
 static expert_domain* d;
@@ -31,7 +32,7 @@ meddly_init(int num_vars)
 	int bounds[num_vars];
 	for(int i=0 ; i < num_vars; i++)
 	{
-		bounds[i] = 1;
+		bounds[i] = 2;
 	}
 	d = static_cast<expert_domain*>(createDomainBottomUp(bounds, num_vars));
 	f = d->createForest(false, forest::BOOLEAN, forest::MULTI_TERMINAL);
@@ -45,15 +46,15 @@ meddly_close()
 
 void allocate_variable(int bound, char* name)
 {
-	int new_var = allocated_var++;
-	d->enlargeVariableBound(new_var, true, bound);
+	int new_var = ++allocated_var;
+	d->enlargeVariableBound(new_var, false, bound);
 	d->useVar(new_var)->setName(name);
 }
 
 dd_edge* create_edge_for_var(int var, const bool* terms)
 {
 	dd_edge* node = new dd_edge(f);
-	f->createEdgeForVar(var, true, terms, *node);
+	f->createEdgeForVar(var + 1, false, terms, *node);
 	return node;
 }
 
@@ -105,4 +106,10 @@ void mdd_free(dd_edge* d)
 int get_num_vars()
 {
 	return allocated_var;
+}
+
+void debug_edge(dd_edge* d)
+{
+	ostream_output out(std::cout);
+	d->show(out, 2);
 }

@@ -13,14 +13,11 @@ namespace TestMeddlyWrap
 			
 			var a = new MDD(0, new bool[]{true, false});
 			var b = new MDD(1, new bool[]{true, false});
-			
-			var not_a = new MDD(0, new bool[]{false, true});
-			if(a.Not() != not_a) 
+
+			if(!a.Not().Or(b.Not()).EqualEqual(a.And(b).Not())) 
 			{
 				Console.WriteLine("Failed");
 			}
-			
-			
 		}
 	}
 }
