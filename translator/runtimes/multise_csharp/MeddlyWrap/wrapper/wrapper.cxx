@@ -26,20 +26,25 @@ void delete_string(char*);
 }
 
 static expert_domain* d;
-static forest* f;
+static expert_forest* f;
 static int allocated_var = 0;
 
 void 
 meddly_init(int num_vars)
 {
 	initialize();
-	int bounds[num_vars];
+	int bounds[num_vars+1];
 	for(int i=0 ; i < num_vars; i++)
 	{
-		bounds[i] = 1;
+		bounds[i] = 2;
 	}
+	forest::policies p(false);
+	p.setOptimistic();
+	p.setFullyReduced();
 	d = static_cast<expert_domain*>(createDomainBottomUp(bounds, num_vars));
-	f = d->createForest(false, forest::BOOLEAN, forest::MULTI_TERMINAL);
+	f = dynamic_cast <expert_forest*> (
+		d->createForest(false, forest::BOOLEAN, forest::MULTI_TERMINAL, p)
+	);
 }
 
 void
@@ -59,6 +64,10 @@ void allocate_variable(int bound, char* _name)
 
 dd_edge* create_edge_for_var(int var, const bool* terms)
 {
+	bool tmp[2] = {0, 1};
+	dd_edge* n_node = new dd_edge(f);
+	f->createEdgeForVar(var + 1, false, (bool*)tmp, *n_node);
+	std::cout << "xx" << edge_to_string(n_node) << "??";
 	dd_edge* node = new dd_edge(f);
 	f->createEdgeForVar(var + 1, false, terms, *node);
 	return node;
