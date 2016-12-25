@@ -5,6 +5,7 @@ using System.Security;
 
 namespace MeddlyWrap
 {
+	using System.Diagnostics;
 	using MDD_Ptr = IntPtr;
 
 	public sealed class MDD
@@ -69,11 +70,37 @@ namespace MeddlyWrap
 			return PInvoke.get_num_vars();
 		}
 		
-		public void DebugPrint()
+		/* For compats */
+		public MDD_Ptr Id { get { return inner; }}
+		
+		public MDD(MDD_Ptr inner, bool memoryOwn)
 		{
-			PInvoke.debug_edge(this.inner);
+			this.inner = inner;
 		}
-
+		
+		public bool not_pure_bool()
+		{
+			return false;
+		}
+		
+		public bool Biimp(MDD other)
+		{
+			throw new Exception("not implemented");
+		}
+		
+		public void PrintDot()
+		{
+			Console.WriteLine("MDD print dot not implemented");
+		}
+		
+		public override string ToString()
+		{
+			var p = PInvoke.edge_to_string(inner);
+			string ret = Marshal.PtrToStringAuto(p);
+			PInvoke.delete_string(p);
+			return ret;
+		}
+		
 		static class PInvoke
 		{
 			const string DLLNAME = "Meddly_Wrap";
@@ -128,7 +155,11 @@ namespace MeddlyWrap
 
 			[SuppressUnmanagedCodeSecurity]
 			[DllImport(DLLNAME)]
-			public static extern void debug_edge(MDD_Ptr d);
+			public static extern IntPtr edge_to_string(MDD_Ptr d);
+			
+			[SuppressUnmanagedCodeSecurity]
+			[DllImport(DLLNAME)]
+			public static extern void delete_string(IntPtr s);
 		}	
 	}
 }

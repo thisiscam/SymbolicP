@@ -6,6 +6,8 @@ using System.Linq;
 #if USE_SYLVAN
 using bdd = SylvanSharp.bdd;
 using BDDLIB = SylvanSharp.SylvanSharp;
+#elif USE_MDD
+using bdd = MeddlyWrap.MDD;
 #else
 using bdd = BuDDySharp.bdd;
 using BDDLIB = BuDDySharp.BuDDySharp;

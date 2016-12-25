@@ -10,6 +10,9 @@ using System.Security;
 using bdd = SylvanSharp.bdd;
 using BDDLIB = SylvanSharp.SylvanSharp;
 using BDD = System.Int64;
+#elif USE_MDD
+using bdd = MeddlyWrap.MDD;
+using BDD = System.IntPtr;
 #else
 using bdd = BuDDySharp.bdd;
 using BDDLIB = BuDDySharp.BuDDySharp;
@@ -23,10 +26,12 @@ namespace BDDToZ3Wrap
 		private static Context ctx;
 
 		public static void Init(Context ctx) {
+#if !USE_MDD
 			BindingFlags bindFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
 			var nCtx = (IntPtr)ctx.GetType().GetProperty("nCtx", bindFlags).GetValue(ctx, null);
 			PInvoke.init_bdd_z3_wrap (nCtx);
 			Converter.ctx = ctx;
+#endif
 
 #if USE_SYLVAN
 			BDDLIB.sylvan_gc_hook_pregc(() => {
@@ -37,7 +42,7 @@ namespace BDDToZ3Wrap
 			BDDLIB.sylvan_gc_hook_postgc(() => {
 				Console.WriteLine("Post GC");
 			});
-#else
+#elif !USE_MDD
 			unsafe {
 				BDDLIB.gbc_hook((arg0, arg1) => {
 					if(arg0 == 1) {
@@ -95,6 +100,8 @@ namespace BDDToZ3Wrap
 
 #if USE_SYLVAN 
 		const string DLLNAME = "BDD_SYLVAN_Z3_Wrap";
+//#elif USE_MDD
+//		const string DLLNAME = "Meddy does not have wrapper yet";
 #else
 		const string DLLNAME = "BDD_BUDDY_Z3_Wrap";
 #endif

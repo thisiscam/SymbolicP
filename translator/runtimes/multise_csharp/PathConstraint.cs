@@ -13,6 +13,8 @@ using System.Threading;
 #if USE_SYLVAN
 using bdd = SylvanSharp.bdd;
 using BDDLIB = SylvanSharp.SylvanSharp;
+#elif USE_MDD
+using bdd = MeddlyWrap.MDD;
 #else
 using bdd = BuDDySharp.bdd;
 using BDDLIB = BuDDySharp.BuDDySharp;
@@ -42,6 +44,8 @@ public static partial class PathConstraint
 			BDDLIB.quit();
 			SylvanSharp.Lace.Exit();
 		};
+#elif USE_MDD
+		
 #else
 		BDDLIB.init(options.BDDNumInitialNodes, options.BDDNumInitialNodes / options.BDDCacheRatio);
 		BDDLIB.setcacheratio(options.BDDCacheRatio);
@@ -316,6 +320,7 @@ public static partial class PathConstraint
 	
 	private static SCG.List<int> num_decision_vars_history = new SCG.List<int>();
 	private static Stopwatch riwatch = new Stopwatch();
+#if !USE_MDD
 	public static ValueSummary<int> ChooseRandomIndex(ValueSummary<int> count)
 	{
 		riwatch.Restart();
@@ -382,7 +387,43 @@ public static partial class PathConstraint
 		solver.Pop();
 		return ret;
 	}
+#else
+	public static ValueSummary<int> ChooseRandomIndex(ValueSummary<int> count)
+	{
+		riwatch.Restart();
+		var pc = GetPC();		
+		var max_count = count.values.Max((GuardedValue<int> arg) => 
+				{	
+					if(!arg.bddForm.And(pc).EqualEqual(bdd.bddfalse)) {
+						return arg.value;
+					} else {
+						return 0;
+					}
+				}
+			);
+		bdd.AllocateVar(max_count, string.Format("decision_{0}", decision_cnt));
+		ValueSummary<int> idx = new ValueSummary<int>();
+		foreach(var guardedCnt in count.values)
+		{
+			var bddForm = guardedCnt.bddForm.And(pc);
+			var all_false = Enumerable.Repeat(false, guardedCnt.value);			
+			for(int i=0; i < guardedCnt.value; i++) {
+				var x = new bdd(decision_cnt, all_false.Select((arg1, arg2) => arg2 == i).ToArray());
+				idx.AddValue(bddForm.And(x), i);
+			}
+		}
+		decision_cnt++;
+		riwatch.Stop();
+		Console.WriteLine("ChooseRandomIndex: {0}", riwatch.Elapsed);
+		return idx;
+	}
 	
+	public static bdd ExtractOneCounterExampleFromAggregatePC(bdd aggregatePC)
+	{
+		throw new Exception("Not implemented");
+	}
+#endif
+
 	public static bool DebugProofEquivalence(BoolExpr e1, BoolExpr e2)
 	{
 		solver.Push();
@@ -438,6 +479,16 @@ public static partial class PathConstraint
  		File.Delete(tmpfile);
  		return new bdd(i);
  	}
+#elif USE_MDD
+	private static string BDDToSavedString(bdd b)
+ 	{
+ 		throw new Exception("Not implemente");
+ 	}
+ 	
+ 	private static bdd SavedStringToBDD(string s)
+ 	{
+ 		 throw new Exception("Not implemente");
+ 	}
 #else
  	private static string BDDToSavedString(bdd b)
  	{
@@ -459,6 +510,16 @@ public static partial class PathConstraint
  	}
  #endif
  
+#if USE_MDD
+ 	public static void SaveTrace(string tracefile) 
+	{
+		throw new Exception("Not implmeneted");
+	}
+ 	public static void RecoverFromTrace(string tracefile)
+ 	{
+		throw new Exception("Not implmeneted");
+ 	}
+#else
  	private static int saving_trace = 0;
  	public static void SaveTrace(string tracefile)
  	{
@@ -502,6 +563,7 @@ public static partial class PathConstraint
  		}
  		ForceSetPC(pc);
  	}
+#endif
 #endregion
 
 #region BDD_Z3_Ext

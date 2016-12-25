@@ -1,3 +1,6 @@
+#include <string>
+#include <sstream>
+#include <iostream>
 #include "meddly.h"
 #include "meddly.hh"
 #include "meddly_expert.h"
@@ -18,7 +21,8 @@ dd_edge* get_mdd_true();
 dd_edge* get_mdd_false();
 void mdd_free(dd_edge* d);
 int get_num_vars();
-void debug_edge(dd_edge* d);
+char* edge_to_string(dd_edge* d);
+void delete_string(char*);
 }
 
 static expert_domain* d;
@@ -32,7 +36,7 @@ meddly_init(int num_vars)
 	int bounds[num_vars];
 	for(int i=0 ; i < num_vars; i++)
 	{
-		bounds[i] = 2;
+		bounds[i] = 1;
 	}
 	d = static_cast<expert_domain*>(createDomainBottomUp(bounds, num_vars));
 	f = d->createForest(false, forest::BOOLEAN, forest::MULTI_TERMINAL);
@@ -44,10 +48,12 @@ meddly_close()
 	cleanup();
 }
 
-void allocate_variable(int bound, char* name)
+void allocate_variable(int bound, char* _name)
 {
 	int new_var = ++allocated_var;
 	d->enlargeVariableBound(new_var, false, bound);
+	char* name = new char[strlen(_name)]; // no variable is ever destroyed so no need to free
+	strcpy(name, _name);
 	d->useVar(new_var)->setName(name);
 }
 
@@ -89,7 +95,7 @@ dd_edge* get_mdd_true()
 dd_edge* get_mdd_false()
 {
 	dd_edge* mdd_false = new dd_edge(f);
-	f->createEdge(true, *mdd_false);
+	f->createEdge(false, *mdd_false);
 	return mdd_false;
 }
 
@@ -108,8 +114,19 @@ int get_num_vars()
 	return allocated_var;
 }
 
-void debug_edge(dd_edge* d)
+char* edge_to_string(dd_edge* d)
 {
-	ostream_output out(std::cout);
+	std::ostringstream str_buffer;
+	ostream_output out(str_buffer);
 	d->show(out, 2);
+	std::string s = str_buffer.str();
+	char* ret = new char[s.length()];
+	strcpy(ret, s.c_str());
+	return ret;
 }
+
+void delete_string(char* s)
+{
+	delete[] s;
+}
+
