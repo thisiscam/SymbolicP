@@ -25,9 +25,9 @@ namespace MeddlyWrap
 			_bddfalse = new MDD(PInvoke.get_mdd_false());
 		}
 		
-		public MDD(int var, bool[] terminals)
+		public MDD(int var, int which_term)
 		{
-			inner = PInvoke.create_edge_for_var(var, terminals);
+			inner = PInvoke.create_edge_for_var(var, which_term);
 		}
 		
 		public MDD(MDD_Ptr inner)
@@ -119,7 +119,7 @@ namespace MeddlyWrap
 			
 			[SuppressUnmanagedCodeSecurity]
 			[DllImport(DLLNAME)]
-			public static extern MDD_Ptr create_edge_for_var(int var, bool[] terms);
+			public static extern MDD_Ptr create_edge_for_var(int var, int idx);
 			
 			[SuppressUnmanagedCodeSecurity]
 			[DllImport(DLLNAME)]

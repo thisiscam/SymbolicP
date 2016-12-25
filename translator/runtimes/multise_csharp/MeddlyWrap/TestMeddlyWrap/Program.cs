@@ -8,10 +8,12 @@ namespace TestMeddlyWrap
 		public static void Main(string[] args)
 		{
 			Console.WriteLine("Hello World!");
-			//MDD.AllocateVar(3, "a");
+			MDD.AllocateVar(2, "a");
 			//MDD.AllocateVar(3, "b");
 			
-			var a = new MDD(0, new bool[]{true, false});
+			var a = new MDD(0, 1);
+			var na = new MDD(0, 0);
+			Console.WriteLine(a.And(na));
 			//var b = new MDD(1, new bool[]{true, false});
 			
 			//var na = new MDD(0, new bool[]{false, true});
@@ -20,7 +22,7 @@ namespace TestMeddlyWrap
 			//	Console.WriteLine("?");
 			//}
 			
-			Console.WriteLine(a);
+			// Console.WriteLine(a);
 			//Console.WriteLine(na);
 			//Console.WriteLine(a.And(b));
 			

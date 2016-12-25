@@ -12,7 +12,7 @@ extern "C" {
 void meddly_init(int num_vars);
 void meddly_close();
 void allocate_variable(int bound, char* name);
-dd_edge* create_edge_for_var(int var, const bool* terms);
+dd_edge* create_edge_for_var(int var, int which_term);
 dd_edge* mdd_and(dd_edge* a, dd_edge* b);
 dd_edge* mdd_or(dd_edge* a, dd_edge* b);
 dd_edge* mdd_not(dd_edge* a);
@@ -62,14 +62,19 @@ void allocate_variable(int bound, char* _name)
 	d->useVar(new_var)->setName(name);
 }
 
-dd_edge* create_edge_for_var(int var, const bool* terms)
+dd_edge* create_edge_for_var(int var, int which_term)
 {
-	bool tmp[2] = {0, 1};
-	dd_edge* n_node = new dd_edge(f);
-	f->createEdgeForVar(var + 1, false, (bool*)tmp, *n_node);
-	std::cout << "xx" << edge_to_string(n_node) << "??";
+	int bound = d->getVariableBound(var + 1, false);
+	bool terms[bound];
+	memset(terms, 0, sizeof(bool) * bound);
+	terms[which_term] = true;
 	dd_edge* node = new dd_edge(f);
 	f->createEdgeForVar(var + 1, false, terms, *node);
+	std::cout << "---\n" << edge_to_string(node) << std::endl;
+	// bool tmp[2] = {0, 1};
+	// dd_edge* n_node = new dd_edge(f);
+	// f->createEdgeForVar(var + 1, false, (bool*)tmp, *n_node);
+	// std::cout << "xxx\n" << edge_to_string(n_node) << std::endl;
 	return node;
 }
 
