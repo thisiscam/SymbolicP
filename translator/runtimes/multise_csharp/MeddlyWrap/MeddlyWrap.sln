@@ -1,0 +1,23 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MeddlyWrap", "MeddlyWrap.csproj", "{4F547021-486C-4AEE-9AAB-15F3C7AD7847}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestMeddlyWrap", "TestMeddlyWrap\TestMeddlyWrap.csproj", "{DE951AD1-B596-4A70-AD1C-10995F23550F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4F547021-486C-4AEE-9AAB-15F3C7AD7847}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F547021-486C-4AEE-9AAB-15F3C7AD7847}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F547021-486C-4AEE-9AAB-15F3C7AD7847}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F547021-486C-4AEE-9AAB-15F3C7AD7847}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE951AD1-B596-4A70-AD1C-10995F23550F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE951AD1-B596-4A70-AD1C-10995F23550F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE951AD1-B596-4A70-AD1C-10995F23550F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE951AD1-B596-4A70-AD1C-10995F23550F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
