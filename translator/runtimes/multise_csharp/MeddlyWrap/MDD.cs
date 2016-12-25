@@ -60,9 +60,9 @@ namespace MeddlyWrap
 			return PInvoke.mdd_equalequal(this.inner, other.inner);
 		}
 		
-		public static void AllocateVar(int bound, string name)
+		public static int AllocateVar(int bound, string name)
 		{
-			PInvoke.allocate_variable(bound, name);
+			return PInvoke.allocate_variable(bound, name);
 		}
 		
 		public static int GetNumVars()
@@ -115,7 +115,7 @@ namespace MeddlyWrap
 			
 			[SuppressUnmanagedCodeSecurity]
 			[DllImport(DLLNAME)]
-			public static extern void allocate_variable(int bound, string name);
+			public static extern int allocate_variable(int bound, string name);
 			
 			[SuppressUnmanagedCodeSecurity]
 			[DllImport(DLLNAME)]

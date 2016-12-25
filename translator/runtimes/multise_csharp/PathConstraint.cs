@@ -228,7 +228,12 @@ public static partial class PathConstraint
 		return Allocate<SymbolicBool>((idx) => 
 			{
 				var sym_var_name = String.Format("{0}_{1}", prefix, idx);
+#if !USE_MDD
 				var fresh_const = new SymbolicBool(ctx.MkBoolConst(sym_var_name).ToBDD());
+#else
+				int new_var = bdd.AllocateVar(2, sym_var_name);
+				var fresh_const = new SymbolicBool(new bdd(new_var, 1));
+#endif
 				return fresh_const;
 			}, sym_bool_vars, solver_bool_var_cnt);
 	}
@@ -401,17 +406,24 @@ public static partial class PathConstraint
 					}
 				}
 			);
-		bdd.AllocateVar(max_count, string.Format("decision_{0}", decision_cnt));
+		
 		ValueSummary<int> idx = new ValueSummary<int>();
-		foreach(var guardedCnt in count.values)
+		if(max_count > 1) 
 		{
-			var bddForm = guardedCnt.bddForm.And(pc);
-			var all_false = Enumerable.Repeat(false, guardedCnt.value);			
-			for(int i=0; i < guardedCnt.value; i++) {
-				var x = new bdd(decision_cnt, all_false.Select((arg1, arg2) => arg2 == i).ToArray());
-				idx.AddValue(bddForm.And(x), i);
+			int new_var = bdd.AllocateVar(max_count, string.Format("decision_{0}", decision_cnt));
+			foreach(var guardedCnt in count.values)
+			{
+				var bddForm = guardedCnt.bddForm.And(pc);
+				for(int i=0; i < guardedCnt.value; i++) {
+					var x = new bdd(new_var, i);
+					idx.AddValue(bddForm.And(x), i);
+				}
 			}
-		}
+		} 
+		else
+ 		{
+ 			idx = count.InvokeUnary((arg) => arg - 1);
+ 		}
 		decision_cnt++;
 		riwatch.Stop();
 		Console.WriteLine("ChooseRandomIndex: {0}", riwatch.Elapsed);

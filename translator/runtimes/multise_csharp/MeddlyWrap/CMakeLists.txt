@@ -14,7 +14,7 @@ ExternalProject_Add(meddly_project
 	CONFIGURE_COMMAND 
 				./autogen.sh 
 			  COMMAND 
-			  	./configure --prefix=${MEDDLY_PROJ_DIR} CXXFLAGS=-g\ -O0\ 
+			  	./configure --prefix=${MEDDLY_PROJ_DIR} CXXFLAGS=\ -O3\ 
 	BUILD_COMMAND make
 	BUILD_IN_SOURCE 1
 	INSTALL_COMMAND make install

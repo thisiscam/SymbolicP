@@ -4,7 +4,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.Serialization.Json;
 using BDDToZ3Wrap;
-using SylvanSharp;
+
+#if USE_MDD
+using bdd = MeddlyWrap.MDD;
+#endif
+
 abstract class PMachine : IPType<PMachine>
 {
     protected delegate void TransitionFunction(ValueSummary<IPType> payload);
@@ -132,8 +136,13 @@ abstract class PMachine : IPType<PMachine>
         return PathConstraint.Allocate<PBool>((idx) => 
            {
                    var sym_var_name = String.Format("RB_{0}_site{1}_{2}", this, site, idx);
-                   var fresh_const = new SymbolicBool(PathConstraint.ctx.MkBoolConst(sym_var_name).ToBDD());
-                   return new PBool(fresh_const);
+#if !USE_MDD
+				var fresh_const = new SymbolicBool(ctx.MkBoolConst(sym_var_name).ToBDD());
+#else
+				int new_var = bdd.AllocateVar(2, sym_var_name);
+				var fresh_const = new SymbolicBool(new bdd(new_var, 1));
+#endif
+                return new PBool(fresh_const);
            }, list, cnt);
     }
 
