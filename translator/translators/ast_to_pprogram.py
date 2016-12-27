@@ -12,6 +12,7 @@ class PProgram(object):
         self.machines = OrderedSet()
         self.observes_map = defaultdict(list)
         self.global_fn_decls = OrderedDict()
+        self.typedefs = OrderedDict()
 
 class PMachine(object):
     def __init__(self):
@@ -106,6 +107,11 @@ class PTypeNamedTuple(object):
         return isinstance(other, PTypeNamedTuple) and self.NTs == other.NTs
 
 class PTypeTranslatorVisitor(pVisitor):
+    """
+        Mixin class for translating types
+        Subclasses need to define field "pprogram" 
+            for this class to function properly
+    """
     def warning(self, msg, ctx):
         print("Warning: {}".format(msg), file=sys.stderr)
 
@@ -125,46 +131,37 @@ class PTypeTranslatorVisitor(pVisitor):
     def visitPtype_bool(self, ctx):
         return PTypeBool
 
-
     # Visit a parse tree produced by pParser#ptype_int_type.
     def visitPtype_int_type(self, ctx):
         return PTypeInt
-
 
     # Visit a parse tree produced by pParser#ptype_event.
     def visitPtype_event(self, ctx):
         return PTypeEventUnknown
 
-
     # Visit a parse tree produced by pParser#ptype_machine.
     def visitPtype_machine(self, ctx):
         return PTypeMachine
-
 
     # Visit a parse tree produced by pParser#ptype_any.
     def visitPtype_any(self, ctx):
         return PTypeAny
 
-
     # Visit a parse tree produced by pParser#ptype_typedef.
     def visitPtype_typedef(self, ctx):
-        return self.typedefs[ctx.getChild(0).getText()]
-
+        return self.pprogram.typedefs[ctx.getChild(0).getText()]
 
     # Visit a parse tree produced by pParser#ptype_seq.
     def visitPtype_seq(self, ctx):
         return PTypeSeq(ctx.getChild(2).accept(self))
 
-
     # Visit a parse tree produced by pParser#ptype_map.
     def visitPtype_map(self, ctx):
         return PTypeMap(ctx.getChild(2).accept(self), ctx.getChild(4).accept(self))
 
-
     # Visit a parse tree produced by pParser#ptype_tuple.
     def visitPtype_tuple(self, ctx):
         return PTypeTuple(ctx.getChild(1).accept(self))
-
 
     # Visit a parse tree produced by pParser#ptype_named_tuple.
     def visitPtype_named_tuple(self, ctx):
@@ -185,10 +182,29 @@ class PTypeTranslatorVisitor(pVisitor):
             return [ctx.getChild(0).accept(self)] + ctx.getChild(2).accept(self)
 
 
+class TopdeclCollector(PTypeTranslatorVisitor):
+    
+    def __init__(self, pprogram):
+        self.pprogram = pprogram
+
+    # Visit a parse tree produced by pParser#top_decl.
+    def visitTop_decl(self, ctx):
+        if ctx.getChild(0).name == "Type_def_decl":
+            return ctx.getChild(0).accept(self)
+        else:
+            return ctx
+
+    # Visit a parse tree produced by pParser#type_def_decl.
+    def visitType_def_decl(self, ctx):
+        i = ctx.getChildCount() - 5 # ignore "model"
+        name = ctx.getChild(i + 1).getText()
+        t = ctx.getChild(i + 3).accept(self)
+        self.pprogram.typedefs[name] = t
+
 class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
 
     def __init__(self, enable_warning=False):
-        self.current_pprogram = None
+        self.pprogram = None
         self.current_visited_machine = None
         self.current_visited_state = None
         self.current_visited_event_list = None
@@ -199,9 +215,10 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
     # Visit a parse tree produced by pParser#program.
     def visitProgram(self, ctx):
         new_program = PProgram()
-        self.current_pprogram = new_program
+        self.pprogram = new_program
+        TopdeclCollector(self.pprogram).visitProgram(ctx)
         self.visitChildren(ctx)
-        self.current_pprogram = None
+        self.pprogram = None
         return new_program
 
     # Visit a parse tree produced by pParser#annotation_set.
@@ -221,11 +238,11 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
 
     # Visit a parse tree produced by pParser#type_def_decl.
     def visitType_def_decl(self, ctx):
-        raise ValueError("Typedef not supported")
+        pass
 
     # Visit a parse tree produced by pParser#event_decl.
     def visitEvent_decl(self, ctx):
-        self.current_pprogram.events.add(ctx.getChild(1).getText())
+        self.pprogram.events.add(ctx.getChild(1).getText())
         return self.visitChildren(ctx)
 
 
@@ -242,7 +259,7 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.current_visited_machine = new_visiting_machine
         self.visitChildren(ctx)
         self.current_visited_machine = None
-        self.current_pprogram.machines.add(new_visiting_machine)
+        self.pprogram.machines.add(new_visiting_machine)
         return new_visiting_machine
 
 
@@ -273,7 +290,7 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         self.visitChildren(ctx)
         self.current_visited_event_list = None
         for e in new_event_list:
-            self.current_pprogram.observes_map[e].append(self.current_visited_machine)
+            self.pprogram.observes_map[e].append(self.current_visited_machine)
 
     # Visit a parse tree produced by pParser#is_main.
     def visitIs_main(self, ctx):
@@ -311,7 +328,7 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         if self.current_visited_machine:
             self.current_visited_machine.fun_decls[f.name] = f
         else:
-            self.current_pprogram.global_fn_decls[f.name] = f
+            self.pprogram.global_fn_decls[f.name] = f
         return f
 
 

@@ -151,9 +151,6 @@ public partial class ValueSummary<T>
 				ret.values.Add(new GuardedValue<T>(bddForm, v.value));
 			}
 		}
-		if(ret.values.Count == 0) {
-			Debugger.Break();
-		}
 		ret.MergeMax();
 		return ret;
 	}
