@@ -541,7 +541,7 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
 
     # Visit a parse tree produced by pParser#state_body_item_on_e_goto_with_fn_named.
     def visitState_body_item_on_e_goto_with_fn_named(self, ctx):
-        fn_name = ctx.getChild(2).getText()
+        fn_name = ctx.getChild(-2).getText()
         new_event_list = []
         self.current_visited_event_list = new_event_list
         self.visitChildren(ctx)

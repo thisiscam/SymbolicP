@@ -188,7 +188,7 @@ machine PaxosNode {
 			receivedAgree = (proposal = (round = -1, servermachine = -1), value = -1);
 			BroadCastAcceptors(prepare, (proposer = this, slot = nextSlotForProposer, proposal = (round = nextProposal.round, servermachine = myRank)));
 			announce announce_proposer_sent, proposeVal;
-			send timer, startTimer;
+			// send timer, startTimer;
 		}
 		
 		on agree do (receivedMess :(slot : int, proposal : (round: int, servermachine : int), value : int)) { 
@@ -209,11 +209,11 @@ machine PaxosNode {
 			if(nextProposal.round <= payload.proposal.round)
 				maxRound = payload.proposal.round;
 				
-			send timer, cancelTimer;
+			// send timer, cancelTimer;
 		}
 		on success goto ProposeValuePhase2 with
 		{
-			send timer, cancelTimer;
+			// send timer, cancelTimer;
 		}
 		on timeout goto ProposeValuePhase1;
 	}
@@ -229,9 +229,9 @@ machine PaxosNode {
 			if(countAccept == majority)
 			{
 				//the value is chosen, hence invoke the announce on chosen event
-				announce announce_valueChosen, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal);
-				send timer, cancelTimer;
-				announce announce_proposer_chosen, proposeVal;
+				// announce announce_valueChosen, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal);
+				// send timer, cancelTimer;
+				// announce announce_proposer_chosen, proposeVal;
 				//increment the nextSlotForProposer
 				nextSlotForProposer = nextSlotForProposer + 1;
 				raise chosen, receivedMess_1;
@@ -264,7 +264,7 @@ machine PaxosNode {
 			announce announce_proposer_sent, proposeVal;
 			
 			BroadCastAcceptors(accept, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal));
-			send timer, startTimer;
+			// send timer, startTimer;
 		}
 		
 		on accepted do (payload : (slot:int, proposal : (round: int, servermachine : int), value : int)) {
@@ -275,7 +275,7 @@ machine PaxosNode {
 			if(nextProposal.round <= payload.proposal.round)
 				maxRound = payload.proposal.round;
 				
-			send timer, cancelTimer;
+			// send timer, cancelTimer;
 		}
 		on timeout goto ProposeValuePhase1;
 		
