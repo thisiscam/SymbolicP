@@ -15,6 +15,7 @@ Global
 		Debug|x86 = Debug|x86
 		ReleaseVSNoMerging|x64 = ReleaseVSNoMerging|x64
 		ReleaseLogTransitions|x64 = ReleaseLogTransitions|x64
+		ReleaseRR|x64 = ReleaseRR|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 #for @project in @include_projects:
@@ -28,14 +29,18 @@ Global
 		@{project.guid}.Release|x64.Build.0 = Release|x64
 #if(@project == @main_project)
 		@{main_project.guid}.ReleaseVSNoMerging|x64.ActiveCfg = ReleaseVSNoMerging|x64
-		@{main_project.guid}.ReleaseVSNoMerging|x64.Build.0 = ReleaseVSNoMerging|x64	
-		@{main_project.guid}.ReleaseLogTransitions|x64.Build.0 = ReleaseLogTransitions|x64	
-		@{main_project.guid}.ReleaseLogTransitions|x64.Build.0 = ReleaseLogTransitions|x64	
+		@{main_project.guid}.ReleaseVSNoMerging|x64.Build.0 = ReleaseVSNoMerging|x64
+		@{main_project.guid}.ReleaseLogTransitions|x64.Build.0 = ReleaseLogTransitions|x64
+		@{main_project.guid}.ReleaseLogTransitions|x64.Build.0 = ReleaseLogTransitions|x64
+		@{main_project.guid}.ReleaseRR|x64.Build.0 = ReleaseRR|x64
+		@{main_project.guid}.ReleaseRR|x64.Build.0 = ReleaseRR|x64
 #else
 		@{project.guid}.ReleaseVSNoMerging|x64.ActiveCfg = Release|x64
 		@{project.guid}.ReleaseVSNoMerging|x64.Build.0 = Release|x64
 		@{project.guid}.ReleaseLogTransitions|x64.ActiveCfg = Release|x64
-		@{project.guid}.ReleaseLogTransitions|x64.Build.0 = Release|x64	
+		@{project.guid}.ReleaseLogTransitions|x64.Build.0 = Release|x64
+		@{project.guid}.ReleaseRR|x64.ActiveCfg = Release|x64
+		@{project.guid}.ReleaseRR|x64.Build.0 = Release|x64
 #end
 #end
 	EndGlobalSection
