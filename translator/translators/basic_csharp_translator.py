@@ -438,8 +438,8 @@ class PProgramToCSharpTranslator(TranslatorBase):
 
     # Visit a parse tree produced by pParser#stmt_return_exp.
     def visitStmt_return_exp(self, ctx):
-        self.do_copy = True
-        c1 = ctx.getChild(1).accept(self)
+        with self.scoped_do_copy(True):
+            c1 = ctx.getChild(1).accept(self)
         self.out("return {0};\n".format(c1))
 
 
