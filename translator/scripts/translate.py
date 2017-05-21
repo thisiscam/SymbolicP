@@ -1,7 +1,7 @@
 from __future__ import print_function
 import os, sys, argparse, importlib
 
-from pparser.p_java_parser import pJavaParser
+from pparser.p_program_parser import pProgramParser
 from ordered_set import OrderedSet
 from collections import defaultdict, OrderedDict
 
@@ -14,7 +14,7 @@ for _, name, _ in pkgutil.iter_modules([os.path.realpath(os.path.join(__file__, 
         viable_translators.append(name[:-len(translator_suffix)])
 
 def translate(options):
-    pparser = pJavaParser(options.search_dirs)
+    pparser = pProgramParser(options.search_dirs, backend="python")
     ast = pparser.parse(options.input_file)
     translator = options.translator(ast, 
                     os.path.splitext(os.path.basename(options.input_file))[0],

@@ -4,6 +4,7 @@ import copy
 from ordered_set import OrderedSet
 from collections import defaultdict, OrderedDict, namedtuple
 from pparser.pVisitor import pVisitor
+from pparser.pParser import pParser
 
 class PProgram(object):
     def __init__(self):
@@ -189,7 +190,7 @@ class TopdeclCollector(PTypeTranslatorVisitor):
 
     # Visit a parse tree produced by pParser#top_decl.
     def visitTop_decl(self, ctx):
-        if ctx.getChild(0).name == "Type_def_decl":
+        if isinstance(ctx.getChild(0), pParser.Type_def_declContext):
             return ctx.getChild(0).accept(self)
         else:
             return ctx
