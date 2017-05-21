@@ -8,7 +8,7 @@ all: parser_jar
 parser_python_visitor: p.g4
 	echo "Generating python visitor..."
 	mkdir $(TEMPDIR)
-	$(ANTLR4) -visitor -no-listener -Dlanguage=Python2 -o $(TEMPDIR) $^
+	$(ANTLR4) -visitor -no-listener -Dlanguage=Python2 -o . $^
 	mv $(TEMPDIR)/pVisitor.py .
 	rm -rf $(TEMPDIR)
 
