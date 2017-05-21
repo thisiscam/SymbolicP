@@ -13,7 +13,7 @@ class PProgramToSymbolicCSharpTranslator(PProgramToCSharpTranslator):
         if exp_ast.getChildCount() == 1:
             return self.is_call_exp(exp_ast.getChild(0))
         else:
-            return exp_ast.name in ("exp_call", "exp_call_with_arguments")
+            return exp_ast.name in ("Exp_call", "Exp_call_with_arguments")
 
     def visitBinary_Exp(self, ctx, **kwargs):
         if ctx.getChildCount() > 1:
