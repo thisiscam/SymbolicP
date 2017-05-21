@@ -14,7 +14,7 @@ for _, name, _ in pkgutil.iter_modules([os.path.realpath(os.path.join(__file__, 
         viable_translators.append(name[:-len(translator_suffix)])
 
 def translate(options):
-    pparser = pProgramParser(options.search_dirs, backend="python")
+    pparser = pProgramParser(options.search_dirs, options.parser_backend)
     ast = pparser.parse(options.input_file)
     translator = options.translator(ast, 
                     os.path.splitext(os.path.basename(options.input_file))[0],
@@ -39,6 +39,10 @@ def main(argv):
                         default=[],
                         action="append",
                         help="include directory for the translator to search for P source files")
+    parser.add_argument('--parser-backend', type=str, dest="parser_backend",
+                        default="java",
+                        choices=["java", "python"],
+                        help="P program parser's backend")
     parser.add_argument('input_file')
     options = parser.parse_args(argv)
     process_options(options)
