@@ -145,7 +145,6 @@ class IncludeFileHandlerVisitor(pVisitor):
 
     # Visit a parse tree produced by pParser#top_decl.
     def visitTop_decl(self, ctx):
-        import pdb; pdb.set_trace()
         if isinstance(ctx.getChild(0), pParser.Include_declContext):
             return ctx.getChild(0).accept(self)
         else:

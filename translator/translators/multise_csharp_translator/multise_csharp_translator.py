@@ -91,30 +91,29 @@ class PProgramToMultSECSharpTranslator(PProgramToSymbolicCSharpTranslator):
             ]
 
     # Visit a parse tree produced by pParser#exp_new.
-    def visitExp_new(self, ctx, **kwargs):
+    def visitExp_new(self, ctx):
         return "NewMachine(Machine{0}.Allocate(), null)".format(ctx.getChild(1).getText())
 
     # Visit a parse tree produced by pParser#exp_new_with_arguments.
-    def visitExp_new_with_arguments(self, ctx, **_kwargs):
-        kwargs = _kwargs.copy()
-        kwargs["do_copy"] = True
-        c3 = ctx.getChild(3).accept(self, **kwargs)
+    def visitExp_new_with_arguments(self, ctx):
+        with self.scoped_do_copy(True):
+            c3 = ctx.getChild(3).accept(self)
         return "NewMachine(Machine{0}.Allocate(), {1})".format(ctx.getChild(1).getText(), c3)
 
     # Visit a parse tree produced by pParser#stmt_new.
-    def visitStmt_new(self, ctx, **kwargs):
+    def visitStmt_new(self, ctx):
         self.out("NewMachine(Machine{0}.Allocate(), null);\n".format(ctx.getChild(1).getText()))
 
     # Visit a parse tree produced by pParser#stmt_new_with_arguments.
-    def visitStmt_new_with_arguments(self, ctx, **kwargs):
-        c3 = ctx.getChild(3).accept(self, **kwargs)
+    def visitStmt_new_with_arguments(self, ctx):
+        c3 = ctx.getChild(3).accept(self)
         self.out("NewMachine(Machine{0}.Allocate(),{1});\n".format(ctx.getChild(1).getText(), c3))
 
-    def visitExp_nondet(self, ctx, **kwargs):
+    def visitExp_nondet(self, ctx):
         self.rand_bool_cnt += 1
         return "RandomBool({cnt}, _rnd{cnt}, _allRnds{cnt})".format(cnt=self.rand_bool_cnt)
 
-    def visitExp_fairnondet(self, ctx, **kwargs):
+    def visitExp_fairnondet(self, ctx):
         self.rand_bool_cnt += 1
         return "RandomBool({cnt}, _rnd{cnt}, _allRnds{cnt})".format(cnt=self.rand_bool_cnt)
 
