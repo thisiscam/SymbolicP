@@ -1,46 +1,55 @@
 from tempfile import TemporaryFile
 import subprocess, os
 from .pVisitor import pVisitor
+from antlr4 import *
+from pLexer import pLexer
+from pParser import pParser
 from ordered_set import OrderedSet
+from antlr4.tree.Tree import TerminalNode, TerminalNodeImpl
 
-class AntlrASTNode(object):
-    is_token = False
+# class AntlrASTNode(object):
+#     is_token = False
 
-class AntlrSExpCtx(AntlrASTNode):
-    def __init__(self, name, childs):
-        self.name = name
-        self.childs = childs
+# class AntlrSExpCtx(AntlrASTNode):
+#     def __init__(self, name, children):
+#         self.name = name
+#         self.children = children
 
-        self.visitor_invoke_name = "visit" + self.name
+#         self.visitor_invoke_name = "visit" + self.name
 
-    def getChildCount(self):
-        return len(self.childs)
+#     def getChildCount(self):
+#         return len(self.children)
 
-    def getChild(self, i):
-        return self.childs[i]
+#     def getChild(self, i):
+#         return self.children[i]
 
-    def accept(self, visitor, *args, **kwargs):
-        if hasattr(visitor, self.visitor_invoke_name):
-            return getattr(visitor, self.visitor_invoke_name)(self, *args, **kwargs)
-        else:
-            print("Warning: {0} not invoked".format(self.visitor_invoke_name))
+#     def accept(self, visitor, *args, **kwargs):
+#         if hasattr(visitor, self.visitor_invoke_name):
+#             return getattr(visitor, self.visitor_invoke_name)(self, *args, **kwargs)
+#         else:
+#             print("Warning: {0} not invoked".format(self.visitor_invoke_name))
 
-    def __repr__(self):
-        return "{0}{1}".format(self.name, self.childs)
+#     def __repr__(self):
+#         return "{0}{1}".format(self.name, self.children)
 
-class Token(AntlrASTNode):
-    is_token = True
-    def __init__(self, txt):
-        self.text = txt
+# class Token(AntlrASTNode):
+#     is_token = True
+#     def __init__(self, txt):
+#         self.getText() = txt
 
-    def getText(self):
-        return self.text
+#     def text(self):
+#         return self.getText()
 
-    def accept(self, visitor):
-        return
+#     def accept(self, visitor):
+#         return
 
-    def __repr__(self):
-        return "`{0}`".format(self.text)
+#     def __repr__(self):
+#         return "`{0}`".format(self.getText())
+
+def creat_token(text):
+    token = Token()
+    token._text = text
+    return TerminalNodeImpl(token) 
 
 def peek1(s):
     c = s.read(1)
@@ -48,25 +57,29 @@ def peek1(s):
     return c
 
 def to_tree(s):
-    return parse_exp(s)
+    ret = parse_exp(s)
+    return ret
 
 def parse_exp(s):
     c = peek1(s)
     if c == "(":
         c = s.read(1)
         if peek1(s) in (")", " "):
-            return Token(c)
+            return creat_token(c)
         else:
-            name = parse_tid(s)
-            childs = []
+            name = parse_tid(s) + "Context"
+            children = []
             while peek1(s) == " ":
                 s.read(1)
-                childs.append(parse_exp(s))
+                children.append(parse_exp(s))
             if s.read(1) != ")":
                 raise ValueError("Invalid s-expression")
-            return AntlrSExpCtx(name, childs)
+            node_type = getattr(pParser, name)
+            new_node = node_type.__new__(node_type)
+            new_node.children = children
+            return new_node
     else:
-        return Token(parse_id(s))
+        return creat_token(parse_id(s))
 
 def parse_id(s):
     if peek1(s) in ("(", ")"):
@@ -98,7 +111,7 @@ class IncludeFileHandlerVisitor(pVisitor):
         c1 = ctx.getChild(-1).accept(self)
         if c1 == None:
             c1 = Token("EOF")
-        ctx.childs[-1] = c1
+        ctx.children[-1] = c1
         return c1
 
     # Visit a parse tree produced by pParser#top_decl_list.
@@ -107,10 +120,10 @@ class IncludeFileHandlerVisitor(pVisitor):
             c0 = ctx.getChild(0).accept(self)
             if c0 == None:
                 return None
-            elif c0.name == "Top_decl_list":
+            elif isinstance(c0, pParser.Top_decl_listContext):
                 return c0
             else:
-                ctx.childs[0] = c0
+                ctx.children[0] = c0
                 return ctx
         else:
             c0 = ctx.getChild(0).accept(self)
@@ -119,20 +132,20 @@ class IncludeFileHandlerVisitor(pVisitor):
                 return c0
             elif c0 == None:
                 return c1
-            elif c1.name == "Top_decl_list":
+            elif isinstance(c1, pParser.Top_decl_listContext):
                 i = c1
                 while i.getChildCount() > 1:
                     i = i.getChild(0)
-                i.childs.insert(0, c0)
+                i.children.insert(0, c0)
                 return c1
             else:
-                ctx.childs[1] = c1
-                ctx.childs[0] = c0
+                ctx.children[1] = c1
+                ctx.children[0] = c0
                 return ctx
 
     # Visit a parse tree produced by pParser#top_decl.
     def visitTop_decl(self, ctx):
-        if ctx.getChild(0).name == "Include_decl":
+        if isinstance(ctx.getChild(0), pParser.Include_declContext):
             return ctx.getChild(0).accept(self)
         else:
             return ctx
@@ -148,18 +161,19 @@ class IncludeFileHandlerVisitor(pVisitor):
             self.parser.included_files.add(potential_file_path)
             ast = self.parser.parse(potential_file_path)
             if ast.getChildCount() == 1:
-                if ast.childs[0].is_token or ast.childs[0].name == "Annotation_set":
+                if isinstance(ast.children[0], TerminalNode) or isinstance(ast.children[0], pParser.Annotation_setContext):
                     return None
                 else:
                     return ast.getChild(-1) # return a top_decl_list for now, annotation set is currently ignored
         else:
             raise Exception("{0} not found".format(include_file_name))
 
-class pJavaParser(object):
-    def __init__(self, search_dirs=[]):
+class pProgramParser(object):
+    def __init__(self, search_dirs=[], backend="java"):
         self.include_file_handler = IncludeFileHandlerVisitor(self)
         self.search_dirs = OrderedSet(["."] + search_dirs)
         self.included_files = set()
+        self.backend = backend
 
     def search_and_parse(self, filename):
         filename = self.search_file(filename)
@@ -179,11 +193,20 @@ class pJavaParser(object):
         self.included_files.add(os.path.abspath(filename))
         self.search_dirs.add(os.path.dirname(filename))
         jar_path = os.path.dirname(__file__)
-        cmd = ["java", "-jar", os.path.join(jar_path, "pparser.jar"), filename]
-        with TemporaryFile() as outfile:
-            subprocess.call(cmd, stdout=outfile)
-            outfile.seek(0)
-            ast = to_tree(outfile)
-            ast.accept(self.include_file_handler)
-            return ast
+        ast = None
+        if self.backend == "java":
+            cmd = ["java", "-jar", os.path.join(jar_path, "pparser.jar"), filename]
+            with TemporaryFile() as outfile:
+                subprocess.call(cmd, stdout=outfile)
+                outfile.seek(0)
+                ast = to_tree(outfile)
+        elif self.backend == "python":
+            lexer = pLexer(FileStream(filename))
+            stream = CommonTokenStream(lexer)
+            parser = pParser(stream)
+            ast = parser.program()
+        else:
+            raise Exception("Invalid parser backend")
+        ast.accept(self.include_file_handler)
+        return ast
 

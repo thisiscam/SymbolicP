@@ -1,5 +1,7 @@
 import os
 from .basic_csharp_translator import PProgramToCSharpTranslator
+from antlr4.tree.Tree import TerminalNode
+from pparser.pParser import pParser
 
 class PProgramToSymbolicCSharpTranslator(PProgramToCSharpTranslator):
     runtime_dir = os.environ.get("RUNTIME_DIR", os.path.realpath(os.path.dirname(__file__) + "/../runtimes/symbolic_csharp"))
@@ -8,12 +10,12 @@ class PProgramToSymbolicCSharpTranslator(PProgramToCSharpTranslator):
         super(PProgramToCSharpTranslator, self).__init__(*args)
 
     def is_call_exp(self, exp_ast):
-        if exp_ast.is_token:
+        if isinstance(exp_ast, TerminalNode):
             return False
         if exp_ast.getChildCount() == 1:
             return self.is_call_exp(exp_ast.getChild(0))
         else:
-            return exp_ast.name in ("Exp_call", "Exp_call_with_arguments")
+            return isinstance(exp_ast, pParser.Exp_callContext) or isinstance(exp_ast, pParser.Exp_call_with_argumentsContext)
 
     def visitBinary_Exp(self, ctx, **kwargs):
         if ctx.getChildCount() > 1:

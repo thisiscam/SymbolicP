@@ -7,10 +7,7 @@ all: parser_jar
 
 parser_python_visitor: p.g4
 	echo "Generating python visitor..."
-	mkdir $(TEMPDIR)
 	$(ANTLR4) -visitor -no-listener -Dlanguage=Python2 -o . $^
-	mv $(TEMPDIR)/pVisitor.py .
-	rm -rf $(TEMPDIR)
 
 parser_src: p.g4
 	$(ANTLR4) -no-visitor -no-listener -o java $^
@@ -22,4 +19,4 @@ parser_jar: parser_src
 	rm -rf build
 
 clean: 
-	rm -rf java/*.java build 
+	rm -rf java/* build 
