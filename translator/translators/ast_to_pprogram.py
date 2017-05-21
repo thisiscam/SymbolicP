@@ -582,8 +582,3 @@ class AntlrTreeToPProgramVisitor(PTypeTranslatorVisitor):
         if self.enable_warning and ctx.getChildCount() > 1:
             self.warning("'.' ignored", ctx)
         return
-
-    # Visit a parse tree produced by pParser#stmt_pop.
-    def visitStmt_pop(self, ctx):
-        self.out("this.PopState(); retcode = RAISED_EVENT; return;\n")
-
