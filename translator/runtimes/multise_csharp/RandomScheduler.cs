@@ -98,6 +98,7 @@ partial class Scheduler
     {
         this.machines.Add(machine);
         machine.InvokeMethod<Scheduler, IPType>((_, a0, a1) => _.StartMachine(a0, a1), this, payload);
+        PMachine.totalMachineCreateCount += machine.getValuesCount();
     }
 }
 #endif

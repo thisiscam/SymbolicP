@@ -28,6 +28,7 @@ public class Program {
 			Watch.Reset();
 			BDDToZ3Wrap.Converter.Watch.Reset();
         }
+        SylvanSharp.SylvanSharp.sylvan_stats_report("stat");
 	}
 	
 	static void HandleProgramException(Exception e)
@@ -38,6 +39,7 @@ public class Program {
     	Console.WriteLine("Saving program trace log to {0}...", options.ErrorTraceFile);
 		PathConstraint.SaveTrace(options.ErrorTraceFile);
 		Console.WriteLine("You can rerun with -r to inspect the trace! Good Bye!");
+        logStats();
 		Process.GetCurrentProcess().Kill(); //TODO better way to shut down the system
 	}
 	
@@ -75,8 +77,16 @@ public class Program {
 		    	Run();
 		    } catch(Exception e) {
 		    	HandleProgramException(e);
+            } finally {
+                logStats();
 			}
 		}
         return 0;
+    }
+
+    static void logStats() {
+		Console.WriteLine(String.Format("Total machine create: {0}", PMachine.totalMachineCreateCount));
+		Console.WriteLine(String.Format("Total transition handler executed: {0}", PMachine.totalTransitionsCount));
+		Console.WriteLine(String.Format("Sum of above two: {0}", PMachine.totalMachineCreateCount + PMachine.totalTransitionsCount));
     }
 }

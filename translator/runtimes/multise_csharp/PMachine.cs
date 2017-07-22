@@ -163,6 +163,9 @@ abstract class PMachine : IPType<PMachine>
         vs_cond_27.MergeBranch();
     }
 
+    public static int totalTransitionsCount = 0;
+    public static int totalMachineCreateCount = 0;
+
     public void RunStateMachine(ValueSummary<int> state_idx, ValueSummary<PInteger> e, ValueSummary<IPType> payload)
     {
         ValueSummary<int> state = this.states.InvokeMethod<int, int>((_, a0) => _[a0], state_idx);
@@ -186,6 +189,7 @@ abstract class PMachine : IPType<PMachine>
 #if LOG_TRANSITIONS
         Console.WriteLine("{0} takes {1}", this, transition_fn);
 #endif
+        totalTransitionsCount += transition_fn.getValuesCount();
         transition_fn.Invoke(payload);
     }
 

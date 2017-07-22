@@ -311,7 +311,7 @@ nmd_tup_type_list
 
 stmt
     : SEMICOLON                                                                     # stmt_semicolon
-    | LCBRACE RCBRACE                                                               # stmt_rbrace
+    | LCBRACE RCBRACE                                                               # stmt_lrbrace
     | POP SEMICOLON                                                                 # stmt_pop
     | LCBRACE stmt_list RCBRACE                                                     # stmt_stmt_list
     | ASSERT exp SEMICOLON                                                          # stmt_assert
@@ -333,8 +333,8 @@ stmt
     | RAISE exp COMMA single_expr_arg_list SEMICOLON                                # stmt_raise_with_arguments
     | qualifier_or_none SEND exp COMMA exp SEMICOLON                                # stmt_send
     | qualifier_or_none SEND exp COMMA exp COMMA single_expr_arg_list SEMICOLON     # stmt_send_with_arguments
-    | ANNOUNCE exp SEMICOLON                                                         # stmt_announce
-    | ANNOUNCE exp COMMA single_expr_arg_list SEMICOLON                              # stmt_announce_with_arguments
+    | ANNOUNCE exp SEMICOLON                                                        # stmt_announce
+    | ANNOUNCE exp COMMA single_expr_arg_list SEMICOLON                             # stmt_announce_with_arguments
     | receive_stmt LCBRACE case_list RCBRACE                                        # stmt_recieve
     ;
 

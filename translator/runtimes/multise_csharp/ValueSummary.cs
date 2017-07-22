@@ -519,6 +519,20 @@ public partial class ValueSummary<T>
 		return ret;
 	}
 
+    internal int getValuesCount() {
+        int count = 0;
+		var pc = PathConstraint.GetPC();
+		foreach (var guardedVal in this.values)
+		{
+			var bddForm = guardedVal.bddForm.And(pc);
+			if (bddForm.FormulaBDDSAT())
+			{
+                count++;
+            }
+		}
+        return count;
+    }
+
 	public override string ToString()
 	{
 		return "[VS]{" + values.Select((gv) => {
