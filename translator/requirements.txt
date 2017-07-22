@@ -1,5 +1,5 @@
 antlr4-python2-runtime==4.7
 ddt==1.0.3
-lxml==3.6.0
+lxml==3.8.0
 ordered-set==2.0.1
 quik==0.2.2
